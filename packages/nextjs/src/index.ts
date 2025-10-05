@@ -31,11 +31,17 @@ export {
 // Server-only exports - import from "@intl-party/nextjs/server"
 export { getLocale, getLocaleFromParams } from "./app";
 
-// Re-export core and react for convenience, avoiding VERSION conflict
-export * from "@intl-party/core";
-export {
-  I18nProvider,
-  useTranslations,
-  useLocale,
-  useI18nContext as useI18n,
-} from "@intl-party/react";
+// Re-export core types for convenience
+export type {
+  Locale,
+  Namespace,
+  TranslationKey,
+  TranslationValue,
+  TranslationOptions,
+  TranslationFunction,
+  I18nConfig,
+  I18nInstance,
+} from "@intl-party/core";
+
+// Note: React hooks should be imported directly from @intl-party/react
+// to avoid bundling client code in server components

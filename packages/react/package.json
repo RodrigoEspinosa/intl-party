@@ -7,6 +7,7 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "react-server": "./dist/server.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
@@ -16,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.tsx --format cjs,esm --external react,react-dom",
+    "build": "tsup src/index.tsx src/server.ts --format cjs,esm --external react,react-dom",
     "dev": "tsup src/index.tsx --format cjs,esm --external react,react-dom --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",

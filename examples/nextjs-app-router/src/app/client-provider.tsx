@@ -1,6 +1,6 @@
 "use client";
 
-import { AppI18nProvider } from "@intl-party/nextjs";
+import { AppI18nProvider } from "@intl-party/nextjs/client";
 
 const i18nConfig = {
   locales: ["en", "es", "fr", "de"],

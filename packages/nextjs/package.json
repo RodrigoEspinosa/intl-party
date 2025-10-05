@@ -7,6 +7,7 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "react-server": "./dist/server-safe.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
@@ -15,13 +16,18 @@
       "types": "./dist/server/index.d.ts",
       "import": "./dist/server/index.mjs",
       "require": "./dist/server/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.mjs",
+      "require": "./dist/client/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/server/index.ts src/client/index.tsx --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher",
+    "build": "tsup src/index.ts src/server/index.ts src/client/index.tsx src/server-safe.ts src/server-only.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",
