@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/react",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "React integration for IntlParty - hooks, context, and components for type-safe i18n",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
