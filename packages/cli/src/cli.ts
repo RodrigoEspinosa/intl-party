@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+
+import { program } from "commander";
+import chalk from "chalk";
+import { validateCommand } from "./commands/validate";
+import { extractCommand } from "./commands/extract";
+import { syncCommand } from "./commands/sync";
+import { initCommand } from "./commands/init";
+import { checkCommand } from "./commands/check";
+import { generateCommand } from "./commands/generate";
+
+const packageJson = require("../package.json");
+
+program
+  .name("intl-party")
+  .description("CLI for IntlParty internationalization library")
+  .version(packageJson.version);
+
+// Global options
+program
+  .option("-c, --config <path>", "path to config file", "intl-party.config.js")
+  .option("-v, --verbose", "verbose output")
+  .option("--no-color", "disable colored output");
+
+// Validate command
+program
+  .command("validate")
+  .description("validate translation files for completeness and consistency")
+  .option("-l, --locales <locales...>", "specific locales to validate")
+  .option("-n, --namespaces <namespaces...>", "specific namespaces to validate")
+  .option("--strict", "enable strict validation mode")
+  .option("--format <format>", "output format (text|json|junit)", "text")
+  .option("--output <file>", "output file path")
+  .action(validateCommand);
+
+// Extract command
+program
+  .command("extract")
+  .description("extract translation keys from source code")
+  .option("-s, --source <patterns...>", "source file patterns", [
+    "src/**/*.{ts,tsx,js,jsx}",
+  ])
+  .option(
+    "-o, --output <dir>",
+    "output directory for extracted keys",
+    "./translations",
+  )
+  .option("--dry-run", "show what would be extracted without writing files")
+  .option("--update", "update existing translation files with new keys")
+  .option("--remove-unused", "remove unused translation keys")
+  .action(extractCommand);
+
+// Sync command
+program
+  .command("sync")
+  .description("synchronize translations across locales")
+  .option("-b, --base <locale>", "base locale to sync from", "en")
+  .option("-t, --target <locales...>", "target locales to sync to")
+  .option("--missing-only", "only add missing keys, don't remove extras")
+  .option("--interactive", "interactive mode for conflict resolution")
+  .action(syncCommand);
+
+// Init command
+program
+  .command("init")
+  .description("initialize intl-party configuration and structure")
+  .option("--force", "overwrite existing configuration")
+  .option(
+    "--template <template>",
+    "template to use (nextjs|react|vanilla)",
+    "react",
+  )
+  .action(initCommand);
+
+// Check command
+program
+  .command("check")
+  .description("check for issues in translations and configuration")
+  .option("--missing", "check for missing translations")
+  .option("--unused", "check for unused translation keys")
+  .option("--duplicates", "check for duplicate keys")
+  .option("--format-errors", "check for format errors in translations")
+  .option("--fix", "automatically fix issues where possible")
+  .action(checkCommand);
+
+// Generate command
+program
+  .command("generate")
+  .description("generate TypeScript definitions and other files")
+  .option("-t, --types", "generate TypeScript type definitions")
+  .option("-s, --schemas", "generate JSON schemas")
+  .option("-d, --docs", "generate documentation")
+  .option("--watch", "watch for changes and regenerate")
+  .action(generateCommand);
+
+// Add subcommands
+program
+  .command("completion")
+  .description("generate shell completion scripts")
+  .option("--shell <shell>", "shell type (bash|zsh|fish)", "bash")
+  .action((options) => {
+    console.log("Shell completion not implemented yet");
+  });
+
+// Error handling
+program.exitOverride((err) => {
+  if (err.code === "commander.help") {
+    process.exit(0);
+  }
+  if (err.code === "commander.version") {
+    process.exit(0);
+  }
+  console.error(chalk.red("Error:"), err.message);
+  process.exit(1);
+});
+
+// Parse arguments
+program.parse();
+
+// Show help if no command provided
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}

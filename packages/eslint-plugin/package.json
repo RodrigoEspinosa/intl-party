@@ -1,0 +1,52 @@
+{
+  "name": "@intl-party/eslint-plugin",
+  "version": "1.0.0",
+  "description": "ESLint plugin for IntlParty - detect hardcoded strings and enforce i18n best practices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsup src/index.ts --format cjs --dts --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "i18n",
+    "internationalization",
+    "typescript",
+    "hardcoded-strings"
+  ],
+  "author": "IntlParty Team",
+  "license": "MIT",
+  "dependencies": {
+    "@typescript-eslint/utils": "^6.15.0"
+  },
+  "devDependencies": {
+    "@types/eslint": "^8.56.0",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@typescript-eslint/rule-tester": "^6.15.0",
+    "eslint": "^8.55.0",
+    "jsdom": "^23.0.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intl-party/intl-party.git",
+    "directory": "packages/eslint-plugin"
+  }
+}

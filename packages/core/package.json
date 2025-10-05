@@ -1,0 +1,55 @@
+{
+  "name": "@intl-party/core",
+  "version": "1.0.0",
+  "description": "Core internationalization library with type-safe translations and advanced locale detection",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "typescript",
+    "localization",
+    "translations"
+  ],
+  "author": "IntlParty Team",
+  "license": "MIT",
+  "dependencies": {
+    "@formatjs/intl-localematcher": "^0.5.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.55.0",
+    "jsdom": "^23.0.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intl-party/intl-party.git",
+    "directory": "packages/core"
+  }
+}

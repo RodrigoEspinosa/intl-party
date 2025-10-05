@@ -1,0 +1,57 @@
+{
+  "name": "@intl-party/cli",
+  "version": "1.0.0",
+  "description": "Command-line interface for IntlParty - validation, extraction, and management tools",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "intl-party": "./dist/cli.js",
+    "ip": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts src/index.ts --format cjs",
+    "dev": "tsup src/cli.ts src/index.ts --format cjs --dts --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "cli",
+    "i18n",
+    "internationalization",
+    "validation",
+    "extraction",
+    "typescript"
+  ],
+  "author": "IntlParty Team",
+  "license": "MIT",
+  "dependencies": {
+    "@intl-party/core": "workspace:*",
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "glob": "^10.3.10",
+    "fs-extra": "^11.2.0",
+    "ora": "^7.0.1",
+    "inquirer": "^9.2.12"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.10.0",
+    "eslint": "^8.55.0",
+    "jsdom": "^23.0.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intl-party/intl-party.git",
+    "directory": "packages/cli"
+  }
+}

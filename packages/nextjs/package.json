@@ -1,0 +1,67 @@
+{
+  "name": "@intl-party/nextjs",
+  "version": "1.0.0",
+  "description": "Next.js integration for IntlParty - App Router and Pages Router support with SSR/SSG",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "nextjs",
+    "next",
+    "i18n",
+    "internationalization",
+    "typescript",
+    "app-router",
+    "pages-router",
+    "ssr",
+    "ssg"
+  ],
+  "author": "IntlParty Team",
+  "license": "MIT",
+  "dependencies": {
+    "@formatjs/intl-localematcher": "^0.5.10",
+    "@intl-party/core": "workspace:*",
+    "@intl-party/react": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "eslint": "^8.55.0",
+    "jsdom": "^23.0.1",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "next": ">=13.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/intl-party/intl-party.git",
+    "directory": "packages/nextjs"
+  }
+}
