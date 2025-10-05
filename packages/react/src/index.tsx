@@ -96,6 +96,22 @@ export type {
 // Version
 export const VERSION = "0.1.0";
 
+// ============================================================================
+// NEXT-INTL COMPATIBILITY
+// ============================================================================
+// Our useTranslations(namespace?) hook is already compatible with next-intl!
+// No additional exports needed - just use the existing useTranslations hook:
+//
+// import { useTranslations, useLocale } from '@intl-party/react';
+//
+// function MyComponent() {
+//   const t = useTranslations('navigation'); // With namespace
+//   const tGlobal = useTranslations(); // Without namespace
+//   const locale = useLocale();
+//
+//   return <h1>{t('title')}</h1>; // Works exactly like next-intl
+// }
+
 // React-specific utilities
 export function createI18nHook<T extends Record<string, any>>() {
   return {

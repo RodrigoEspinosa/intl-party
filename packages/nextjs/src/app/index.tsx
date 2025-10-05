@@ -1,14 +1,20 @@
-import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
-import { I18n, createI18n, type I18nConfig, type Locale } from '@intl-party/core';
-import { I18nProvider, type I18nProviderProps } from '@intl-party/react';
+import React from "react";
+import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import {
+  I18n,
+  createI18n,
+  type I18nConfig,
+  type Locale,
+} from "@intl-party/core";
+import { I18nProvider, type I18nProviderProps } from "@intl-party/react";
 
 export interface NextI18nConfig extends I18nConfig {
   cookieName?: string;
   paramName?: string;
   pathSegment?: number;
   basePath?: string;
-  notFoundBehavior?: 'not-found' | 'redirect' | 'fallback';
+  notFoundBehavior?: "not-found" | "redirect" | "fallback";
   asyncTranslations?: boolean;
 }
 
@@ -17,14 +23,14 @@ export async function getLocale(config: NextI18nConfig): Promise<Locale> {
   const {
     locales,
     defaultLocale,
-    cookieName = 'INTL_LOCALE',
-    paramName = 'locale'
+    cookieName = "INTL_LOCALE",
+    paramName = "locale",
   } = config;
 
   // Get headers for server-side detection
   const headersList = headers();
-  const acceptLanguage = headersList.get('accept-language');
-  const customLocaleHeader = headersList.get('x-locale');
+  const acceptLanguage = headersList.get("accept-language");
+  const customLocaleHeader = headersList.get("x-locale");
 
   // Try to detect from custom header first
   if (customLocaleHeader && locales.includes(customLocaleHeader)) {
@@ -33,9 +39,9 @@ export async function getLocale(config: NextI18nConfig): Promise<Locale> {
 
   // Create detection context for server
   const detectionContext = {
-    request: new Request('http://localhost', {
-      headers: Object.fromEntries(headersList.entries())
-    })
+    request: new Request("http://localhost", {
+      headers: Object.fromEntries(headersList.entries()),
+    }),
   };
 
   // Create temporary i18n instance for detection
@@ -48,16 +54,16 @@ export async function getLocale(config: NextI18nConfig): Promise<Locale> {
 // Server component for getting locale from params
 export function getLocaleFromParams(
   params: { locale?: string },
-  config: NextI18nConfig
+  config: NextI18nConfig,
 ): Locale {
-  const { locales, defaultLocale, notFoundBehavior = 'not-found' } = config;
-  
+  const { locales, defaultLocale, notFoundBehavior = "not-found" } = config;
+
   if (!params.locale) {
     return defaultLocale;
   }
 
   if (!locales.includes(params.locale)) {
-    if (notFoundBehavior === 'not-found') {
+    if (notFoundBehavior === "not-found") {
       notFound();
     }
     return defaultLocale;
@@ -66,17 +72,26 @@ export function getLocaleFromParams(
   return params.locale;
 }
 
-// App Router provider component
-export interface AppI18nProviderProps extends Omit<I18nProviderProps, 'config'> {
+// App Router provider component - supports multi-locale preloading
+export interface AppI18nProviderProps
+  extends Omit<I18nProviderProps, "config"> {
   locale: Locale;
   config: NextI18nConfig;
   translations?: Record<string, any>;
+  /** Multi-locale translations for instant switching */
+  initialData?: Record<Locale, Record<string, any>>;
+  /** Enable client-side locale switching without URL changes */
+  enableClientSideRouting?: boolean;
 }
+
+("use client");
 
 export function AppI18nProvider({
   locale,
   config,
   translations,
+  initialData,
+  enableClientSideRouting = true,
   children,
   ...props
 }: AppI18nProviderProps) {
@@ -85,26 +100,31 @@ export function AppI18nProvider({
     ...config,
     // Override detection to use the provided locale
     detection: {
-      strategies: [],
-    }
+      strategies: enableClientSideRouting ? ["cookie", "localStorage"] : [],
+    },
   });
 
   // Set the locale
   i18n.setLocale(locale);
 
-  // Add translations if provided
+  // Add translations for current locale if provided
   if (translations) {
     for (const [namespace, nsTranslations] of Object.entries(translations)) {
       i18n.addTranslations(locale, namespace, nsTranslations);
     }
   }
 
+  // Add multi-locale translations for instant switching
+  if (initialData) {
+    for (const [targetLocale, localeData] of Object.entries(initialData)) {
+      for (const [namespace, nsTranslations] of Object.entries(localeData)) {
+        i18n.addTranslations(targetLocale, namespace, nsTranslations);
+      }
+    }
+  }
+
   return (
-    <I18nProvider 
-      {...props}
-      i18n={i18n}
-      initialLocale={locale}
-    >
+    <I18nProvider {...props} i18n={i18n} initialLocale={locale}>
       {children}
     </I18nProvider>
   );
@@ -114,14 +134,17 @@ export function AppI18nProvider({
 export function useAppTranslations(
   locale: Locale,
   namespaces: string[],
-  loadTranslations: (locale: Locale, namespace: string) => Promise<Record<string, any>>
+  loadTranslations: (
+    locale: Locale,
+    namespace: string,
+  ) => Promise<Record<string, any>>,
 ) {
   // This would typically be implemented with React.cache() or similar
   // For now, it's a placeholder for the async translation loading pattern
   return {
     translations: {},
     isLoading: false,
-    error: null
+    error: null,
   };
 }
 
@@ -130,7 +153,10 @@ export interface I18nLayoutProps {
   children: React.ReactNode;
   params: { locale: string };
   config: NextI18nConfig;
-  loadTranslations?: (locale: Locale, namespace: string) => Promise<Record<string, any>>;
+  loadTranslations?: (
+    locale: Locale,
+    namespace: string,
+  ) => Promise<Record<string, any>>;
   namespaces?: string[];
 }
 
@@ -139,27 +165,30 @@ export async function I18nLayout({
   params,
   config,
   loadTranslations,
-  namespaces = ['common']
+  namespaces = ["common"],
 }: I18nLayoutProps) {
   const locale = getLocaleFromParams(params, config);
-  
+
   // Load translations for server-side rendering
   const translations: Record<string, any> = {};
-  
+
   if (loadTranslations) {
     for (const namespace of namespaces) {
       try {
         translations[namespace] = await loadTranslations(locale, namespace);
       } catch (error) {
-        console.warn(`Failed to load translations for ${locale}/${namespace}:`, error);
+        console.warn(
+          `Failed to load translations for ${locale}/${namespace}:`,
+          error,
+        );
         translations[namespace] = {};
       }
     }
   }
 
   return (
-    <AppI18nProvider 
-      locale={locale} 
+    <AppI18nProvider
+      locale={locale}
       config={config}
       translations={translations}
     >
@@ -170,9 +199,9 @@ export async function I18nLayout({
 
 // Utility for generating static params
 export function generateStaticParams(
-  locales: Locale[]
+  locales: Locale[],
 ): Array<{ locale: string }> {
-  return locales.map(locale => ({ locale }));
+  return locales.map((locale) => ({ locale }));
 }
 
 // Metadata generation helpers
@@ -194,7 +223,7 @@ export interface MetadataConfig {
 export function generateMetadata(
   locale: Locale,
   config: MetadataConfig,
-  allLocales: Locale[]
+  allLocales: Locale[],
 ) {
   const metadata: any = {};
 
@@ -212,15 +241,15 @@ export function generateMetadata(
 
   if (config.openGraph) {
     metadata.openGraph = {};
-    
+
     if (config.openGraph.title?.[locale]) {
       metadata.openGraph.title = config.openGraph.title[locale];
     }
-    
+
     if (config.openGraph.description?.[locale]) {
       metadata.openGraph.description = config.openGraph.description[locale];
     }
-    
+
     if (config.openGraph.siteName?.[locale]) {
       metadata.openGraph.siteName = config.openGraph.siteName[locale];
     }
@@ -228,11 +257,11 @@ export function generateMetadata(
 
   if (config.alternates) {
     metadata.alternates = {};
-    
+
     if (config.alternates.canonical) {
       metadata.alternates.canonical = config.alternates.canonical(locale);
     }
-    
+
     if (config.alternates.languages) {
       metadata.alternates.languages = config.alternates.languages(allLocales);
     }
@@ -245,17 +274,17 @@ export function generateMetadata(
 export async function changeLocaleAction(
   locale: Locale,
   config: NextI18nConfig,
-  redirectPath?: string
+  redirectPath?: string,
 ) {
-  const { redirect } = await import('next/navigation');
-  const { cookies } = await import('next/headers');
-  
+  const { redirect } = await import("next/navigation");
+  const { cookies } = await import("next/headers");
+
   // Set locale cookie
-  cookies().set(config.cookieName || 'INTL_LOCALE', locale, {
+  cookies().set(config.cookieName || "INTL_LOCALE", locale, {
     httpOnly: false,
     maxAge: 60 * 60 * 24 * 365, // 1 year
-    path: '/',
-    sameSite: 'lax'
+    path: "/",
+    sameSite: "lax",
   });
 
   // Redirect to the new locale
@@ -269,11 +298,11 @@ export async function changeLocaleAction(
 // HOC for pages that need locale
 export function withLocale<P extends { params: { locale: string } }>(
   Component: React.ComponentType<P>,
-  config: NextI18nConfig
+  config: NextI18nConfig,
 ) {
   return function LocalizedComponent(props: P) {
     const locale = getLocaleFromParams(props.params, config);
-    
+
     return <Component {...props} locale={locale} />;
   };
 }
@@ -295,10 +324,71 @@ export function LocalizedLink({
 }: LocalizedLinkProps) {
   // This would need access to current locale context
   // Implementation would depend on how locale is stored in the app
-  
+
   return (
     <a href={locale ? `/${locale}${href}` : href} {...props}>
       {children}
     </a>
   );
 }
+
+// ============================================================================
+// NEXT-INTL COMPATIBILITY APIs
+// ============================================================================
+
+// Next-intl compatible provider (alias for AppI18nProvider)
+export interface NextIntlClientProviderProps {
+  locale: string;
+  messages?: Record<string, any>;
+  /** Multi-locale messages for instant switching */
+  initialData?: Record<string, Record<string, any>>;
+  children: React.ReactNode;
+  /** Enable client-side locale switching */
+  enableClientSideRouting?: boolean;
+  timeZone?: string;
+  onError?: (error: Error) => void;
+}
+
+export function NextIntlClientProvider({
+  locale,
+  messages,
+  initialData,
+  children,
+  enableClientSideRouting = true,
+  onError,
+}: NextIntlClientProviderProps) {
+  const config: NextI18nConfig = {
+    locales: initialData ? Object.keys(initialData) : [locale],
+    defaultLocale: locale,
+    namespaces: ["_flat"], // Use flat namespace for next-intl compatibility
+  };
+
+  // Convert messages to intl-party format
+  const translations = messages ? { _flat: messages } : undefined;
+
+  // Convert initialData to intl-party format
+  const convertedInitialData = initialData
+    ? Object.fromEntries(
+        Object.entries(initialData).map(([loc, msgs]) => [
+          loc,
+          { _flat: msgs },
+        ]),
+      )
+    : undefined;
+
+  return (
+    <AppI18nProvider
+      locale={locale}
+      config={config}
+      translations={translations}
+      initialData={convertedInitialData}
+      enableClientSideRouting={enableClientSideRouting}
+      onError={onError}
+    >
+      {children}
+    </AppI18nProvider>
+  );
+}
+
+// Server-side compatibility helpers moved to @intl-party/nextjs/server
+// to avoid bundling server code in client builds

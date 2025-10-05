@@ -93,6 +93,8 @@ function Welcome() {
 
 ### Next.js App Router
 
+#### URL-based Locale Routing
+
 ```tsx
 // app/[locale]/layout.tsx
 import { AppI18nProvider } from "@intl-party/nextjs/app";
@@ -108,6 +110,55 @@ export default function LocaleLayout({
     <AppI18nProvider locale={locale} config={i18nConfig}>
       {children}
     </AppI18nProvider>
+  );
+}
+```
+
+#### Cookie-based Locale Storage (No URL Changes)
+
+For applications that prefer to keep clean URLs without locale prefixes and use cookies for persistence:
+
+```tsx
+// middleware.ts
+import { createI18nMiddleware } from "@intl-party/nextjs";
+
+export const middleware = createI18nMiddleware({
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+
+  // Cookie-only storage - no URL modification
+  localePrefix: "never",
+  cookieName: "INTL_LOCALE",
+
+  // Detection sources
+  detectFromCookie: true,
+  detectFromHeader: true,
+  detectFromQuery: true, // Allow ?locale=es override
+  detectFromPath: false,
+
+  redirectStrategy: "none",
+});
+
+// app/layout.tsx
+import { AppI18nProvider, getLocale } from "@intl-party/nextjs";
+
+const i18nConfig = {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  namespaces: ["common"],
+};
+
+export default async function RootLayout({ children }) {
+  const locale = await getLocale(i18nConfig);
+
+  return (
+    <html lang={locale}>
+      <body>
+        <AppI18nProvider locale={locale} config={i18nConfig}>
+          {children}
+        </AppI18nProvider>
+      </body>
+    </html>
   );
 }
 ```
@@ -156,6 +207,29 @@ const i18n = createI18n({
   },
 });
 ```
+
+### Next.js Locale Prefix Strategies
+
+Choose how locales appear in your URLs:
+
+```typescript
+// Always include locale in URL: /en/about, /es/about
+localePrefix: "always";
+
+// Only include non-default locales: /about, /es/about
+localePrefix: "as-needed";
+
+// Never include locale in URL, use cookies: /about (all languages)
+localePrefix: "never";
+```
+
+**Cookie-only Benefits:**
+
+- ✅ Clean URLs without language prefixes
+- ✅ Automatic persistence across sessions
+- ✅ Better SEO for single-language content
+- ✅ Simpler routing and link sharing
+- ✅ Query parameter override support (?locale=es)
 
 ### Comprehensive Validation
 
