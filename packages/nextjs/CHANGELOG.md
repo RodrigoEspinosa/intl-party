@@ -1,5 +1,16 @@
 # @intl-party/nextjs
 
+## 1.1.0
+
+### Minor Changes
+
+- 4136ede: Add support for cookie-based locale storage and next-intl compatibility
+
+### Patch Changes
+
+- Updated dependencies [4136ede]
+  - @intl-party/react@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
