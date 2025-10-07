@@ -1,68 +1,15 @@
 {
-  "navigation": {
-    "home": "Inicio",
-    "features": "Características",
-    "docs": "Documentación",
-    "examples": "Ejemplos"
-  },
-  "hero": {
-    "title": "Internacionalización con Tipos Seguros",
-    "subtitle": "i18n moderno para aplicaciones React y Next.js con soporte completo de TypeScript",
-    "cta": {
-      "primary": "Comenzar",
-      "secondary": "Ver Documentación"
-    }
-  },
+  "title": "Demo de IntlParty",
+  "subtitle": "Internacionalización con tipos seguros para React y Next.js",
+  "welcome": "¡Bienvenido a IntlParty!",
+  "description": "Esta demo muestra el cambio de idioma basado en cookies sin cambios de URL.",
+  "currentLocale": "Idioma actual: {{locale}}",
+  "switchLanguage": "Cambiar Idioma:",
   "features": {
-    "title": "Todo lo que necesitas para i18n moderno",
-    "subtitle": "Construido para rendimiento, experiencia de desarrollador y mantenibilidad",
-    "items": {
-      "typescript": {
-        "title": "Tipos Seguros",
-        "description": "Soporte completo de TypeScript con autocompletado y verificación de tipos para claves de traducción"
-      },
-      "performance": {
-        "title": "Alto Rendimiento",
-        "description": "Caché optimizada, carga perezosa y sobrecarga mínima en tiempo de ejecución"
-      },
-      "nextjs": {
-        "title": "Listo para Next.js",
-        "description": "Soporte integrado para App Router, SSR, SSG y middleware"
-      },
-      "developer": {
-        "title": "Experiencia de Desarrollador",
-        "description": "Recarga en caliente, herramientas CLI, reglas ESLint y manejo completo de errores"
-      },
-      "flexible": {
-        "title": "Almacenamiento Flexible",
-        "description": "Estrategias de almacenamiento de locale basadas en cookies, URL o personalizadas"
-      },
-      "compatibility": {
-        "title": "Listo para Migración",
-        "description": "Reemplazo directo para next-intl con APIs de compatibilidad"
-      }
-    }
-  },
-  "demo": {
-    "title": "Demo en Vivo",
-    "subtitle": "Prueba cambiar idiomas para ver las actualizaciones en tiempo real",
-    "current": "Locale actual: {{locale}}",
-    "switchTo": "Cambiar a {{language}}",
-    "features": {
-      "cookies": "Almacenamiento basado en cookies (sin cambios de URL)",
-      "ssr": "Soporte de renderizado del lado del servidor",
-      "instant": "Cambio instantáneo de idioma",
-      "persistence": "Persistencia de locale entre páginas"
-    }
-  },
-  "footer": {
-    "description": "Una biblioteca de internacionalización moderna y con tipos seguros para aplicaciones React",
-    "links": {
-      "documentation": "Documentación",
-      "github": "GitHub",
-      "examples": "Ejemplos",
-      "community": "Comunidad"
-    }
+    "title": "Características Principales",
+    "typeScript": "Soporte TypeScript",
+    "performance": "Alto Rendimiento",
+    "nextjs": "Listo para Next.js"
   },
   "languages": {
     "en": "Inglés",

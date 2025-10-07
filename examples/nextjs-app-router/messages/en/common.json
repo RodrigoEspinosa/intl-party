@@ -1,68 +1,15 @@
 {
-  "navigation": {
-    "home": "Home",
-    "features": "Features",
-    "docs": "Documentation",
-    "examples": "Examples"
-  },
-  "hero": {
-    "title": "Type-Safe Internationalization",
-    "subtitle": "Modern i18n for React and Next.js applications with full TypeScript support",
-    "cta": {
-      "primary": "Get Started",
-      "secondary": "View Documentation"
-    }
-  },
+  "title": "IntlParty Demo",
+  "subtitle": "Type-safe internationalization for React & Next.js",
+  "welcome": "Welcome to IntlParty!",
+  "description": "This demo shows cookie-based locale switching without URL changes.",
+  "currentLocale": "Current locale: {{locale}}",
+  "switchLanguage": "Switch Language:",
   "features": {
-    "title": "Everything you need for modern i18n",
-    "subtitle": "Built for performance, developer experience, and maintainability",
-    "items": {
-      "typescript": {
-        "title": "Type Safety",
-        "description": "Full TypeScript support with autocomplete and type checking for translation keys"
-      },
-      "performance": {
-        "title": "High Performance",
-        "description": "Optimized caching, lazy loading, and minimal runtime overhead"
-      },
-      "nextjs": {
-        "title": "Next.js Ready",
-        "description": "Built-in support for App Router, SSR, SSG, and middleware"
-      },
-      "developer": {
-        "title": "Developer Experience",
-        "description": "Hot reloading, CLI tools, ESLint rules, and comprehensive error handling"
-      },
-      "flexible": {
-        "title": "Flexible Storage",
-        "description": "Cookie-based, URL-based, or custom locale storage strategies"
-      },
-      "compatibility": {
-        "title": "Migration Ready",
-        "description": "Drop-in replacement for next-intl with compatibility APIs"
-      }
-    }
-  },
-  "demo": {
-    "title": "Live Demo",
-    "subtitle": "Try switching languages to see the real-time updates",
-    "current": "Current locale: {{locale}}",
-    "switchTo": "Switch to {{language}}",
-    "features": {
-      "cookies": "Cookie-based storage (no URL changes)",
-      "ssr": "Server-side rendering support",
-      "instant": "Instant language switching",
-      "persistence": "Locale persistence across pages"
-    }
-  },
-  "footer": {
-    "description": "A modern, type-safe internationalization library for React applications",
-    "links": {
-      "documentation": "Documentation",
-      "github": "GitHub",
-      "examples": "Examples",
-      "community": "Community"
-    }
+    "title": "Key Features",
+    "typeScript": "TypeScript Support",
+    "performance": "High Performance",
+    "nextjs": "Next.js Ready"
   },
   "languages": {
     "en": "English",
