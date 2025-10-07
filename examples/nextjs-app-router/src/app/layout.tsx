@@ -28,21 +28,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body className={inter.className}>
-        <ClientProvider locale={locale}>
-          <nav style={{ padding: "1rem", borderBottom: "1px solid #ccc" }}>
-            <p>
-              Current locale: <strong>{locale}</strong>
-            </p>
-            <p>
-              <small>
-                This locale is stored in cookies and detected automatically
-                without URL parameters. Change your browser language or use
-                ?locale=es to test.
-              </small>
-            </p>
-          </nav>
-          {children}
-        </ClientProvider>
+        <ClientProvider locale={locale}>{children}</ClientProvider>
       </body>
     </html>
   );

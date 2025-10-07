@@ -1,0 +1,73 @@
+{
+  "navigation": {
+    "home": "Home",
+    "features": "Features",
+    "docs": "Documentation",
+    "examples": "Examples"
+  },
+  "hero": {
+    "title": "Type-Safe Internationalization",
+    "subtitle": "Modern i18n for React and Next.js applications with full TypeScript support",
+    "cta": {
+      "primary": "Get Started",
+      "secondary": "View Documentation"
+    }
+  },
+  "features": {
+    "title": "Everything you need for modern i18n",
+    "subtitle": "Built for performance, developer experience, and maintainability",
+    "items": {
+      "typescript": {
+        "title": "Type Safety",
+        "description": "Full TypeScript support with autocomplete and type checking for translation keys"
+      },
+      "performance": {
+        "title": "High Performance",
+        "description": "Optimized caching, lazy loading, and minimal runtime overhead"
+      },
+      "nextjs": {
+        "title": "Next.js Ready",
+        "description": "Built-in support for App Router, SSR, SSG, and middleware"
+      },
+      "developer": {
+        "title": "Developer Experience",
+        "description": "Hot reloading, CLI tools, ESLint rules, and comprehensive error handling"
+      },
+      "flexible": {
+        "title": "Flexible Storage",
+        "description": "Cookie-based, URL-based, or custom locale storage strategies"
+      },
+      "compatibility": {
+        "title": "Migration Ready",
+        "description": "Drop-in replacement for next-intl with compatibility APIs"
+      }
+    }
+  },
+  "demo": {
+    "title": "Live Demo",
+    "subtitle": "Try switching languages to see the real-time updates",
+    "current": "Current locale: {{locale}}",
+    "switchTo": "Switch to {{language}}",
+    "features": {
+      "cookies": "Cookie-based storage (no URL changes)",
+      "ssr": "Server-side rendering support",
+      "instant": "Instant language switching",
+      "persistence": "Locale persistence across pages"
+    }
+  },
+  "footer": {
+    "description": "A modern, type-safe internationalization library for React applications",
+    "links": {
+      "documentation": "Documentation",
+      "github": "GitHub",
+      "examples": "Examples",
+      "community": "Community"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German"
+  }
+}

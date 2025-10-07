@@ -1,0 +1,73 @@
+{
+  "navigation": {
+    "home": "Startseite",
+    "features": "Funktionen",
+    "docs": "Dokumentation",
+    "examples": "Beispiele"
+  },
+  "hero": {
+    "title": "Type-Safe Internationalisierung",
+    "subtitle": "Moderne i18n für React und Next.js Anwendungen mit vollständiger TypeScript-Unterstützung",
+    "cta": {
+      "primary": "Loslegen",
+      "secondary": "Dokumentation Anzeigen"
+    }
+  },
+  "features": {
+    "title": "Alles was Sie für moderne i18n benötigen",
+    "subtitle": "Entwickelt für Performance, Entwicklererfahrung und Wartbarkeit",
+    "items": {
+      "typescript": {
+        "title": "Type-Sicherheit",
+        "description": "Vollständige TypeScript-Unterstützung mit Autocompletion und Typprüfung für Übersetzungsschlüssel"
+      },
+      "performance": {
+        "title": "Hohe Performance",
+        "description": "Optimiertes Caching, Lazy Loading und minimaler Laufzeit-Overhead"
+      },
+      "nextjs": {
+        "title": "Next.js Ready",
+        "description": "Eingebaute Unterstützung für App Router, SSR, SSG und Middleware"
+      },
+      "developer": {
+        "title": "Entwicklererfahrung",
+        "description": "Hot Reloading, CLI-Tools, ESLint-Regeln und umfassende Fehlerbehandlung"
+      },
+      "flexible": {
+        "title": "Flexibler Speicher",
+        "description": "Cookie-basierte, URL-basierte oder benutzerdefinierte Locale-Speicherstrategien"
+      },
+      "compatibility": {
+        "title": "Migrationsbereit",
+        "description": "Drop-in-Ersatz für next-intl mit Kompatibilitäts-APIs"
+      }
+    }
+  },
+  "demo": {
+    "title": "Live-Demo",
+    "subtitle": "Versuchen Sie, die Sprache zu wechseln, um die Echtzeit-Updates zu sehen",
+    "current": "Aktuelle Locale: {{locale}}",
+    "switchTo": "Wechseln zu {{language}}",
+    "features": {
+      "cookies": "Cookie-basierte Speicherung (keine URL-Änderungen)",
+      "ssr": "Server-seitiges Rendering-Support",
+      "instant": "Sofortiger Sprachwechsel",
+      "persistence": "Locale-Persistenz zwischen Seiten"
+    }
+  },
+  "footer": {
+    "description": "Eine moderne, type-safe Internationalisierungsbibliothek für React-Anwendungen",
+    "links": {
+      "documentation": "Dokumentation",
+      "github": "GitHub",
+      "examples": "Beispiele",
+      "community": "Community"
+    }
+  },
+  "languages": {
+    "en": "Englisch",
+    "es": "Spanisch",
+    "fr": "Französisch",
+    "de": "Deutsch"
+  }
+}
