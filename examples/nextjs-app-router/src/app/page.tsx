@@ -2,6 +2,8 @@
 
 import { useTranslations, useLocale } from "@intl-party/react";
 
+export const dynamic = "force-dynamic";
+
 function LanguageSelector() {
   const [locale, setLocale] = useLocale();
   const t = useTranslations("common");

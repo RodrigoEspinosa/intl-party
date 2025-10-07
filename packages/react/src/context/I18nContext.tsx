@@ -199,6 +199,26 @@ export function useI18nContext(): I18nContextValue {
   const context = useContext(I18nContext);
 
   if (!context) {
+    // Check if we're in SSR environment
+    if (typeof window === "undefined") {
+      // During SSR, create a minimal fallback context to prevent errors
+      const fallbackI18n = createI18n({
+        locales: ["en"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+      });
+
+      return {
+        i18n: fallbackI18n,
+        locale: "en",
+        namespace: "common",
+        t: fallbackI18n.t,
+        setLocale: () => {},
+        setNamespace: () => {},
+        isLoading: false,
+      };
+    }
+
     throw new Error("useI18nContext must be used within an I18nProvider");
   }
 
@@ -260,6 +280,26 @@ export function useTypedI18nContext<
   ) as TypedI18nContextValue<T> | null;
 
   if (!context) {
+    // Check if we're in SSR environment
+    if (typeof window === "undefined") {
+      // During SSR, create a minimal fallback context to prevent errors
+      const fallbackI18n = createI18n({
+        locales: ["en"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+      });
+
+      return {
+        i18n: fallbackI18n,
+        locale: "en",
+        namespace: "common",
+        t: fallbackI18n.t as TypedTranslationFunction<T>,
+        setLocale: () => {},
+        setNamespace: () => {},
+        isLoading: false,
+      };
+    }
+
     throw new Error(
       "useTypedI18nContext must be used within a TypedI18nProvider",
     );

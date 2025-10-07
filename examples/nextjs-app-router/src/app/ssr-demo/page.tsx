@@ -1,5 +1,7 @@
 import { getLocale, getServerTranslations } from "@intl-party/nextjs/server";
 
+export const dynamic = "force-dynamic";
+
 // Example messages (in real app, load from files)
 const messages = {
   en: {

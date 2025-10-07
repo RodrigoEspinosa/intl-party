@@ -4,6 +4,8 @@
 import { useTranslations, useLocale } from "@intl-party/react";
 import { useState } from "react";
 
+export const dynamic = "force-dynamic";
+
 // setLocale would be imported from '@intl-party/nextjs/server' in server actions
 async function setLocale(locale: string) {
   // This would call the actual server action

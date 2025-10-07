@@ -3,6 +3,8 @@ import { getLocale } from "@intl-party/nextjs/server";
 import { ClientProvider } from "./client-provider";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {

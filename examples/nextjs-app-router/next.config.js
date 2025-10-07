@@ -6,7 +6,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  output: "standalone", // Disable static export for SSR demo
+  // Use standalone mode to skip static optimization
+  output: "standalone",
 };
 
 module.exports = nextConfig;
