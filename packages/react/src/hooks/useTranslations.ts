@@ -10,7 +10,6 @@ import type {
   TranslationFunction,
   TypedTranslationFunction,
   Namespace,
-  DeepKeyOf,
 } from "@intl-party/core";
 
 // Basic useTranslations hook
@@ -36,7 +35,7 @@ export function useTypedTranslations<T extends Record<string, any>>(
   const targetNamespace = namespace || currentNamespace;
 
   return useCallback(
-    (key: DeepKeyOf<T>, options?: TranslationOptions) => {
+    (key: string, options?: TranslationOptions) => {
       return i18n.t(key as TranslationKey, {
         ...options,
         namespace: targetNamespace,

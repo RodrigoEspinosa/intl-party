@@ -8,16 +8,16 @@
   "exports": {
     ".": {
       "react-server": "./dist/server.js",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.tsx src/server.ts --format cjs,esm --external react,react-dom",
+    "build": "tsup src/index.tsx src/server.ts --format cjs,esm --dts --external react,react-dom",
     "dev": "tsup src/index.tsx --format cjs,esm --external react,react-dom --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",
