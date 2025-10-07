@@ -14,7 +14,7 @@ export default function CompatDemoPage() {
   const [currentLocale, setCurrentLocale] = useState("en");
   const t = useTranslations();
   const tNav = useTranslations("navigation");
-  const locale = useLocale();
+  const [locale] = useLocale();
 
   const handleLocaleChange = async (newLocale: string) => {
     await setLocale(newLocale);
