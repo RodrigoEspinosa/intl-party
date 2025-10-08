@@ -55,6 +55,23 @@ describe("LocaleDetector", () => {
   });
 
   describe("Accept-Language detection", () => {
+    beforeEach(() => {
+      // Create a detector that only uses Accept-Language strategy
+      detector = createLocaleDetector(["en", "es", "fr"], "en", {
+        strategies: ["acceptLanguage"],
+      });
+
+      // Mock navigator to not interfere with request header testing
+      Object.defineProperty(window, "navigator", {
+        value: {
+          language: undefined,
+          languages: undefined,
+          userAgent: "Mozilla/5.0 (Node.js) Test",
+        },
+        writable: true,
+      });
+    });
+
     it("should detect locale from Accept-Language header", () => {
       const request = new Request("http://localhost", {
         headers: {

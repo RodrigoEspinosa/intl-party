@@ -110,11 +110,8 @@ export class LocaleDetector {
     if (!acceptLanguage) return null;
 
     try {
-      const matched = match(
-        this.parseAcceptLanguage(acceptLanguage),
-        this.supportedLocales,
-        this.defaultLocale,
-      );
+      const parsed = this.parseAcceptLanguage(acceptLanguage);
+      const matched = match(parsed, this.supportedLocales, this.defaultLocale);
       return matched;
     } catch {
       return null;

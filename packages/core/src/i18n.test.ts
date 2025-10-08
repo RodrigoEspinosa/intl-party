@@ -181,8 +181,13 @@ describe("I18n", () => {
     it("should validate translations", () => {
       const i18n = createI18n(config);
 
+      // Add translations for all required locales and namespaces
       i18n.addTranslations("en", "common", { welcome: "Welcome!" });
+      i18n.addTranslations("en", "auth", { login: "Login" });
       i18n.addTranslations("es", "common", { welcome: "Bienvenido!" });
+      i18n.addTranslations("es", "auth", { login: "Iniciar sesión" });
+      i18n.addTranslations("fr", "common", { welcome: "Bienvenue!" });
+      i18n.addTranslations("fr", "auth", { login: "Connexion" });
 
       const result = i18n.validateTranslations();
       expect(result.valid).toBe(true);
