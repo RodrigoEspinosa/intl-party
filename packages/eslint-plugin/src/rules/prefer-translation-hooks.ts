@@ -2,17 +2,21 @@ import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 
 type MessageIds = "preferUseTranslations" | "preferScopedTranslations";
 
+export interface PreferTranslationHooksOptions {
+  allowDirectUsage?: boolean;
+}
+
 export const preferTranslationHooks = ESLintUtils.RuleCreator(
   (name) =>
     `https://github.com/intl-party/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
-)<[], MessageIds>({
+)<[PreferTranslationHooksOptions], MessageIds>({
   name: "prefer-translation-hooks",
   meta: {
     type: "suggestion",
     docs: {
       description:
         "Prefer using translation hooks over direct i18n instance usage in React components",
-      recommended: "warn",
+      recommended: "recommended",
     },
     fixable: "code",
     schema: [
@@ -36,8 +40,8 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     },
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    const { allowDirectUsage = false } = options;
+  create(context, [options]) {
+    const { allowDirectUsage = false } = options || {};
 
     function checkMemberExpression(node: TSESTree.MemberExpression) {
       // Check for i18n.t() usage

@@ -2,16 +2,21 @@ import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 
 type MessageIds = "missingTranslationKey" | "invalidTranslationKey";
 
+export interface NoMissingKeysOptions {
+  translationFiles?: string[];
+  defaultLocale?: string;
+}
+
 export const noMissingKeys = ESLintUtils.RuleCreator(
   (name) =>
     `https://github.com/intl-party/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
-)<[], MessageIds>({
+)<[NoMissingKeysOptions], MessageIds>({
   name: "no-missing-keys",
   meta: {
     type: "problem",
     docs: {
       description: "Ensure all translation keys exist in translation files",
-      recommended: "error",
+      recommended: "recommended",
     },
     schema: [
       {
@@ -38,8 +43,8 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
     },
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
-    const { translationFiles = [], defaultLocale = "en" } = options;
+  create(context, [options]) {
+    const { translationFiles = [], defaultLocale = "en" } = options || {};
 
     // In a real implementation, we would load and cache translation files
     // For now, this is a placeholder structure

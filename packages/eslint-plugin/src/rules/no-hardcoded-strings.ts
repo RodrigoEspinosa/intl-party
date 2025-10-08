@@ -2,17 +2,24 @@ import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 
 type MessageIds = "hardcodedString" | "hardcodedStringInAttribute";
 
+export interface NoHardcodedStringsOptions {
+  attributes?: string[];
+  ignorePattern?: string;
+  minLength?: number;
+  allowedStrings?: string[];
+}
+
 export const noHardcodedStrings = ESLintUtils.RuleCreator(
   (name) =>
     `https://github.com/intl-party/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
-)<[], MessageIds>({
+)<[NoHardcodedStringsOptions], MessageIds>({
   name: "no-hardcoded-strings",
   meta: {
     type: "problem",
     docs: {
       description:
         "Disallow hardcoded strings in JSX elements and specific attributes",
-      recommended: "warn",
+      recommended: "recommended",
     },
     fixable: "code",
     schema: [
@@ -57,7 +64,7 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
     },
   },
   defaultOptions: [{}],
-  create(context, [options = {}]) {
+  create(context, [options]) {
     const {
       attributes = [
         "placeholder",
@@ -69,7 +76,7 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
       ignorePattern,
       minLength = 3,
       allowedStrings = [],
-    } = options;
+    } = options || {};
 
     const ignoreRegex = ignorePattern ? new RegExp(ignorePattern) : null;
 
@@ -116,17 +123,18 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
         typeof node.value.value === "string" &&
         isHardcodedString(node.value.value)
       ) {
+        const literalValue = node.value.value as string;
         context.report({
           node: node.value,
           messageId: "hardcodedStringInAttribute",
           data: {
-            text: node.value.value,
+            text: literalValue,
             attribute: node.name.name,
           },
           fix(fixer) {
             return fixer.replaceText(
               node.value!,
-              `{t('${generateTranslationKey(node.value!.value as string)}')}`,
+              `{t('${generateTranslationKey(literalValue)}')}`,
             );
           },
         });
