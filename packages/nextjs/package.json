@@ -29,8 +29,8 @@
   "scripts": {
     "build": "tsup src/index.ts src/server/index.ts src/client/index.tsx src/server-safe.ts src/server-only.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher",
     "dev": "tsup --watch",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest --run",
+    "test:watch": "vitest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

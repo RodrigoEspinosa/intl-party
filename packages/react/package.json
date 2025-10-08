@@ -19,8 +19,8 @@
   "scripts": {
     "build": "tsup src/index.tsx src/server.ts --format cjs,esm --dts --external react,react-dom",
     "dev": "tsup src/index.tsx --format cjs,esm --external react,react-dom --watch",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest --run",
+    "test:watch": "vitest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
