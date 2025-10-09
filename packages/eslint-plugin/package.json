@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/eslint-plugin",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "ESLint plugin for IntlParty - detect hardcoded strings and enforce i18n best practices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
