@@ -38,7 +38,9 @@ module.exports = {
         "@typescript-eslint/no-empty-function": "warn",
         "@typescript-eslint/no-non-null-assertion": "warn",
         "@typescript-eslint/ban-types": "warn",
+        "@typescript-eslint/no-var-requires": "warn",
         "no-prototype-builtins": "warn",
+        "prefer-const": "warn",
         // React rules
         "react/jsx-uses-react": "warn",
         "react/jsx-uses-vars": "warn",
