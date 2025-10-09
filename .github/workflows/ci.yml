@@ -75,7 +75,16 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ "$(git status --porcelain)" = "" ]; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+
       - name: Create Release Pull Request or Publish
+        if: steps.changes.outputs.no_changes != 'true'
         id: changesets
         uses: changesets/action@v1
         with:
