@@ -2,7 +2,7 @@ import chalk from "chalk";
 import ora from "ora";
 import { glob } from "glob";
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 
 export interface ExtractOptions {
   source?: string[];
@@ -54,7 +54,7 @@ export async function extractCommand(options: ExtractOptions) {
     spinner.fail("Extraction failed");
     console.error(
       chalk.red("Error:"),
-      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.message : error
     );
     process.exit(1);
   }
@@ -84,7 +84,7 @@ function extractKeysFromContent(content: string): string[] {
 async function writeExtractedKeys(
   keys: string[],
   outputDir: string,
-  options: ExtractOptions,
+  options: ExtractOptions
 ) {
   await fs.ensureDir(outputDir);
 

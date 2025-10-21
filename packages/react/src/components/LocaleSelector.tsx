@@ -104,7 +104,32 @@ export function LocaleSelector({
     );
   }
 
-  // TODO: Implement dropdown variant
+  if (variant === "dropdown") {
+    return (
+      <div className={className} style={style}>
+        <select
+          value={currentLocale}
+          onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+          disabled={disabled}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "white",
+            fontSize: "14px",
+            minWidth: "120px",
+          }}
+        >
+          {filteredLocales.map((locale) => (
+            <option key={locale} value={locale}>
+              {formatLocaleDisplay(locale)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   return null;
 }
 

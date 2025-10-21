@@ -1,43 +1,20 @@
 "use client";
 
-import { AppI18nProvider } from "@intl-party/nextjs/client";
-
-// Import all translation files
-import enCommon from "../../messages/en/common.json";
-import esCommon from "../../messages/es/common.json";
-import frCommon from "../../messages/fr/common.json";
-import deCommon from "../../messages/de/common.json";
-
-const i18nConfig = {
-  locales: ["en", "es", "fr", "de"],
-  defaultLocale: "en",
-  namespaces: ["common"],
-  cookieName: "INTL_LOCALE",
-};
-
-// Preload all messages for instant switching
-const initialData = {
-  en: { common: enCommon },
-  es: { common: esCommon },
-  fr: { common: frCommon },
-  de: { common: deCommon },
-};
+// Zero-config client provider - everything auto-detected
+import { Provider } from "@intl-party/nextjs";
 
 export function ClientProvider({
   locale,
+  initialData,
   children,
 }: {
   locale: string;
+  initialData?: any;
   children: React.ReactNode;
 }) {
   return (
-    <AppI18nProvider
-      locale={locale}
-      config={i18nConfig}
-      initialData={initialData}
-      enableClientSideRouting={true}
-    >
+    <Provider locale={locale} initialMessages={initialData}>
       {children}
-    </AppI18nProvider>
+    </Provider>
   );
 }

@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "i18n:generate": "node ../../packages/cli/dist/cli.js generate --client --types --output ./src/lib/generated",
+    "i18n:extract": "node ../../packages/cli/dist/cli.js extract",
+    "i18n:sync": "node ../../packages/cli/dist/cli.js sync"
   },
   "dependencies": {
+    "@intl-party/client": "workspace:*",
     "@intl-party/core": "workspace:*",
     "@intl-party/react": "workspace:*",
     "@intl-party/nextjs": "workspace:*",

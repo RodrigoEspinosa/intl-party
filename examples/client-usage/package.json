@@ -1,0 +1,25 @@
+{
+  "name": "@intl-party/example-client-usage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Example showing how to use @intl-party/client like @prisma/client",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "dev:watch": "concurrently \"intl-party generate --client --watch\" \"tsx src/index.ts --watch\"",
+    "generate": "intl-party generate --client",
+    "generate:watch": "intl-party generate --client --watch"
+  },
+  "dependencies": {
+    "@intl-party/client": "workspace:*",
+    "@intl-party/cli": "workspace:*",
+    "tsx": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.0"
+  }
+}

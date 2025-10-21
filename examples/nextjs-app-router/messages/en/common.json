@@ -1,15 +1,29 @@
 {
   "title": "IntlParty Demo",
   "subtitle": "Type-safe internationalization for React & Next.js",
-  "welcome": "Welcome to IntlParty!",
+  "welcome": "Welcome to IntlParty! 🚀",
   "description": "This demo shows cookie-based locale switching without URL changes.",
   "currentLocale": "Current locale: {{locale}}",
   "switchLanguage": "Switch Language:",
+  "navigation": {
+    "title": "Navigation",
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "interpolation": {
+    "title": "Variable Interpolation",
+    "example": "Hello {{name}}, you have {{count}} messages."
+  },
   "features": {
     "title": "Key Features",
     "typeScript": "TypeScript Support",
     "performance": "High Performance",
-    "nextjs": "Next.js Ready"
+    "nextjs": "Next.js Ready",
+    "zeroConfig": "Zero Configuration",
+    "typeSafe": "Type Safe",
+    "cleanUrls": "Clean URLs",
+    "ssr": "Server-Side Rendering"
   },
   "languages": {
     "en": "English",

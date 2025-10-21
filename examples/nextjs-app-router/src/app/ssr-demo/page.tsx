@@ -43,7 +43,7 @@ export default async function SSRDemoPage() {
     locale,
     "_flat", // namespace
     i18nConfig,
-    messages[locale as keyof typeof messages],
+    messages[locale as keyof typeof messages]
   );
 
   // Server-side rendering timestamp

@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import ora from "ora";
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 import inquirer from "inquirer";
 import { saveConfig } from "../utils/config";
 import type { CLIConfig } from "../utils/config";
@@ -109,7 +109,7 @@ export async function initCommand(options: InitOptions) {
         config.translationPaths[locale][namespace] = path.join(
           answers.translationsDir,
           locale,
-          `${namespace}.json`,
+          `${namespace}.json`
         );
       }
     }
@@ -144,7 +144,7 @@ export async function initCommand(options: InitOptions) {
     console.log(chalk.green("\n✓ Configuration created:"), configPath);
     console.log(
       chalk.green("✓ Translation directories created:"),
-      answers.translationsDir,
+      answers.translationsDir
     );
 
     if (options.template) {
@@ -156,18 +156,18 @@ export async function initCommand(options: InitOptions) {
     console.log(
       "2. Run",
       chalk.cyan("intl-party extract"),
-      "to extract keys from your code",
+      "to extract keys from your code"
     );
     console.log(
       "3. Run",
       chalk.cyan("intl-party validate"),
-      "to check your translations",
+      "to check your translations"
     );
   } catch (error) {
     spinner.fail("Initialization failed");
     console.error(
       chalk.red("Error:"),
-      error instanceof Error ? error.message : error,
+      error instanceof Error ? error.message : error
     );
     process.exit(1);
   }

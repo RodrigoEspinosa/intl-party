@@ -1,31 +1,29 @@
 # @intl-party/react
 
-React integration for IntlParty - hooks, context, and components for type-safe internationalization in React applications.
+**React integration for IntlParty with perfect TypeScript support and developer experience.**
 
-## Features
+## ✨ Features
 
-- ⚛️ **React hooks** - `useTranslations`, `useLocale`, `useNamespace`
-- 🎯 **Context provider** - `I18nProvider` for app-wide i18n state
-- 🧩 **Components** - `Trans`, `LocaleSelector` for declarative translations
-- 🔄 **Real-time updates** - Automatic re-renders when locale changes
-- 📱 **SSR support** - Server-side rendering compatible
-- 🎨 **Type safety** - Full TypeScript support with typed hooks
+- **⚛️ React Hooks**: `useTranslations`, `useLocale`, `useNamespace`
+- **🎯 Context Provider**: `I18nProvider` for app-wide i18n state
+- **🧩 Components**: `Trans`, `LocaleSelector` for declarative translations
+- **🔄 Real-time Updates**: Automatic re-renders when locale changes
+- **🔒 Type-Safe**: Full TypeScript support with auto-completion
+- **⚡ Performance Optimized**: Minimal re-renders and efficient caching
 
-## Installation
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
 npm install @intl-party/react @intl-party/core
-# or
-pnpm add @intl-party/react @intl-party/core
-# or
-yarn add @intl-party/react @intl-party/core
 ```
 
-## Quick Start
+### Basic Usage
 
 ```tsx
 import React from "react";
-import { I18nProvider, useTranslations, useLocale } from "@intl-party/react";
+import { I18nProvider, useTranslations } from "@intl-party/react";
 import { createI18n } from "@intl-party/core";
 
 // Create i18n instance
@@ -35,308 +33,441 @@ const i18n = createI18n({
   namespaces: ["common"],
 });
 
-// Add translations
-i18n.addTranslations("en", "common", {
-  welcome: "Welcome!",
-  greeting: "Hello, {{name}}!",
-});
-
-i18n.addTranslations("es", "common", {
-  welcome: "¡Bienvenido!",
-  greeting: "¡Hola, {{name}}!",
-});
-
 function App() {
   return (
     <I18nProvider i18n={i18n}>
-      <HomePage />
+      <Welcome />
     </I18nProvider>
   );
 }
 
-function HomePage() {
+function Welcome() {
   const t = useTranslations("common");
-  const { locale, setLocale } = useLocale();
 
   return (
     <div>
       <h1>{t("welcome")}</h1>
-      <p>{t("greeting", { interpolation: { name: "John" } })}</p>
-
-      <button onClick={() => setLocale("es")}>Español</button>
-      <button onClick={() => setLocale("en")}>English</button>
-
-      <p>Current locale: {locale}</p>
+      <p>{t("greeting", { interpolation: { name: "World" } })}</p>
     </div>
   );
 }
 ```
 
-## Hooks
+## 🎯 API Reference
 
-### useTranslations
+### `I18nProvider`
 
-Get a translation function for a specific namespace:
+Provides i18n context to the React component tree.
 
 ```tsx
-import { useTranslations } from "@intl-party/react";
+<I18nProvider
+  i18n={i18nInstance}
+  initialLocale="en"
+  initialNamespace="common"
+  loadingComponent={<Loading />}
+  fallbackComponent={<Error />}
+>
+  {children}
+</I18nProvider>
+```
 
-function MyComponent() {
-  const t = useTranslations("common");
+#### Props
+
+```typescript
+interface I18nProviderProps {
+  children: ReactNode;
+  i18n?: I18nInstance; // I18n instance
+  config?: I18nConfig; // Config (creates instance if not provided)
+  initialLocale?: Locale; // Initial locale
+  initialNamespace?: Namespace; // Initial namespace
+  loadingComponent?: ReactNode; // Loading component
+  fallbackComponent?: ReactNode; // Error fallback component
+  onLocaleChange?: (locale: Locale) => void;
+  onNamespaceChange?: (namespace: Namespace) => void;
+  onError?: (error: Error) => void;
+}
+```
+
+### Hooks
+
+#### `useTranslations(namespace?)`
+
+Main hook for using translations.
+
+```tsx
+// Without namespace (uses default)
+const t = useTranslations();
+
+// With namespace
+const t = useTranslations("common");
+
+// Usage
+t("welcome"); // "Welcome!"
+t("greeting", { interpolation: { name: "John" } }); // "Hello John!"
+t("navigation.home"); // "Home"
+```
+
+#### `useLocale()`
+
+Get and set the current locale.
+
+```tsx
+function LocaleComponent() {
+  const [locale, setLocale] = useLocale();
 
   return (
     <div>
-      <h1>{t("title")}</h1>
-      <p>
-        {t("description", {
-          interpolation: { name: "User" },
-          count: 5,
-        })}
-      </p>
+      <p>Current locale: {locale}</p>
+      <button onClick={() => setLocale("es")}>Español</button>
+      <button onClick={() => setLocale("fr")}>Français</button>
     </div>
   );
 }
-
-// With fallback namespace
-function MyComponent() {
-  const t = useTranslations(["common", "fallback"]);
-  return <h1>{t("title")}</h1>;
-}
 ```
 
-### useLocale
+#### `useNamespace()`
 
-Manage the current locale:
-
-```tsx
-import { useLocale } from "@intl-party/react";
-
-function LocaleSwitcher() {
-  const { locale, setLocale, availableLocales } = useLocale();
-
-  return (
-    <select value={locale} onChange={(e) => setLocale(e.target.value)}>
-      {availableLocales.map((loc) => (
-        <option key={loc} value={loc}>
-          {loc}
-        </option>
-      ))}
-    </select>
-  );
-}
-```
-
-### useNamespace
-
-Manage the current namespace:
+Get and set the current namespace.
 
 ```tsx
-import { useNamespace } from "@intl-party/react";
-
-function NamespaceSwitcher() {
-  const { namespace, setNamespace, availableNamespaces } = useNamespace();
+function NamespaceComponent() {
+  const [namespace, setNamespace] = useNamespace();
 
   return (
     <div>
       <p>Current namespace: {namespace}</p>
-      {availableNamespaces.map((ns) => (
-        <button key={ns} onClick={() => setNamespace(ns)}>
-          {ns}
-        </button>
-      ))}
+      <button onClick={() => setNamespace("navigation")}>Navigation</button>
+      <button onClick={() => setNamespace("auth")}>Auth</button>
     </div>
   );
 }
 ```
 
-### useI18nContext
+#### `useI18nContext()`
 
-Access the full i18n context:
+Access the full i18n context.
 
 ```tsx
-import { useI18nContext } from "@intl-party/react";
-
 function AdvancedComponent() {
-  const { i18n, locale, namespace } = useI18nContext();
+  const { i18n, locale, namespace, t, setLocale, setNamespace } =
+    useI18nContext();
 
-  // Direct access to i18n instance
-  const hasTranslation = i18n.hasTranslation("some.key");
-
-  return <div>...</div>;
-}
-```
-
-## Components
-
-### Trans Component
-
-Declarative translation with JSX interpolation:
-
-```tsx
-import { Trans } from "@intl-party/react";
-
-function MyComponent() {
   return (
-    <Trans
-      namespace="common"
-      i18nKey="welcome.message"
-      values={{ name: "John", count: 5 }}
-      components={{
-        bold: <strong />,
-        link: <a href="/profile" />,
-      }}
-    />
+    <div>
+      <p>Locale: {locale}</p>
+      <p>Namespace: {namespace}</p>
+      <button
+        onClick={() => i18n.addTranslations("en", "common", { new: "Key" })}
+      >
+        Add Translation
+      </button>
+    </div>
   );
 }
 ```
 
-Translation file:
+## 🧩 Components
 
-```json
-{
-  "welcome": {
-    "message": "Hello <bold>{{name}}</bold>! You have <link>{{count}} messages</link>."
-  }
+### `Trans`
+
+Component for translations with rich text and interpolation.
+
+```tsx
+import { Trans } from "@intl-party/react";
+
+function RichText() {
+  return (
+    <Trans
+      i18nKey="rich.greeting"
+      interpolation={{ name: "John" }}
+      components={{
+        bold: <strong />,
+        link: <a href="/about" />,
+      }}
+    >
+      Hello <bold>{{ name }}</bold>! Learn more <link>about</link>.
+    </Trans>
+  );
 }
 ```
 
-### LocaleSelector Component
+### `LocaleSelector`
 
-Pre-built locale selector:
+Pre-built locale selector component.
 
 ```tsx
 import { LocaleSelector } from "@intl-party/react";
 
 function Header() {
   return (
-    <header>
-      <h1>My App</h1>
-      <LocaleSelector
-        className="locale-selector"
-        showFlags={true}
-        onChange={(locale) => console.log("Locale changed to:", locale)}
-      />
-    </header>
+    <LocaleSelector
+      locales={[
+        { code: "en", name: "English", flag: "🇺🇸" },
+        { code: "es", name: "Español", flag: "🇪🇸" },
+        { code: "fr", name: "Français", flag: "🇫🇷" },
+      ]}
+      variant="flags" // or "dropdown" or "compact"
+    />
   );
 }
 ```
 
-## Provider Configuration
+## 🎨 Advanced Usage
 
-### I18nProvider
+### Typed Translations
+
+```typescript
+interface AppTranslations {
+  common: {
+    welcome: string;
+    navigation: {
+      home: string;
+      about: string;
+    };
+  };
+  auth: {
+    login: string;
+    register: string;
+  };
+}
+
+// Create typed i18n instance
+const i18n = createI18n<AppTranslations>({
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  namespaces: ["common", "auth"],
+});
+
+// Use with full type safety
+function TypedComponent() {
+  const t = useTranslations<AppTranslations["common"]>("common");
+
+  return (
+    <div>
+      {t("welcome")} {/* ✅ Type-safe */}
+      {t("navigation.home")} {/* ✅ Type-safe */}
+      {t("invalid.key")} {/* ❌ TypeScript error */}
+    </div>
+  );
+}
+```
+
+### Multiple Namespaces
 
 ```tsx
-import { I18nProvider } from "@intl-party/react";
+function MultiNamespaceComponent() {
+  const commonT = useTranslations("common");
+  const authT = useTranslations("auth");
 
-function App() {
   return (
-    <I18nProvider
-      i18n={i18nInstance}
-      fallback={<div>Loading translations...</div>}
-    >
-      <YourApp />
-    </I18nProvider>
+    <div>
+      <h1>{commonT("welcome")}</h1>
+      <button>{authT("login")}</button>
+    </div>
   );
 }
 ```
 
 ### Server-Side Rendering
 
-For SSR compatibility, initialize with server-detected locale:
-
 ```tsx
-// Server-side
-import { createI18n } from "@intl-party/core";
+// Server component (Next.js App Router)
+async function ServerPage() {
+  const t = await getServerTranslations("common");
 
-function createServerI18n(locale: string) {
-  const i18n = createI18n({
-    locales: ["en", "es", "fr"],
-    defaultLocale: "en",
-    namespaces: ["common"],
-  });
-
-  i18n.setLocale(locale);
-  return i18n;
-}
-
-// In your SSR setup
-const i18n = createServerI18n(detectedLocale);
-```
-
-## TypeScript Support
-
-Create typed hooks for better developer experience:
-
-```tsx
-interface MyTranslations {
-  common: {
-    welcome: string;
-    user: {
-      profile: string;
-      settings: string;
-    };
-  };
-  navigation: {
-    home: string;
-    about: string;
-  };
-}
-
-// Type the hooks
-const useTypedTranslations = useTranslations as <
-  T extends keyof MyTranslations,
->(
-  namespace: T,
-) => (key: string) => string;
-
-function TypedComponent() {
-  const t = useTypedTranslations("common");
-  // Now t() has autocomplete for keys in 'common' namespace
-  return <h1>{t("welcome")}</h1>;
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+    </div>
+  );
 }
 ```
 
-## Advanced Usage
-
-### Dynamic namespace loading
+### Dynamic Namespace Loading
 
 ```tsx
-import { useTranslations, useI18nContext } from "@intl-party/react";
+function DynamicComponent({ namespace }: { namespace: string }) {
+  const t = useTranslations(namespace);
 
-function DynamicComponent() {
-  const { i18n } = useI18nContext();
-  const t = useTranslations("dynamic");
-
-  useEffect(() => {
-    // Load translations dynamically
-    import(`./translations/${i18n.locale}/dynamic.json`).then(
-      (translations) => {
-        i18n.addTranslations(i18n.locale, "dynamic", translations.default);
-      },
-    );
-  }, [i18n.locale]);
-
-  return <div>{t("content")}</div>;
+  return (
+    <div>
+      <h2>Namespace: {namespace}</h2>
+      <p>{t("title")}</p>
+    </div>
+  );
 }
 ```
 
-### Custom hook for scoped translations
+## 🔧 Utilities
+
+### `createNamespaceHOC(namespace)`
+
+Higher-order component for automatic namespacing.
 
 ```tsx
-function usePageTranslations(page: string) {
-  const { i18n } = useI18nContext();
-  return useMemo(
-    () => i18n.createScopedTranslator(`pages.${page}`),
-    [i18n, page],
+import { createNamespaceHOC } from "@intl-party/react";
+
+const withNavigation = createNamespaceHOC("navigation");
+
+function NavigationComponent({ t }) {
+  return (
+    <nav>
+      <a href="/">{t("home")}</a>
+      <a href="/about">{t("about")}</a>
+    </nav>
   );
 }
 
-function ContactPage() {
-  const t = usePageTranslations("contact");
-  return <h1>{t("title")}</h1>; // translates 'pages.contact.title'
+export default withNavigation(NavigationComponent);
+```
+
+### `useMultipleTranslations(namespaces)`
+
+Use multiple namespaces at once.
+
+```tsx
+function MultiNamespaceComponent() {
+  const { common, auth, navigation } = useMultipleTranslations([
+    "common",
+    "auth",
+    "navigation",
+  ]);
+
+  return (
+    <div>
+      <h1>{common("welcome")}</h1>
+      <button>{auth("login")}</button>
+      <nav>{navigation("home")}</nav>
+    </div>
+  );
 }
 ```
 
-## License
+## 🎨 Styling
 
-MIT © IntlParty
+### Theme Support
+
+```tsx
+import { I18nProvider } from "@intl-party/react";
+
+function ThemedApp() {
+  return (
+    <I18nProvider
+      i18n={i18n}
+      theme="dark" // or "light", "auto"
+    >
+      <App />
+    </I18nProvider>
+  );
+}
+```
+
+### Custom Components
+
+```tsx
+// Custom translation component
+function CustomTrans({ i18nKey, interpolation, components }) {
+  const t = useTranslations();
+
+  return (
+    <span className="translation">
+      {t(i18nKey, { interpolation, components })}
+    </span>
+  );
+}
+```
+
+## 🔄 Migration from react-i18next
+
+### Simple Migration
+
+```tsx
+// react-i18next
+import { useTranslation } from "react-i18next";
+const { t } = useTranslation();
+
+// intl-party/react
+import { useTranslations } from "@intl-party/react";
+const t = useTranslations();
+```
+
+### Benefits of switching:
+
+- ✅ **Better TypeScript**: No more `t('key' as any)`
+- ✅ **Simpler API**: Less boilerplate code
+- ✅ **Performance**: Optimized re-rendering
+- ✅ **Modern**: Built for React 18+ and concurrent features
+
+## 📦 Exports
+
+```typescript
+// Provider and context
+export {
+  I18nProvider,
+  TypedI18nProvider,
+  ScopedI18nProvider,
+  useI18nContext,
+  useTypedI18nContext,
+  withI18n,
+  type I18nProviderProps,
+  type TypedI18nProviderProps,
+  type ScopedI18nProviderProps,
+  type I18nContextValue,
+  type TypedI18nContextValue,
+};
+
+// Hooks
+export {
+  useTranslations,
+  useTypedTranslations,
+  useT,
+  useTypedT,
+  useScopedTranslations,
+  useMultipleTranslations,
+  useOptionalTranslation,
+  useTranslationWithFallback,
+  useHasTranslation,
+  useTranslationValue,
+  useInterpolatedTranslation,
+  usePluralization,
+};
+
+// Locale and namespace hooks
+export {
+  useLocale,
+  useLocaleInfo,
+  useLocaleSwitch,
+  useBrowserLocale,
+  useLocalePreference,
+  useDirection,
+  useFormatting,
+  useNamespace,
+  useNamespaceInfo,
+  useNamespaceSwitch,
+  useMultipleNamespaces,
+  useNamespacePreloading,
+};
+
+// Components
+export {
+  Trans,
+  ConditionalTrans,
+  PluralTrans,
+  RichTrans,
+  LocaleSelector,
+  FlagLocaleSelector,
+  CompactLocaleSelector,
+  AccessibleLocaleSelector,
+};
+
+// Utilities
+export { createI18nHook, createNamespaceHOC, I18nErrorBoundary };
+```
+
+## 🤝 Contributing
+
+See the [main README](../../README.md) for contribution guidelines.
+
+## 📄 License
+
+MIT

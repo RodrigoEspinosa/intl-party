@@ -1,11 +1,11 @@
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 import type { AllTranslations } from "@intl-party/core";
 
 export async function loadTranslations(
   translationPaths: Record<string, Record<string, string>>,
   locales: string[],
-  namespaces: string[],
+  namespaces: string[]
 ): Promise<AllTranslations> {
   const translations: AllTranslations = {};
 
@@ -21,7 +21,7 @@ export async function loadTranslations(
           translations[locale][namespace] = content;
         } catch (error) {
           console.warn(
-            `Failed to load ${locale}/${namespace} from ${translationPath}`,
+            `Failed to load ${locale}/${namespace} from ${translationPath}`
           );
           translations[locale][namespace] = {};
         }
@@ -36,11 +36,11 @@ export async function loadTranslations(
 
 export async function saveTranslations(
   translations: AllTranslations,
-  translationPaths: Record<string, Record<string, string>>,
+  translationPaths: Record<string, Record<string, string>>
 ): Promise<void> {
   for (const [locale, localeTranslations] of Object.entries(translations)) {
     for (const [namespace, namespaceTranslations] of Object.entries(
-      localeTranslations,
+      localeTranslations
     )) {
       const translationPath = translationPaths[locale]?.[namespace];
 

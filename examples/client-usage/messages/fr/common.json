@@ -1,0 +1,11 @@
+{
+  "title": "Mon Application Géniale",
+  "welcome": "Bienvenue dans {{appName}} !",
+  "description": "Ceci est une démonstration du package @intl-party/client, similaire à @prisma/client",
+  "features": {
+    "title": "Fonctionnalités Clés",
+    "typescript": "Support TypeScript",
+    "performance": "Haute Performance",
+    "client": "Package Client Généré"
+  }
+}

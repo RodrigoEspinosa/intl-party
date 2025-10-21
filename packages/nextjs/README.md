@@ -1,379 +1,345 @@
 # @intl-party/nextjs
 
-Next.js integration for IntlParty - full App Router and Pages Router support with SSR/SSG, cookie-based locale storage, and next-intl compatibility.
+**The easiest Next.js internationalization solution with perfect TypeScript support.**
 
-## Features
+## ✨ Features
 
-- 🚀 **Next.js 13+ App Router** - Full support with server components
-- 📄 **Pages Router** - Complete Pages Router integration
-- 🍪 **Cookie-based locale** - Store locale in cookies without URL changes
-- 🔄 **next-intl compatibility** - Drop-in replacement for next-intl
-- 🎯 **Server/Client separation** - Proper bundling for each environment
-- 📱 **SSR/SSG ready** - Server-side rendering and static generation
-- ⚡ **Middleware support** - Automatic locale detection and routing
-- 🎨 **Type safety** - Full TypeScript support
+- **🚀 Zero-Config Setup**: Get started in 2 minutes
+- **🔒 Perfect TypeScript**: Full type safety, no casting required
+- **⚡ Next.js Native**: Built for App Router with SSR/SSG
+- **🌍 Clean URLs**: No ugly `/en/` prefixes by default
+- **🎯 Developer First**: Intuitive API that just works
+- **🛠️ Automatic**: Type generation and hot reloading
 
-## Installation
+## 🚀 Quick Start
+
+### 1. Installation
 
 ```bash
-npm install @intl-party/nextjs @intl-party/react @intl-party/core
-# or
-pnpm add @intl-party/nextjs @intl-party/react @intl-party/core
-# or
-yarn add @intl-party/nextjs @intl-party/react @intl-party/core
+npm install @intl-party/nextjs
 ```
 
-## Quick Start (App Router)
+### 2. Initialize
 
-### 1. Configuration
+```bash
+npx intl-party nextjs --init --simplified
+```
+
+### 3. Use
+
+```tsx
+import { useSimplifiedTranslations } from "@intl-party/nextjs";
+
+export default function Page() {
+  const t = useSimplifiedTranslations("common");
+  return <h1>{t("welcome")}</h1>;
+}
+```
+
+## 📁 Configuration
+
+Create `intl-party.config.ts` in your project root:
 
 ```typescript
-// lib/i18n.ts
-export const locales = ["en", "es", "fr"] as const;
-export const defaultLocale = "en" as const;
-
-export const i18nConfig = {
-  locales,
-  defaultLocale,
-  namespaces: ["common", "navigation"],
-  cookieName: "INTL_LOCALE", // Store locale in cookies
-} as const;
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  messages: "./messages",
+};
 ```
 
-### 2. App Layout
+## 🎯 API Reference
+
+### Simplified Setup
+
+```typescript
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const {
+  middleware, // Next.js middleware
+  middlewareConfig, // Middleware matcher config
+  getLocale, // Server-side locale detection
+  getMessages, // Server-side message loading
+  Provider, // React provider
+} = createSimplifiedSetup(config);
+```
+
+### Hooks
+
+#### `useSimplifiedTranslations(namespace?)`
+
+The main hook for using translations.
+
+```tsx
+// Without namespace
+const t = useSimplifiedTranslations();
+
+// With namespace
+const t = useSimplifiedTranslations("common");
+
+// Usage
+t("welcome"); // "Welcome!"
+t("greeting", { name: "John" }); // "Hello John!"
+t("navigation.home"); // "Home"
+```
+
+### Configuration Types
+
+```typescript
+interface SimplifiedConfig {
+  // Required
+  locales: string[];
+  defaultLocale: string;
+
+  // Optional with smart defaults
+  messages?: string; // Path to messages directory (default: "./messages")
+  namespaces?: string[]; // Auto-detected if not provided
+  localePrefix?: "always" | "as-needed" | "never"; // Default: "never"
+  cookieName?: string; // Default: "INTL_LOCALE"
+}
+```
+
+## 🏗️ Setup Examples
+
+### Middleware
+
+```typescript
+// middleware.ts
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+### Layout with SSR
 
 ```tsx
 // app/layout.tsx
-import { AppI18nProvider } from "@intl-party/nextjs/client";
-import { getLocale } from "@intl-party/nextjs/server";
-import { i18nConfig } from "@/lib/i18n";
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
+
+export default async function RootLayout({ children }) {
   const locale = await getLocale();
+  const messages = await getMessages(locale);
 
   return (
     <html lang={locale}>
       <body>
-        <AppI18nProvider locale={locale} config={i18nConfig}>
+        <Provider locale={locale} initialMessages={messages}>
           {children}
-        </AppI18nProvider>
+        </Provider>
       </body>
     </html>
   );
 }
 ```
 
-### 3. Page Components
+### Next.js Config Integration
 
-```tsx
-// app/page.tsx
-import { useTranslations } from "@intl-party/react";
-import { getServerTranslations } from "@intl-party/nextjs/server";
+```javascript
+// next.config.js
+const { createNextConfigWithIntl } = require("@intl-party/nextjs");
 
-// Server Component
-export default async function HomePage() {
-  const t = await getServerTranslations("common");
+module.exports = createNextConfigWithIntl(
+  {
+    i18nConfig: {
+      locales: ["en", "es", "fr"],
+      defaultLocale: "en",
+      messages: "./messages",
+    },
+    autoGenerate: true,
+    watchMode: true,
+  },
+  {
+    // Your existing Next.js config
+    reactStrictMode: true,
+  },
+);
+```
 
-  return (
-    <div>
-      <h1>{t("welcome")}</h1>
-      <ClientComponent />
-    </div>
-  );
-}
+## 🌐 Translation Files
 
-// Client Component
-("use client");
-function ClientComponent() {
-  const t = useTranslations("common");
+Translation files are simple JSON:
 
-  return <p>{t("description")}</p>;
+```json
+// messages/en/common.json
+{
+  "welcome": "Welcome to IntlParty!",
+  "navigation": {
+    "home": "Home",
+    "about": "About"
+  },
+  "greeting": "Hello {{name}}!"
 }
 ```
 
-### 4. Middleware (Optional)
+```json
+// messages/es/common.json
+{
+  "welcome": "¡Bienvenido a IntlParty!",
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de"
+  },
+  "greeting": "¡Hola {{name}}!"
+}
+```
+
+## 🎨 Advanced Features
+
+### Clean URLs (Default)
+
+By default, uses cookie-based locale detection:
+
+```
+✅ Clean URLs:
+  /about          # Shows in user's preferred language
+  /contact        # Shows in user's preferred language
+
+❌ Traditional URLs:
+  /en/about        # English version
+  /es/about        # Spanish version
+  /fr/about        # French version
+```
+
+### URL Prefixes (Optional)
 
 ```typescript
-// middleware.ts
-import { createI18nMiddleware } from "@intl-party/nextjs";
-
-const i18nMiddleware = createI18nMiddleware({
+// intl-party.config.ts
+export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  cookieName: "INTL_LOCALE",
-});
-
-export default i18nMiddleware;
-
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  localePrefix: "always", // or "as-needed"
 };
 ```
 
-## Cookie-Based Locale Storage
+### Automatic Type Generation
 
-Instead of URL prefixes like `/es/page`, store locale in cookies:
+Get full TypeScript support:
 
 ```typescript
-// No URL changes needed!
-// User visits: example.com/page
-// Locale stored in cookie: INTL_LOCALE=es
+const t = useSimplifiedTranslations("common");
 
-const i18nConfig = {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  cookieName: "INTL_LOCALE", // Cookie-based storage
-  // localePrefix: 'never' - This is implicit with cookie storage
-};
+t("welcome"); // ✅ Type-safe with auto-completion
+t("navigation.home"); // ✅ Type-safe
+t("invalid.key"); // ❌ TypeScript error
 ```
 
-## Server-Side Usage
+### Hot Reloading
 
-### Server Translations
+Translation changes automatically reload in development.
 
-```tsx
-// Server Component
-import { getServerTranslations, getLocale } from "@intl-party/nextjs/server";
+## 🔧 Advanced API
 
-export default async function ServerPage() {
-  const locale = await getLocale();
-  const t = await getServerTranslations("common");
+### Locale Detection Strategies
 
-  return (
-    <div>
-      <h1>{t("title")}</h1>
-      <p>Current locale: {locale}</p>
-    </div>
-  );
-}
+The middleware automatically detects locale from:
+
+1. **Cookie** (`INTL_LOCALE` by default)
+2. **Accept-Language** header
+3. **Query parameter** (`?locale=es`)
+4. **URL path** (if `localePrefix` is enabled)
+
+### Server-Side Functions
+
+```typescript
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+
+const { getLocale, getMessages } = createSimplifiedSetup(config);
+
+// Get current locale
+const locale = await getLocale(request);
+
+// Get messages for a locale
+const messages = await getMessages("es");
 ```
 
-### Server Actions
+## 🛠️ Traditional Setup (Legacy)
 
-```tsx
-// Server Action
-import { setLocale } from "@intl-party/nextjs/server";
+If you need more control, you can use traditional setup:
 
-async function changeLocale(locale: string) {
-  "use server";
-  await setLocale(locale);
-}
-
-// Client Component
-("use client");
-export function LocaleSwitcher() {
-  return (
-    <form action={changeLocale}>
-      <button type="submit" name="locale" value="es">
-        Español
-      </button>
-      <button type="submit" name="locale" value="en">
-        English
-      </button>
-    </form>
-  );
-}
-```
-
-## Next-Intl Compatibility
-
-Drop-in replacement for next-intl with compatibility APIs:
-
-```tsx
-// These next-intl APIs work with IntlParty:
+```typescript
 import {
-  useTranslations, // ✅ Compatible
-  useLocale, // ✅ Compatible
-  getTranslations, // ✅ Compatible (server)
-  getLocale, // ✅ Compatible (server)
-  setRequestLocale, // ✅ Compatible (server)
-  getMessages, // ✅ Compatible (server)
+  createSharedI18nConfig,
+  AppI18nProvider,
+  getLocale,
 } from "@intl-party/nextjs";
 
-// Migration is seamless!
-function MyComponent() {
-  const t = useTranslations("common"); // Same API as next-intl
-  return <h1>{t("title")}</h1>;
-}
-```
-
-## API Reference
-
-### Client Components
-
-```tsx
-import { AppI18nProvider } from "@intl-party/nextjs/client";
-
-<AppI18nProvider
-  locale={locale}
-  config={i18nConfig}
-  messages={preloadedMessages} // Optional
->
-  {children}
-</AppI18nProvider>;
-```
-
-### Server Functions
-
-```tsx
-import {
-  getLocale, // Get current locale
-  getServerTranslations, // Get translation function
-  setLocale, // Set locale (server action)
-  getMessages, // Get raw messages
-} from "@intl-party/nextjs/server";
-
-// Usage
-const locale = await getLocale();
-const t = await getServerTranslations("common");
-const messages = await getMessages("common");
-```
-
-### Middleware
-
-```tsx
-import { createI18nMiddleware } from "@intl-party/nextjs";
-
-const middleware = createI18nMiddleware({
+const { middleware, client, shared } = createSharedI18nConfig({
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  cookieName: "INTL_LOCALE",
-  detection: {
-    strategies: ["cookie", "acceptLanguage"],
-  },
+  // ... more options
 });
 ```
 
-## Configuration Options
+## 🆚 Migration from next-intl
+
+### From next-intl:
 
 ```typescript
-interface NextI18nConfig {
-  locales: string[]; // Supported locales
-  defaultLocale: string; // Default locale
-  namespaces: string[]; // Available namespaces
-  cookieName?: string; // Cookie name for locale storage
-  paramName?: string; // URL param name (if needed)
-  detection?: {
-    strategies: Array<"cookie" | "acceptLanguage" | "subdomain">;
-  };
-  messages?: Record<string, any>; // Preloaded messages
-}
+// next-intl
+import { useTranslations, useLocale } from "next-intl";
+
+const t = useTranslations("common");
+const locale = useLocale();
+
+// intl-party (simplified)
+import { useSimplifiedTranslations } from "@intl-party/nextjs";
+
+const t = useSimplifiedTranslations("common");
+// Locale is handled automatically
 ```
 
-## Advanced Usage
+### Benefits of switching:
 
-### Dynamic Message Loading
+- ✅ **Easier setup** (2 min vs 15 min)
+- ✅ **Clean URLs by default**
+- ✅ **No manual type casting**
+- ✅ **Automatic type generation**
+- ✅ **Built-in hot reloading**
 
-```tsx
-// Server Component with dynamic loading
-import { getServerTranslations } from "@intl-party/nextjs/server";
-
-export default async function ProductPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  // Load messages for specific product category
-  const messages = await import(`@/messages/${locale}/products.json`);
-  const t = await getServerTranslations("products", { messages });
-
-  return <h1>{t("title")}</h1>;
-}
-```
-
-### Multi-Locale Preloading
-
-```tsx
-// app/layout.tsx - Preload multiple locales for instant switching
-export default async function RootLayout() {
-  const locale = await getLocale();
-
-  // Preload common messages for all locales
-  const allMessages = {
-    en: await import("@/messages/en/common.json"),
-    es: await import("@/messages/es/common.json"),
-    fr: await import("@/messages/fr/common.json"),
-  };
-
-  return (
-    <AppI18nProvider
-      locale={locale}
-      config={i18nConfig}
-      messages={allMessages} // Enables instant locale switching
-    >
-      {children}
-    </AppI18nProvider>
-  );
-}
-```
-
-### Custom Locale Detection
-
-```tsx
-// middleware.ts
-import { createI18nMiddleware } from "@intl-party/nextjs";
-
-export default createI18nMiddleware({
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  detection: {
-    strategies: ["cookie", "acceptLanguage", "subdomain"],
-  },
-  // Custom detection logic
-  detector: (request) => {
-    // Custom logic to detect locale from request
-    const customLocale = request.headers.get("x-custom-locale");
-    return customLocale || "en";
-  },
-});
-```
-
-## Migration from next-intl
-
-1. **Replace imports**:
-
-   ```tsx
-   // Before (next-intl)
-   import { useTranslations } from "next-intl";
-
-   // After (IntlParty)
-   import { useTranslations } from "@intl-party/nextjs";
-   ```
-
-2. **Update configuration**:
-
-   ```tsx
-   // Before (next-intl)
-   export default createNextIntlPlugin("./i18n.ts");
-
-   // After (IntlParty) - No plugin needed!
-   // Just use the provider and middleware
-   ```
-
-3. **Keep your message files** - No changes needed to translation JSON files!
-
-## TypeScript Support
+## 📦 Exports
 
 ```typescript
-interface Messages {
-  common: {
-    welcome: string;
-    navigation: {
-      home: string;
-      about: string;
-    };
-  };
-}
+// Simplified setup (recommended)
+export {
+  createSimplifiedSetup,
+  SimplifiedI18nProvider,
+  useSimplifiedTranslations,
+  type SimplifiedConfig,
+} from "./simplified-setup";
 
-// Typed hooks
-const t = useTranslations<Messages>("common");
-// t() now has full autocomplete and type checking
+// Next.js integration
+export {
+  withIntlParty,
+  createNextConfigWithIntl,
+  type NextIntegrationOptions,
+} from "./next-integration";
+
+// Traditional setup
+export {
+  createSharedI18nConfig,
+  AppI18nProvider,
+  NextIntlClientProvider,
+} from "./index";
+
+// Server utilities
+export { getLocale, getServerTranslations, getMessages } from "./server";
+
+// Middleware
+export { createI18nMiddleware, createLocaleMatcher } from "./middleware";
 ```
 
-## License
+## 🤝 Contributing
 
-MIT © IntlParty
+See the [main README](../../README.md) for contribution guidelines.
+
+## 📄 License
+
+MIT

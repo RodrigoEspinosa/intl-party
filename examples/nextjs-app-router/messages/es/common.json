@@ -5,11 +5,25 @@
   "description": "Esta demo muestra el cambio de idioma basado en cookies sin cambios de URL.",
   "currentLocale": "Idioma actual: {{locale}}",
   "switchLanguage": "Cambiar Idioma:",
+  "navigation": {
+    "title": "Navegación",
+    "home": "Inicio",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  },
+  "interpolation": {
+    "title": "Interpolación de Variables",
+    "example": "Hola {{name}}, tienes {{count}} mensajes."
+  },
   "features": {
     "title": "Características Principales",
     "typeScript": "Soporte TypeScript",
     "performance": "Alto Rendimiento",
-    "nextjs": "Listo para Next.js"
+    "nextjs": "Listo para Next.js",
+    "zeroConfig": "Configuración Cero",
+    "typeSafe": "Tipos Seguros",
+    "cleanUrls": "URLs Limpias",
+    "ssr": "Renderizado del Servidor"
   },
   "languages": {
     "en": "Inglés",

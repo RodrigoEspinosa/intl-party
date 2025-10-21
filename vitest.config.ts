@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   test: {
@@ -29,7 +29,7 @@ export default defineConfig({
       "@intl-party/cli": resolve(__dirname, "./packages/cli/src"),
       "@intl-party/eslint-plugin": resolve(
         __dirname,
-        "./packages/eslint-plugin/src",
+        "./packages/eslint-plugin/src"
       ),
     },
   },

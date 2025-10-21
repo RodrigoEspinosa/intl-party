@@ -1,6 +1,5 @@
 import { Inter } from "next/font/google";
-import { getLocale } from "@intl-party/nextjs/server";
-import { ClientProvider } from "./client-provider";
+import { Provider } from "@intl-party/nextjs/client";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -9,28 +8,53 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "IntlParty Next.js Example",
-  description: "Example application using IntlParty with Next.js App Router",
+  description:
+    "Example application using zero-config IntlParty with Next.js App Router",
 };
 
-const i18nConfig = {
-  locales: ["en", "es", "fr", "de"],
-  defaultLocale: "en",
-  namespaces: ["common"],
-  cookieName: "INTL_LOCALE",
-};
+// Load messages server-side for all locales
+async function loadMessages() {
+  try {
+    // Try to load from generated files in node_modules (Prisma-style)
+    const { defaultMessages } = await import(".intl-party/messages.generated");
+    return defaultMessages;
+  } catch {
+    // Fallback to loading from messages directory for all locales
+    const { loadMessagesForLocale } = await import("@intl-party/nextjs/server");
+    const locales = ["en", "es", "fr", "de"];
+    const messages: Record<string, any> = {};
+
+    for (const locale of locales) {
+      try {
+        messages[locale] = await loadMessagesForLocale(locale, {
+          messagesPath: "./messages",
+          namespaces: ["common"],
+        });
+      } catch (error) {
+        console.warn(`Failed to load messages for ${locale}:`, error);
+        messages[locale] = {};
+      }
+    }
+
+    return messages;
+  }
+}
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Detect locale from cookies/headers without URL parameters
-  const locale = await getLocale(i18nConfig);
+  const messages = await loadMessages();
 
   return (
-    <html lang={locale}>
-      <body className={inter.className}>
-        <ClientProvider locale={locale}>{children}</ClientProvider>
+    <html>
+      <body>
+        <Provider
+          initialMessages={messages as Record<string, Record<string, any>>}
+        >
+          {children}
+        </Provider>
       </body>
     </html>
   );

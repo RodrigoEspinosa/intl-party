@@ -5,11 +5,25 @@
   "description": "Diese Demo zeigt den Cookie-basierten Sprachwechsel ohne URL-Änderungen.",
   "currentLocale": "Aktuelle Sprache: {{locale}}",
   "switchLanguage": "Sprache Wechseln:",
+  "navigation": {
+    "title": "Navigation",
+    "home": "Startseite",
+    "about": "Über uns",
+    "contact": "Kontakt"
+  },
+  "interpolation": {
+    "title": "Variablen-Interpolation",
+    "example": "Hallo {{name}}, Sie haben {{count}} Nachrichten."
+  },
   "features": {
     "title": "Hauptfunktionen",
     "typeScript": "TypeScript-Unterstützung",
     "performance": "Hohe Performance",
-    "nextjs": "Next.js Ready"
+    "nextjs": "Next.js Ready",
+    "zeroConfig": "Null-Konfiguration",
+    "typeSafe": "Typsicher",
+    "cleanUrls": "Saubere URLs",
+    "ssr": "Server-Side Rendering"
   },
   "languages": {
     "en": "Englisch",

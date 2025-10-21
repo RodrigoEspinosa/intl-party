@@ -27,7 +27,8 @@
   "author": "IntlParty Team",
   "license": "MIT",
   "dependencies": {
-    "@typescript-eslint/utils": "^6.15.0"
+    "@typescript-eslint/utils": "^6.15.0",
+    "fs-extra": "^11.2.0"
   },
   "devDependencies": {
     "@types/eslint": "^8.56.0",

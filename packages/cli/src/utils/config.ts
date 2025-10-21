@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 
 export interface CLIConfig {
   locales: string[];
@@ -91,7 +91,7 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
         return mergeConfig(DEFAULT_CONFIG, config);
       } catch (error) {
         throw new Error(
-          `Failed to load config from ${configFile}: ${error instanceof Error ? error.message : error}`,
+          `Failed to load config from ${configFile}: ${error instanceof Error ? error.message : error}`
         );
       }
     }
@@ -135,7 +135,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
       try {
         const entries = await fs.readdir(basePath);
         const locales = entries.filter((entry) =>
-          fs.statSync(path.join(basePath, entry)).isDirectory(),
+          fs.statSync(path.join(basePath, entry)).isDirectory()
         );
 
         if (locales.length > 0) {
@@ -159,7 +159,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
                 config.translationPaths![locale][namespace] = path.join(
                   basePath,
                   locale,
-                  `${namespace}.json`,
+                  `${namespace}.json`
                 );
               }
             }
@@ -178,7 +178,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
 
 function mergeConfig(
   defaultConfig: CLIConfig,
-  userConfig: Partial<CLIConfig>,
+  userConfig: Partial<CLIConfig>
 ): CLIConfig {
   return {
     ...defaultConfig,
@@ -204,7 +204,7 @@ function mergeConfig(
 
 export async function saveConfig(
   config: CLIConfig,
-  configPath: string = "intl-party.config.json",
+  configPath: string = "intl-party.config.json"
 ): Promise<void> {
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }

@@ -1,6 +1,4 @@
 import React from "react";
-import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import {
   I18n,
   createI18n,
@@ -9,67 +7,13 @@ import {
 } from "@intl-party/core";
 import { I18nProvider, type I18nProviderProps } from "@intl-party/react";
 
-export interface NextI18nConfig extends I18nConfig {
+interface NextI18nConfig extends I18nConfig {
   cookieName?: string;
   paramName?: string;
   pathSegment?: number;
   basePath?: string;
   notFoundBehavior?: "not-found" | "redirect" | "fallback";
   asyncTranslations?: boolean;
-}
-
-// Server component for locale detection
-export async function getLocale(config: NextI18nConfig): Promise<Locale> {
-  const {
-    locales,
-    defaultLocale,
-    cookieName = "INTL_LOCALE",
-    paramName = "locale",
-  } = config;
-
-  // Get headers for server-side detection
-  const headersList = headers();
-  const acceptLanguage = headersList.get("accept-language");
-  const customLocaleHeader = headersList.get("x-locale");
-
-  // Try to detect from custom header first
-  if (customLocaleHeader && locales.includes(customLocaleHeader)) {
-    return customLocaleHeader;
-  }
-
-  // Create detection context for server
-  const detectionContext = {
-    request: new Request("http://localhost", {
-      headers: Object.fromEntries(headersList.entries()),
-    }),
-  };
-
-  // Create temporary i18n instance for detection
-  const tempI18n = createI18n(config);
-  const detected = tempI18n.detectLocale(detectionContext);
-
-  return detected;
-}
-
-// Server component for getting locale from params
-export function getLocaleFromParams(
-  params: { locale?: string },
-  config: NextI18nConfig,
-): Locale {
-  const { locales, defaultLocale, notFoundBehavior = "not-found" } = config;
-
-  if (!params.locale) {
-    return defaultLocale;
-  }
-
-  if (!locales.includes(params.locale)) {
-    if (notFoundBehavior === "not-found") {
-      notFound();
-    }
-    return defaultLocale;
-  }
-
-  return params.locale;
 }
 
 // App Router provider component - supports multi-locale preloading
@@ -167,6 +111,12 @@ export async function I18nLayout({
   loadTranslations,
   namespaces = ["common"],
 }: I18nLayoutProps) {
+  // This function should only be used in server components
+  if (typeof window !== "undefined") {
+    throw new Error("I18nLayout must be used in a Server Component");
+  }
+
+  const { getLocaleFromParams } = await import("../server/index");
   const locale = getLocaleFromParams(params, config);
 
   // Load translations for server-side rendering
@@ -300,7 +250,13 @@ export function withLocale<P extends { params: { locale: string } }>(
   Component: React.ComponentType<P>,
   config: NextI18nConfig,
 ) {
-  return function LocalizedComponent(props: P) {
+  return async function LocalizedComponent(props: P) {
+    // This HOC should only be used in server components
+    if (typeof window !== "undefined") {
+      throw new Error("withLocale must be used in a Server Component");
+    }
+
+    const { getLocaleFromParams } = await import("../server/index");
     const locale = getLocaleFromParams(props.params, config);
 
     return <Component {...props} locale={locale} />;

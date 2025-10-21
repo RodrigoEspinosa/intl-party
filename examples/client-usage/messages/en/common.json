@@ -1,0 +1,11 @@
+{
+  "title": "My Awesome App",
+  "welcome": "Welcome to {{appName}}!",
+  "description": "This is a demonstration of the @intl-party/client package, similar to @prisma/client",
+  "features": {
+    "title": "Key Features",
+    "typescript": "TypeScript Support",
+    "performance": "High Performance",
+    "client": "Generated Client Package"
+  }
+}

@@ -15,7 +15,7 @@ Thank you for your interest in contributing to IntlParty! This document provides
 1. **Fork and Clone**
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/intl-party.git
+   git clone https://github.com/RodrigoEspinosa/intl-party.git
    cd intl-party
    ```
 

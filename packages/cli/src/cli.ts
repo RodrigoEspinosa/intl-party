@@ -8,8 +8,9 @@ import { syncCommand } from "./commands/sync";
 import { initCommand } from "./commands/init";
 import { checkCommand } from "./commands/check";
 import { generateCommand } from "./commands/generate";
+import { nextjsCommand } from "./commands/nextjs";
 
-const packageJson = require("../package.json");
+import packageJson from "../package.json" with { type: "json" };
 
 program
   .name("intl-party")
@@ -90,15 +91,25 @@ program
   .option("-t, --types", "generate TypeScript type definitions")
   .option("-s, --schemas", "generate JSON schemas")
   .option("-d, --docs", "generate documentation")
+  .option("-c, --client", "generate client package files")
+  .option(
+    "-o, --output <dir>",
+    "output directory for generated files",
+    "./node_modules/.intl-party",
+  )
   .option("--watch", "watch for changes and regenerate")
+  .option("--verbose", "verbose output")
   .action(generateCommand);
+
+// Next.js command
+program.addCommand(nextjsCommand);
 
 // Add subcommands
 program
   .command("completion")
   .description("generate shell completion scripts")
   .option("--shell <shell>", "shell type (bash|zsh|fish)", "bash")
-  .action((options) => {
+  .action((_options) => {
     console.log("Shell completion not implemented yet");
   });
 

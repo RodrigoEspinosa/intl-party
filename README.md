@@ -1,273 +1,342 @@
 # IntlParty 🎉
 
-A comprehensive, type-safe internationalization (i18n) library for modern web applications. Built with TypeScript-first approach and designed for exceptional developer experience.
+The **easiest and most developer-friendly** internationalization (i18n) library for Next.js with TypeScript. Built with zero-config setup and perfect TypeScript integration.
 
-## ✨ Features
+## ✨ Why Choose IntlParty?
 
-- **🔒 Type-Safe**: Full TypeScript support with auto-completion for translation keys
-- **🎯 Framework Agnostic**: Core library works with any JavaScript framework
-- **⚛️ React Integration**: Dedicated hooks, context, and components for React
-- **🔄 Next.js Support**: First-class support for both App Router and Pages Router
-- **🌍 Advanced Locale Detection**: Intelligent locale detection from various sources
-- **✅ Validation Tools**: Comprehensive validation and consistency checking
-- **🛠️ CLI Tools**: Command-line interface for translation management
-- **📊 Developer Experience**: ESLint plugin, VS Code extension, and debugging tools
-- **🚀 Performance**: Lazy loading, caching, and tree-shaking optimized
+- **🚀 Zero-Config Setup**: Get started in 2 minutes, not 2 hours
+- **🔒 Perfect TypeScript**: Full type safety with auto-completion, no casting required
+- **⚡ Next.js Native**: Built specifically for Next.js App Router with SSR/SSG
+- **🌍 Clean URLs**: No more ugly `/en/` prefixes (optional)
+- **🎯 Developer First**: Intuitive API that just works
+- **🛠️ Automatic**: Type generation, message loading, and hot reloading
 
-## 📦 Packages
+## 🚀 Quick Start (Next.js)
 
-This monorepo contains the following packages:
-
-- **[@intl-party/core](./packages/core)** - Core internationalization library
-- **[@intl-party/react](./packages/react)** - React integration with hooks and components
-- **[@intl-party/nextjs](./packages/nextjs)** - Next.js integration for App and Pages Router
-- **[@intl-party/cli](./packages/cli)** - Command-line tools for translation management
-- **[@intl-party/eslint-plugin](./packages/eslint-plugin)** - ESLint rules for i18n best practices
-
-## 🚀 Quick Start
-
-### Installation
+### 1. Installation
 
 ```bash
-# Core library
-npm install @intl-party/core
-
-# React integration
-npm install @intl-party/react
-
-# Next.js integration
 npm install @intl-party/nextjs
-
-# CLI tools
-npm install -g @intl-party/cli
+# or
+pnpm add @intl-party/nextjs
+# or
+yarn add @intl-party/nextjs
 ```
 
-### Basic Usage
+### 2. Initialize (One Command)
 
-```typescript
-import { createI18n } from "@intl-party/core";
-
-// Create i18n instance
-const i18n = createI18n({
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  namespaces: ["common", "auth"],
-  fallbackChain: { es: "en", fr: "en" },
-});
-
-// Add translations
-i18n.addTranslations("en", "common", {
-  welcome: "Welcome to IntlParty!",
-  hello: "Hello {{name}}!",
-});
-
-// Use translations
-const message = i18n.t("welcome"); // "Welcome to IntlParty!"
-const greeting = i18n.t("hello", { interpolation: { name: "World" } }); // "Hello World!"
+```bash
+npx intl-party nextjs --init --simplified
 ```
 
-### React Usage
+This creates:
+
+- `intl-party.config.ts` - Your i18n configuration
+- `middleware.ts` - Automatic locale detection
+- `messages/` - Sample translation files
+- Example layout and page components
+
+### 3. Start Using
 
 ```tsx
-import { I18nProvider, useTranslations } from "@intl-party/react";
+// app/page.tsx
+import { useSimplifiedTranslations } from "@intl-party/nextjs";
 
-function App() {
-  return (
-    <I18nProvider config={i18nConfig}>
-      <Welcome />
-    </I18nProvider>
-  );
-}
-
-function Welcome() {
-  const t = useTranslations("common");
+export default function HomePage() {
+  const t = useSimplifiedTranslations("common");
 
   return (
     <div>
       <h1>{t("welcome")}</h1>
-      <p>{t("description")}</p>
+      <p>{t("description", { name: "John" })}</p>
     </div>
   );
 }
 ```
 
-### Next.js App Router
+That's it! 🎉 Your app is now internationalized with full TypeScript support.
 
-#### URL-based Locale Routing
+## 📁 Project Structure
+
+```
+your-app/
+├── intl-party.config.ts     # Your i18n config
+├── middleware.ts            # Automatic locale detection
+├── messages/               # Translation files
+│   ├── en/
+│   │   └── common.json
+│   ├── es/
+│   │   └── common.json
+│   └── fr/
+│       └── common.json
+└── app/
+    ├── layout.tsx           # Auto-configured
+    └── page.tsx            # Use translations
+```
+
+## 🔧 Configuration
+
+Create `intl-party.config.ts` in your project root:
+
+```typescript
+// intl-party.config.ts
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  messages: "./messages", // Optional - defaults to "./messages"
+
+  // Advanced options (optional)
+  // localePrefix: "never", // Clean URLs without /en/ prefix
+  // cookieName: "INTL_LOCALE", // Cookie name for locale storage
+};
+```
+
+## 🎯 API Reference
+
+### `useSimplifiedTranslations(namespace?)`
+
+The main hook for using translations.
 
 ```tsx
-// app/[locale]/layout.tsx
-import { AppI18nProvider } from "@intl-party/nextjs/app";
+// Without namespace (uses default)
+const t = useSimplifiedTranslations();
 
-export default function LocaleLayout({
-  children,
-  params: { locale },
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
-  return (
-    <AppI18nProvider locale={locale} config={i18nConfig}>
-      {children}
-    </AppI18nProvider>
-  );
+// With namespace
+const t = useSimplifiedTranslations("common");
+
+// Simple usage
+t("welcome"); // "Welcome!"
+
+// With interpolation
+t("greeting", { name: "John" }); // "Hello John!"
+
+// Nested keys
+t("navigation.home"); // "Home"
+```
+
+### `createSimplifiedSetup(config)`
+
+Creates the complete i18n setup for Next.js.
+
+```typescript
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const {
+  middleware, // Next.js middleware
+  middlewareConfig, // Middleware matcher config
+  getLocale, // Server-side locale detection
+  getMessages, // Server-side message loading
+  Provider, // React provider
+} = createSimplifiedSetup(config);
+```
+
+## 🌐 Translation Files
+
+Translation files are simple JSON:
+
+```json
+// messages/en/common.json
+{
+  "welcome": "Welcome to IntlParty!",
+  "description": "A modern i18n solution for Next.js",
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "greeting": "Hello {{name}}!"
 }
 ```
 
-#### Cookie-based Locale Storage (No URL Changes)
+```json
+// messages/es/common.json
+{
+  "welcome": "¡Bienvenido a IntlParty!",
+  "description": "Una solución i18n moderna para Next.js",
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  },
+  "greeting": "¡Hola {{name}}!"
+}
+```
 
-For applications that prefer to keep clean URLs without locale prefixes and use cookies for persistence:
+## 🏗️ Setup Examples
+
+### Middleware (Automatic)
+
+```typescript
+// middleware.ts
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+### Layout (Automatic SSR)
 
 ```tsx
-// middleware.ts
-import { createI18nMiddleware } from "@intl-party/nextjs";
-
-export const middleware = createI18nMiddleware({
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-
-  // Cookie-only storage - no URL modification
-  localePrefix: "never",
-  cookieName: "INTL_LOCALE",
-
-  // Detection sources
-  detectFromCookie: true,
-  detectFromHeader: true,
-  detectFromQuery: true, // Allow ?locale=es override
-  detectFromPath: false,
-
-  redirectStrategy: "none",
-});
-
 // app/layout.tsx
-import { AppI18nProvider, getLocale } from "@intl-party/nextjs";
+import { createSimplifiedSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
 
-const i18nConfig = {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  namespaces: ["common"],
-};
+const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
 
 export default async function RootLayout({ children }) {
-  const locale = await getLocale(i18nConfig);
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
 
   return (
     <html lang={locale}>
       <body>
-        <AppI18nProvider locale={locale} config={i18nConfig}>
+        <Provider locale={locale} initialMessages={messages}>
           {children}
-        </AppI18nProvider>
+        </Provider>
       </body>
     </html>
   );
 }
 ```
 
-## 🎯 Why IntlParty?
+### Next.js Config Integration
 
-### Type Safety First
+```javascript
+// next.config.js
+const { createNextConfigWithIntl } = require("@intl-party/nextjs");
 
-IntlParty provides complete type safety for your translation keys with auto-completion:
-
-```typescript
-// Define your translation structure
-interface Translations {
-  common: {
-    welcome: string;
-    navigation: {
-      home: string;
-      about: string;
-    };
-  };
-}
-
-// Get fully typed translation function
-const t = useTypedTranslations<Translations["common"]>();
-t("navigation.home"); // ✅ Type-safe and auto-completed
-t("invalid.key"); // ❌ TypeScript error
+module.exports = createNextConfigWithIntl(
+  {
+    i18nConfig: {
+      locales: ["en", "es", "fr"],
+      defaultLocale: "en",
+      messages: "./messages",
+    },
+    autoGenerate: true, // Auto-generate types during build
+    watchMode: true, // Watch for changes in development
+  },
+  {
+    // Your existing Next.js config
+    reactStrictMode: true,
+    swcMinify: true,
+  },
+);
 ```
 
-### Advanced Locale Detection
+## 🎨 Advanced Features
 
-Smart locale detection from multiple sources:
+### Clean URLs (Default)
+
+By default, IntlParty uses cookie-based locale detection for clean URLs:
+
+```
+✅ Clean URLs:
+  /about          # Shows in user's preferred language
+  /contact        # Shows in user's preferred language
+
+❌ Traditional URLs:
+  /en/about        # English version
+  /es/about        # Spanish version
+  /fr/about        # French version
+```
+
+### URL Prefixes (Optional)
+
+If you prefer URL prefixes, just change the config:
 
 ```typescript
-const i18n = createI18n({
+// intl-party.config.ts
+export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  detection: {
-    strategies: [
-      "localStorage", // User preference
-      "cookie", // Server-side persistence
-      "acceptLanguage", // Browser setting
-      "geographic", // Country-based detection
-      "queryParam", // URL parameter
-      "path", // URL path segment
-    ],
-  },
-});
+  localePrefix: "always", // or "as-needed"
+};
 ```
 
-### Next.js Locale Prefix Strategies
+### Automatic Type Generation
 
-Choose how locales appear in your URLs:
+Get full TypeScript support without any manual work:
 
 ```typescript
-// Always include locale in URL: /en/about, /es/about
-localePrefix: "always";
+// Fully typed translation keys
+const t = useSimplifiedTranslations("common");
 
-// Only include non-default locales: /about, /es/about
-localePrefix: "as-needed";
+t("welcome"); // ✅ Type-safe
+t("navigation.home"); // ✅ Type-safe
+t("invalid.key"); // ❌ TypeScript error
 
-// Never include locale in URL, use cookies: /about (all languages)
-localePrefix: "never";
+// Auto-completion works everywhere
+t("nav"); // → suggests "navigation"
 ```
 
-**Cookie-only Benefits:**
+### Hot Reloading
 
-- ✅ Clean URLs without language prefixes
-- ✅ Automatic persistence across sessions
-- ✅ Better SEO for single-language content
-- ✅ Simpler routing and link sharing
-- ✅ Query parameter override support (?locale=es)
+Translation changes automatically reload in development:
 
-### Comprehensive Validation
+1. Edit `messages/en/common.json`
+2. Save the file
+3. See changes immediately in your browser
 
-Ensure translation consistency across your application:
+## 🛠️ CLI Commands
+
+### Initialize Project
 
 ```bash
-# Validate all translations
-intl-party validate
+# Initialize with simplified setup (recommended)
+npx intl-party nextjs --init --simplified
 
-# Check for missing translations
-intl-party check --missing
-
-# Extract translation keys from code
-intl-party extract --source "src/**/*.{ts,tsx}"
-
-# Sync translations across locales
-intl-party sync --base en --target es,fr
+# Initialize with traditional setup
+npx intl-party nextjs --init
 ```
 
-## 📚 Documentation
+### Generate Types
 
-- [Getting Started Guide](./docs/getting-started.md)
-- [Core Concepts](./docs/concepts.md)
-- [React Integration](./docs/react.md)
-- [Next.js Integration](./docs/nextjs.md)
-- [CLI Reference](./docs/cli.md)
-- [API Reference](./docs/api.md)
-- [Migration Guide](./docs/migration.md)
-- [Examples](./examples)
+```bash
+# Generate TypeScript types
+npx intl-party generate --types
 
-## 🔧 Development
+# Watch for changes
+npx intl-party generate --types --watch
+```
 
-### Prerequisites
+### Validate Translations
 
-- Node.js >= 18
-- pnpm >= 8
+```bash
+# Check for missing translations
+npx intl-party check --missing
 
-### Setup
+# Validate all translations
+npx intl-party validate
+```
+
+## 📦 Packages
+
+- **[@intl-party/nextjs](./packages/nextjs)** - Next.js integration (main package)
+- **[@intl-party/core](./packages/core)** - Core internationalization library
+- **[@intl-party/react](./packages/react)** - React hooks and components
+- **[@intl-party/cli](./packages/cli)** - Command-line tools
+
+## 🆚 Comparison
+
+| Feature                  | IntlParty   | next-intl  | react-i18next       |
+| ------------------------ | ----------- | ---------- | ------------------- |
+| **Setup Time**           | 2 minutes   | 15 minutes | 30 minutes          |
+| **Type Safety**          | ✅ Perfect  | ✅ Good    | ⚠️ Requires casting |
+| **Clean URLs**           | ✅ Default  | ⚠️ Complex | ⚠️ Manual           |
+| **Next.js App Router**   | ✅ Native   | ✅ Good    | ⚠️ Limited          |
+| **Auto Type Generation** | ✅ Built-in | ⚠️ Manual  | ❌ None             |
+| **Hot Reloading**        | ✅ Built-in | ⚠️ Manual  | ❌ None             |
+| **Learning Curve**       | 🟢 Easy     | 🟡 Medium  | 🔴 Hard             |
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+### Development Setup
 
 ```bash
 # Clone the repository
@@ -280,59 +349,24 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Run tests
-pnpm test
-
-# Start development mode
+# Start development
 pnpm dev
 ```
-
-### Project Structure
-
-```
-intl-party/
-├── packages/
-│   ├── core/           # Core library
-│   ├── react/          # React integration
-│   ├── nextjs/         # Next.js integration
-│   ├── cli/            # CLI tools
-│   └── eslint-plugin/  # ESLint plugin
-├── examples/
-│   ├── nextjs-app-router/
-│   ├── react-spa/
-│   └── vanilla-js/
-├── docs/               # Documentation
-└── apps/               # Internal tooling apps
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
-
-### Development Workflow
-
-1. Fork and clone the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes and add tests
-4. Run the test suite: `pnpm test`
-5. Commit your changes: `git commit -m 'Add my feature'`
-6. Push to your fork: `git push origin feature/my-feature`
-7. Create a Pull Request
 
 ## 📄 License
 
 MIT © [IntlParty Team](./LICENSE)
 
-## 🙏 Acknowledgments
-
-IntlParty is inspired by and builds upon the excellent work of:
-
-- [react-i18next](https://github.com/i18next/react-i18next)
-- [next-intl](https://github.com/amannn/next-intl)
-- [FormatJS](https://github.com/formatjs/formatjs)
-
-Special thanks to the open-source community for their contributions to internationalization tooling.
-
 ---
 
-**Made with ❤️ by the IntlParty team**
+**Made with ❤️ for the Next.js community**
+
+## 🙏 Acknowledgments
+
+Inspired by the excellent work of:
+
+- [next-intl](https://github.com/amannn/next-intl)
+- [react-i18next](https://github.com/i18next/react-i18next)
+- [FormatJS](https://github.com/formatjs/formatjs)
+
+But built from the ground up for the **easiest possible developer experience** with Next.js and TypeScript.

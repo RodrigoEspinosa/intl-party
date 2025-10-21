@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
 import fs from "fs-extra";
-import path from "path";
 import { validateTranslations } from "@intl-party/core";
 import { loadConfig } from "../utils/config";
 import { loadTranslations } from "../utils/translations";

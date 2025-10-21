@@ -7,27 +7,30 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "react-server": "./dist/server-safe.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-    "./server": {
-      "types": "./dist/server/index.d.ts",
-      "import": "./dist/server/index.mjs",
-      "require": "./dist/server/index.js"
-    },
     "./client": {
-      "types": "./dist/client/index.d.ts",
-      "import": "./dist/client/index.mjs",
-      "require": "./dist/client/index.js"
+      "types": "./dist/client-exports.d.ts",
+      "import": "./dist/client-exports.mjs",
+      "require": "./dist/client-exports.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js"
+    },
+    "./webpack-plugin": {
+      "types": "./dist/webpack-plugin.d.ts",
+      "require": "./dist/webpack-plugin.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/server/index.ts src/client/index.tsx src/server-safe.ts src/server-only.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher",
+    "build": "tsup src/index.ts src/server.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher,chokidar && tsup src/client-exports.ts --format cjs,esm --dts --external next,react,react-dom && tsup src/webpack-plugin.ts --format cjs --dts --external child_process,path,fs,chokidar",
     "dev": "tsup --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
@@ -51,7 +54,8 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.5.10",
     "@intl-party/core": "workspace:*",
-    "@intl-party/react": "workspace:*"
+    "@intl-party/react": "workspace:*",
+    "chokidar": "^3.5.3"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
