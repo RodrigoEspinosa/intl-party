@@ -370,3 +370,7 @@ Inspired by the excellent work of:
 - [FormatJS](https://github.com/formatjs/formatjs)
 
 But built from the ground up for the **easiest possible developer experience** with Next.js and TypeScript.
+
+## 🤖 AI Disclaimer
+
+This project was developed heavily using AI assistance. While we strive for high code quality and security, please review the code and use it at your own discretion. We welcome contributions to improve and refine the codebase.
