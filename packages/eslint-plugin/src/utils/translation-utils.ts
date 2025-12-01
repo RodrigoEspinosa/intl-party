@@ -174,6 +174,7 @@ export class TranslationUtils {
             // For JS/TS files, we'd need to use dynamic import
             // This is a simplified version - in production, you'd want proper module loading
             delete require.cache[path.resolve(configFile)];
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             config = require(path.resolve(configFile));
 
             if (config.default) {
@@ -199,7 +200,11 @@ export class TranslationUtils {
       locales = ["en"],
       defaultLocale = "en",
       messages = "./messages",
-    } = config;
+    } = config as {
+      locales?: string[];
+      defaultLocale?: string;
+      messages?: string;
+    };
     const translations: AllTranslations = {};
 
     for (const locale of locales) {
@@ -222,7 +227,7 @@ export class TranslationUtils {
 
               try {
                 const content = await this.readJson(filePath);
-                translations[locale][namespace] = content;
+                translations[locale][namespace] = content as any;
               } catch {
                 translations[locale][namespace] = {};
               }
@@ -256,7 +261,7 @@ export class TranslationUtils {
           translations[locale] = {};
         }
 
-        translations[locale][namespace] = content;
+        translations[locale][namespace] = content as any;
       } catch {
         // Skip invalid files
         continue;
@@ -302,7 +307,7 @@ export class TranslationUtils {
 
                   try {
                     const content = await this.readJson(filePath);
-                    translations[locale][namespace] = content;
+                    translations[locale][namespace] = content as any;
                   } catch {
                     translations[locale][namespace] = {};
                   }
@@ -360,7 +365,7 @@ export class TranslationUtils {
         value !== null &&
         !Array.isArray(value)
       ) {
-        this.collectKeys(value, fullKey, keys);
+        this.collectKeys(value as Record<string, unknown>, fullKey, keys);
       } else {
         keys.add(fullKey);
       }

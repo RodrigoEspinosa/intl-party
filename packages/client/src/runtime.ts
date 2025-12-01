@@ -2,6 +2,7 @@ import type {
   TranslationKey,
   Locale,
   TranslationValue,
+  Translations,
 } from "@intl-party/core";
 
 /**
@@ -9,7 +10,7 @@ import type {
  */
 export function createTranslationFunction(
   locale: Locale,
-  messages: Record<string, TranslationValue> = {}
+  messages: Translations = {}
 ) {
   return function t(
     key: TranslationKey,
@@ -51,8 +52,8 @@ export function createTranslationFunction(
  */
 export function getLocaleMessages(
   locale: Locale,
-  allMessages: Record<Locale, Record<string, TranslationValue>>
-): Record<string, TranslationValue> {
+  allMessages: Record<Locale, Translations>
+): Translations {
   return allMessages[locale] || {};
 }
 
@@ -61,11 +62,11 @@ export function getLocaleMessages(
  */
 export function getAllMessages(): Record<
   Locale,
-  Record<string, TranslationValue>
+  Translations
 > {
   // In a real implementation, this would load from generated files
   // For now, return empty object
-  return {} as Record<Locale, Record<string, TranslationValue>>;
+  return {} as Record<Locale, Translations>;
 }
 
 /**

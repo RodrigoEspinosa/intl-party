@@ -322,7 +322,7 @@ function generateJsonSchemas(data: MessageData): string {
   }
 
   // Generate a combined schema for all translations
-  const combinedSchema = {
+  const combinedSchema: any = {
     $schema: "http://json-schema.org/draft-07/schema#",
     $id: "#/schemas/translations",
     title: "IntlParty Translation Schema",

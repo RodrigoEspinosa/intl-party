@@ -77,6 +77,8 @@ export interface TranslationOptions {
   namespace?: Namespace;
 }
 
+export type EventListener = (data: any) => void;
+
 export interface I18nInstance {
   t: TranslationFunction;
   locale: Locale;
@@ -97,8 +99,8 @@ export interface I18nInstance {
   removeTranslations: (locale: Locale, namespace?: Namespace) => void;
   validateTranslations: () => ValidationResult;
   createScopedTranslator: (namespace: Namespace) => TranslationFunction;
-  on: (event: string, listener: Function) => void;
-  off: (event: string, listener: Function) => void;
+  on: (event: string, listener: EventListener) => void;
+  off: (event: string, listener: EventListener) => void;
   getAvailableLocales: () => Locale[];
   getAvailableNamespaces: () => Namespace[];
   getFallbackChain: (locale?: Locale) => Locale[];
