@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { createI18n } from "@intl-party/core";
 import { I18nProvider } from "../context/I18nContext";
 import {
@@ -92,7 +92,9 @@ describe("useTranslations", () => {
     expect(result.current("welcome")).toBe("Welcome!");
 
     // Change locale
-    i18n.setLocale("es");
+    act(() => {
+      i18n.setLocale("es");
+    });
 
     expect(result.current("welcome")).toBe("¡Bienvenido!");
   });
