@@ -32,21 +32,16 @@ npm install --save-dev @intl-party/cli
 ### Initialize Configuration
 
 ```bash
-intl-party init
+intl-party nextjs --init --simplified
 ```
 
-This creates an `intl-party.config.js` file:
+This creates an `intl-party.config.ts` file:
 
-```javascript
-module.exports = {
+```typescript
+export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  namespaces: ["common", "navigation"],
-  translationsDir: "./messages",
-  sourceDir: "./src",
-  patterns: {
-    extract: ["**/*.{ts,tsx,js,jsx}", "!**/*.test.*", "!**/node_modules/**"],
-  },
+  messages: "./messages",
 };
 ```
 
@@ -61,33 +56,24 @@ intl-party extract
 This scans your source files for translation keys like:
 
 - `t('welcome')`
-- `useTranslations('common')('title')`
-- `<Trans i18nKey="description" />`
+- `useSimplifiedTranslations('common')('title')`
+- `i18nKey="description"`
 
 ### Validate Translations
 
 Check for issues in your translations:
 
 ```bash
-intl-party validate
+intl-party check
 ```
 
 Reports:
 
 - Missing translations in different locales
 - Unused translation keys
-- Inconsistent interpolation variables
-- Invalid pluralization forms
+- Format errors in translations
 
-### Generate Translation Files
-
-Create missing translation files:
-
-```bash
-intl-party generate
-```
-
-### Sync Translations
+### Synchronize Translations
 
 Sync keys across all locales:
 
@@ -132,34 +118,30 @@ Example output:
 📝 Created: extracted-keys.json
 ```
 
-### `intl-party validate`
+### `intl-party check`
 
-Validate existing translations.
+Check for issues in translations and configuration.
 
 ```bash
-intl-party validate [options]
+intl-party check [options]
 
 Options:
-  --config <path>    Configuration file path
-  --locale <code>    Validate specific locale only
-  --strict          Fail on warnings
-  --format <type>   Output format: text, json, junit (default: text)
+  --missing         Check for missing translations
+  --unused          Check for unused translation keys
+  --duplicates      Check for duplicate keys
+  --format-errors   Check for format errors in translations
+  --fix             Automatically fix issues where possible
 ```
 
-Example output:
+### `intl-party check-config`
 
-```
-🔍 Validating translations...
+Validate your IntlParty configuration.
 
-❌ Missing translations (es):
-  - common.welcome
-  - navigation.home
+```bash
+intl-party check-config [options]
 
-⚠️  Unused translations (en):
-  - common.oldKey
-
-✅ All interpolation variables match
-📊 Coverage: en (100%), es (87%), fr (92%)
+Options:
+  -c, --config <path>  Path to config file
 ```
 
 ### `intl-party generate`

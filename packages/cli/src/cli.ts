@@ -44,7 +44,7 @@ program
   .option(
     "-o, --output <dir>",
     "output directory for extracted keys",
-    "./translations",
+    "./messages"
   )
   .option("--dry-run", "show what would be extracted without writing files")
   .option("--update", "update existing translation files with new keys")
@@ -69,7 +69,7 @@ program
   .option(
     "--template <template>",
     "template to use (nextjs|react|vanilla)",
-    "react",
+    "react"
   )
   .action(initCommand);
 
@@ -84,6 +84,32 @@ program
   .option("--fix", "automatically fix issues where possible")
   .action(checkCommand);
 
+// Check-config command
+program
+  .command("check-config")
+  .description("validate your intl-party configuration")
+  .option("-c, --config <path>", "path to config file")
+  .action(async (options) => {
+    const { loadConfig } = await import("./utils/config");
+    const spinner = (await import("ora"))
+      .default("Validating configuration...")
+      .start();
+    try {
+      const config = await loadConfig(options.config);
+      spinner.succeed("Configuration is valid!");
+      if (options.verbose) {
+        console.log(JSON.stringify(config, null, 2));
+      }
+    } catch (error) {
+      spinner.fail("Configuration is invalid");
+      console.error(
+        chalk.red("Error:"),
+        error instanceof Error ? error.message : error
+      );
+      process.exit(1);
+    }
+  });
+
 // Generate command
 program
   .command("generate")
@@ -95,7 +121,7 @@ program
   .option(
     "-o, --output <dir>",
     "output directory for generated files",
-    "./node_modules/.intl-party",
+    "./node_modules/.intl-party"
   )
   .option("--watch", "watch for changes and regenerate")
   .option("--verbose", "verbose output")

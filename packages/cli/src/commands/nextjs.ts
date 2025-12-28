@@ -1,6 +1,9 @@
+/* eslint-disable no-console */
+
 import { Command } from "commander";
-import { existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import chalk from "chalk";
 
 export const nextjsCommand = new Command("nextjs")
   .description("Next.js specific commands for IntlParty")
@@ -15,13 +18,21 @@ export const nextjsCommand = new Command("nextjs")
   });
 
 async function initializeNextjsProject(simplified = false) {
-  console.log("🚀 Initializing IntlParty for Next.js...");
+  console.log(chalk.cyan("🚀 Initializing IntlParty for Next.js..."));
 
   // Check if it's already initialized
-  if (existsSync("intl-party.config.ts")) {
-    console.log("⚠️  IntlParty already initialized!");
+  if (
+    existsSync("intl-party.config.ts") ||
+    existsSync("intl-party.config.js")
+  ) {
+    console.log(chalk.yellow("⚠️  IntlParty already initialized!"));
     return;
   }
+
+  // Detect src directory
+  const hasSrcDir = existsSync("src");
+  const baseDir = hasSrcDir ? "src" : ".";
+  const appDir = join(baseDir, "app");
 
   // Create config file
   const configContent = simplified
@@ -32,7 +43,6 @@ export default {
   messages: "./messages",
   // localePrefix defaults to "never" for clean URLs
   // cookieName defaults to "INTL_LOCALE"
-  // namespaces are auto-detected from message files
 };`
     : `// Standard IntlParty configuration for Next.js
 export default {
@@ -57,7 +67,7 @@ export default {
 };`;
 
   writeFileSync("intl-party.config.ts", configContent);
-  console.log("✅ Created intl-party.config.ts");
+  console.log(chalk.green("✅ Created intl-party.config.ts"));
 
   // Create messages directory and sample files
   const messagesDir = "messages";
@@ -67,15 +77,13 @@ export default {
 
   // Create sample message files
   const locales = ["en", "es", "fr"];
-  const sampleMessages = {
-    common: {
-      welcome: "Welcome to IntlParty!",
-      description: "A modern i18n solution for Next.js",
-      navigation: {
-        home: "Home",
-        about: "About",
-        contact: "Contact",
-      },
+  const sampleMessagesBase = {
+    welcome: "Welcome to IntlParty!",
+    description: "A modern i18n solution for Next.js",
+    navigation: {
+      home: "Home",
+      about: "About",
+      contact: "Contact",
     },
   };
 
@@ -85,7 +93,10 @@ export default {
       mkdirSync(localeDir, { recursive: true });
     }
 
-    const messages = sampleMessages.common;
+    const messages = {
+      ...sampleMessagesBase,
+      navigation: { ...sampleMessagesBase.navigation },
+    };
     if (locale === "es") {
       messages.welcome = "¡Bienvenido a IntlParty!";
       messages.description = "Una solución i18n moderna para Next.js";
@@ -106,30 +117,32 @@ export default {
     );
   });
 
-  console.log("✅ Created sample message files");
+  console.log(chalk.green("✅ Created sample message files in ./messages"));
 
   // Create middleware
+  const middlewarePath = hasSrcDir ? "src/middleware.ts" : "middleware.ts";
   const middlewareContent = simplified
     ? `import { createSimplifiedSetup } from "@intl-party/nextjs";
-import config from "./intl-party.config";
+import config from "${hasSrcDir ? "../" : "./"}intl-party.config";
 
 const { middleware, middlewareConfig } = createSimplifiedSetup(config);
 
 export { middleware };
 export const config = middlewareConfig;`
     : `import { createLocaleMatcher } from "@intl-party/nextjs";
-import { middleware, shared } from "./src/lib/i18n-setup";
+import { middleware, shared } from "./lib/i18n-setup";
 
 export { middleware };
 export const config = {
   matcher: createLocaleMatcher(shared),
 };`;
 
-  writeFileSync("middleware.ts", middlewareContent);
-  console.log("✅ Created middleware.ts");
+  writeFileSync(middlewarePath, middlewareContent);
+  console.log(chalk.green(`✅ Created ${middlewarePath}`));
 
   // Update next.config.js if it exists
   if (simplified && existsSync("next.config.js")) {
+    const nextConfigIntlPath = "next.config.intl-party.js";
     const nextConfigContent = `const { createNextConfigWithIntl } = require("@intl-party/nextjs");
 
 /** @type {import('next').NextConfig} */
@@ -146,16 +159,22 @@ module.exports = createNextConfigWithIntl(
   nextConfig
 );`;
 
-    writeFileSync("next.config.intl-party.js", nextConfigContent);
+    writeFileSync(nextConfigIntlPath, nextConfigContent);
     console.log(
-      "✅ Created next.config.intl-party.js (rename to next.config.js to use)"
+      chalk.green(
+        `✅ Created ${nextConfigIntlPath} (merge with your next.config.js)`
+      )
     );
   }
 
-  // Create layout example
+  // Create layout and page examples in the correct app directory
+  if (!existsSync(appDir)) {
+    mkdirSync(appDir, { recursive: true });
+  }
+
   const layoutContent = simplified
     ? `import { createSimplifiedSetup } from "@intl-party/nextjs";
-import config from "../../../intl-party.config";
+import config from "${hasSrcDir ? "../../" : "../"}intl-party.config";
 
 const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
 
@@ -179,8 +198,8 @@ export default async function RootLayout({
 }`
     : `import { getLocale } from "@intl-party/nextjs/server";
 import { ClientProvider } from "./client-provider";
-import { defaultMessages } from "../../lib/generated/translations.generated";
-import { client } from "../../lib/i18n-setup";
+import { defaultMessages } from "${hasSrcDir ? "../../" : "../"}lib/generated/translations.generated";
+import { client } from "${hasSrcDir ? "../../" : "../"}lib/i18n-setup";
 
 export default async function RootLayout({
   children,
@@ -200,47 +219,53 @@ export default async function RootLayout({
   );
 }`;
 
-  // Create directory structure for layout
-  const appDir = "src/app";
-  if (!existsSync(appDir)) {
-    mkdirSync(appDir, { recursive: true });
-  }
+  writeFileSync(join(appDir, "layout.intl-party.tsx"), layoutContent);
 
-  writeFileSync(join(appDir, "layout.example.tsx"), layoutContent);
-  console.log("✅ Created layout.example.tsx");
-
-  // Create page example
   const pageContent = `import { useSimplifiedTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
   const t = useSimplifiedTranslations("common");
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
       <h1>{t("welcome")}</h1>
       <p>{t("description")}</p>
       
-      <nav>
-        <a href="/">{t("navigation.home")}</a> |{" "}
-        <a href="/about">{t("navigation.about")}</a> |{" "}
+      <nav style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+        <a href="/">{t("navigation.home")}</a>
+        <a href="/about">{t("navigation.about")}</a>
         <a href="/contact">{t("navigation.contact")}</a>
       </nav>
     </div>
   );
 }`;
 
-  writeFileSync(join(appDir, "page.example.tsx"), pageContent);
-  console.log("✅ Created page.example.tsx");
+  writeFileSync(join(appDir, "page.intl-party.tsx"), pageContent);
+  console.log(chalk.green(`✅ Created example files in ${appDir}`));
 
-  console.log("\n🎉 IntlParty initialized successfully!");
+  // Suggest updating .gitignore
+  if (existsSync(".gitignore")) {
+    const gitignore = readFileSync(".gitignore", "utf-8");
+    if (!gitignore.includes(".intl-party")) {
+      console.log(chalk.blue("\n💡 Tip: Add .intl-party/ to your .gitignore"));
+    }
+  }
+
+  // Suggest installing dependency
+  console.log(chalk.blue("\n💡 Tip: Make sure to install the dependency:"));
+  console.log(chalk.white("   npm install @intl-party/nextjs"));
+
+  console.log(chalk.green("\n🎉 IntlParty initialized successfully!"));
   console.log("\n📝 Next steps:");
   console.log("1. Review the generated configuration files");
-  console.log("2. Move the example files from .example.tsx to .tsx");
-  console.log("3. Add translations to your message files");
+  console.log(
+    `2. Move/merge ${appDir}/layout.intl-party.tsx into your RootLayout`
+  );
+  console.log("3. Add translations to your message files in ./messages");
   console.log("4. Run your development server");
 
   if (simplified) {
-    console.log("\n✨ You're using the simplified setup!");
+    console.log(chalk.magenta("\n✨ You're using the simplified setup!"));
     console.log("   - Minimal configuration required");
     console.log("   - Clean URLs without locale prefixes");
     console.log("   - Automatic type generation");

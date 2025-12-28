@@ -82,6 +82,7 @@ jobs:
             echo "no_changes=true" >> $GITHUB_OUTPUT
           else
             echo "no_changes=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create Release Pull Request or Publish
         if: steps.changes.outputs.no_changes != 'true'

@@ -3,6 +3,7 @@ import ora from "ora";
 import { glob } from "glob";
 import fs from "fs-extra";
 import path from "node:path";
+import { loadConfig, CLIConfig } from "../utils/config";
 
 export interface ExtractOptions {
   source?: string[];
@@ -15,11 +16,23 @@ export interface ExtractOptions {
 }
 
 export async function extractCommand(options: ExtractOptions) {
-  const spinner = ora("Extracting translation keys...").start();
+  const spinner = ora("Loading configuration...").start();
+  let config: CLIConfig;
 
   try {
-    const sourcePatterns = options.source || ["src/**/*.{ts,tsx,js,jsx}"];
-    const outputDir = options.output || "./translations";
+    config = await loadConfig(options.config);
+    spinner.succeed("Configuration loaded");
+  } catch (error) {
+    spinner.fail("Failed to load configuration");
+    console.error(chalk.red("Error:"), error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+
+  spinner.start("Extracting translation keys...");
+
+  try {
+    const sourcePatterns = options.source || config.sourcePatterns || ["src/**/*.{ts,tsx,js,jsx}"];
+    const outputDir = options.output || config.outputDir || "./messages";
 
     // Find all source files
     const files = await glob(sourcePatterns);
@@ -46,8 +59,8 @@ export async function extractCommand(options: ExtractOptions) {
       return;
     }
 
-    // Write extracted keys to output files
-    await writeExtractedKeys(Array.from(extractedKeys), outputDir, options);
+    // Write extracted keys to output files for all configured locales
+    await writeExtractedKeys(Array.from(extractedKeys), outputDir, config, options);
 
     console.log(chalk.green(`✓ Translation keys extracted to ${outputDir}`));
   } catch (error) {
@@ -67,6 +80,8 @@ function extractKeysFromContent(content: string): string[] {
   const patterns = [
     /t\(['"`]([^'"`]+)['"`]\)/g, // t('key')
     /useTranslations\(\)\(['"`]([^'"`]+)['"`]\)/g, // useTranslations()('key')
+    /useSimplifiedTranslations\(\)\(['"`]([^'"`]+)['"`]\)/g, // useSimplifiedTranslations()('key')
+    /useSimplifiedTranslations\(['"`]([^'"`]+)['"`]\)\(['"`]([^'"`]+)['"`]\)/g, // useSimplifiedTranslations('ns')('key')
     /i18nKey=['"`]([^'"`]+)['"`]/g, // i18nKey="key"
     /\{\s*t\(['"`]([^'"`]+)['"`]\)\s*\}/g, // { t('key') }
   ];
@@ -74,7 +89,12 @@ function extractKeysFromContent(content: string): string[] {
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(content)) !== null) {
-      keys.push(match[1]);
+      // If there are two capture groups, it's the namespaced version
+      if (match[2]) {
+        keys.push(`${match[1]}.${match[2]}`);
+      } else {
+        keys.push(match[1]);
+      }
     }
   }
 
@@ -84,11 +104,12 @@ function extractKeysFromContent(content: string): string[] {
 async function writeExtractedKeys(
   keys: string[],
   outputDir: string,
+  config: CLIConfig,
   options: ExtractOptions
 ) {
   await fs.ensureDir(outputDir);
 
-  // Group keys by namespace (if they have dot notation)
+  // Group keys by namespace
   const namespaces: Record<string, string[]> = { common: [] };
 
   for (const key of keys) {
@@ -106,30 +127,45 @@ async function writeExtractedKeys(
     }
   }
 
-  // Write files for each namespace
-  for (const [namespace, namespaceKeys] of Object.entries(namespaces)) {
-    if (namespaceKeys.length === 0) continue;
+  // Write files for each locale and namespace
+  const locales = config.locales || ["en"];
 
-    const filePath = path.join(outputDir, "en", `${namespace}.json`);
-    await fs.ensureDir(path.dirname(filePath));
+  for (const locale of locales) {
+    for (const [namespace, namespaceKeys] of Object.entries(namespaces)) {
+      if (namespaceKeys.length === 0) continue;
 
-    let translations: Record<string, string> = {};
+      const filePath = path.join(outputDir, locale, `${namespace}.json`);
+      await fs.ensureDir(path.dirname(filePath));
 
-    if (options.update && (await fs.pathExists(filePath))) {
-      try {
-        translations = await fs.readJson(filePath);
-      } catch {
-        // Ignore read errors, start fresh
+      let translations: Record<string, string> = {};
+
+      if ((options.update || locale !== config.defaultLocale) && (await fs.pathExists(filePath))) {
+        try {
+          translations = await fs.readJson(filePath);
+        } catch {
+          // Ignore read errors, start fresh
+        }
       }
-    }
 
-    // Add new keys
-    for (const key of namespaceKeys) {
-      if (!translations[key]) {
-        translations[key] = key; // Use key as default value
+      // Add new keys
+      for (const key of namespaceKeys) {
+        if (!translations[key]) {
+          translations[key] = locale === config.defaultLocale ? key : ""; // Use key as default value only for default locale
+        }
       }
-    }
 
-    await fs.writeJson(filePath, translations, { spaces: 2 });
+      // Sort keys if configured
+      if (config.extraction?.sortKeys !== false) {
+        const sortedTranslations: Record<string, string> = {};
+        Object.keys(translations)
+          .sort()
+          .forEach((k) => {
+            sortedTranslations[k] = translations[k];
+          });
+        translations = sortedTranslations;
+      }
+
+      await fs.writeJson(filePath, translations, { spaces: 2 });
+    }
   }
 }

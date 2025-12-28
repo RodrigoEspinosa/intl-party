@@ -176,11 +176,8 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
   return config;
 }
 
-function mergeConfig(
-  defaultConfig: CLIConfig,
-  userConfig: Partial<CLIConfig>
-): CLIConfig {
-  return {
+function mergeConfig(defaultConfig: CLIConfig, userConfig: any): CLIConfig {
+  const merged = {
     ...defaultConfig,
     ...userConfig,
     validation: {
@@ -200,6 +197,19 @@ function mergeConfig(
       ...userConfig.translationPaths,
     },
   };
+
+  // Support simplified config aliases
+  if (userConfig.messages && !userConfig.outputDir) {
+    merged.outputDir = userConfig.messages;
+  }
+
+  if (userConfig.sourceDir && !userConfig.sourcePatterns) {
+    merged.sourcePatterns = [
+      path.join(userConfig.sourceDir, "**/*.{ts,tsx,js,jsx}"),
+    ];
+  }
+
+  return merged;
 }
 
 export async function saveConfig(
