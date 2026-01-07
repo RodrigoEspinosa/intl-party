@@ -14,6 +14,9 @@ describe("I18n", () => {
       detection: {
         strategies: [],
       },
+      validation: {
+        logMissing: false,
+      },
     };
   });
 
@@ -45,7 +48,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setLocale("de")).toThrow(
-        'Locale "de" is not supported',
+        'Locale "de" is not supported'
       );
     });
 
@@ -78,7 +81,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setNamespace("invalid")).toThrow(
-        'Namespace "invalid" is not supported',
+        'Namespace "invalid" is not supported'
       );
     });
   });

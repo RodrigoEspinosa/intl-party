@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
+  "globalPassThroughEnv": ["VITE_CJS_IGNORE_WARNING"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

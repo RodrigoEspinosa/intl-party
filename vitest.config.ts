@@ -1,6 +1,8 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
 
+process.env.VITE_CJS_IGNORE_WARNING = "true";
+
 export default defineConfig({
   test: {
     globals: true,

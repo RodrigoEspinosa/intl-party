@@ -332,6 +332,179 @@ npx intl-party validate
 | **Hot Reloading**        | ✅ Built-in | ⚠️ Manual  | ❌ None             |
 | **Learning Curve**       | 🟢 Easy     | 🟡 Medium  | 🔴 Hard             |
 
+Want to migrate from another i18n library? Check our detailed [Migration Guide](./MIGRATING.md) for step-by-step instructions on migrating from next-intl, react-i18next, FormatJS (react-intl), and lingui.
+
+## 🔧 Troubleshooting Guide
+
+### Common Issues
+
+#### Missing Translations
+
+**Symptom**: Seeing translation keys instead of translated text (`common.welcome` instead of "Welcome").
+
+**Solutions**:
+
+1. Ensure the correct namespace is being used: `useSimplifiedTranslations("common")`
+2. Check that the translation file exists in your locale directory (e.g., `/messages/en/common.json`)
+3. Verify the key exists in your translation file with exact spelling and casing
+4. Run `npx intl-party check --missing` to identify all missing translations
+
+#### Type Generation Issues
+
+**Symptom**: TypeScript errors or missing type completion for translation keys.
+
+**Solutions**:
+
+1. Run `npx intl-party generate --types` to regenerate type definitions
+2. Check that your `tsconfig.json` includes the generated files
+3. Restart your TypeScript server (`Ctrl+Shift+P` → "TypeScript: Restart TS Server" in VSCode)
+4. Verify that the key exists in your translation files
+
+#### Locale Detection Not Working
+
+**Symptom**: App always shows default locale regardless of browser settings or URL.
+
+**Solutions**:
+
+1. Ensure `middleware.ts` is correctly set up and exported
+2. Check that your `next.config.js` doesn't override the i18n configuration
+3. Clear browser cookies and try again
+4. Test with query parameter override: `?locale=fr`
+5. Check server logs for middleware execution errors
+
+#### Hot Reloading Not Working
+
+**Symptom**: Changes to translation files don't appear immediately.
+
+**Solutions**:
+
+1. Ensure you're in development mode (`npm run dev`)
+2. Check that your `next.config.js` includes the IntlParty plugin
+3. Restart the development server
+4. Run with watch mode explicitly: `npx intl-party generate --watch`
+
+#### Next.js App Router SSR Issues
+
+**Symptom**: Server components show different translations than client components.
+
+**Solutions**:
+
+1. Ensure you're using `getServerTranslations` for server components
+2. Check that your `Provider` in `layout.tsx` correctly passes `initialMessages`
+3. Verify locale detection consistency between server and client
+4. Use the `debug` option in configuration to log i18n state: `debug: process.env.NODE_ENV !== 'production'`
+
+#### URL Prefix Configuration
+
+**Symptom**: URL prefixes not working as expected (`/en/about` vs `/about`).
+
+**Solutions**:
+
+1. Check your `localePrefix` setting in `intl-party.config.ts`:
+   - `"never"` - No prefixes, uses cookies (default)
+   - `"as-needed"` - Only non-default locales have prefix
+   - `"always"` - All locales have prefix
+2. Update `middleware.ts` if you changed the configuration
+3. Clear cookies and refresh
+
+### Debugging
+
+#### Enable Debug Mode
+
+Add debug mode to your configuration:
+
+```typescript
+// intl-party.config.ts
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  debug: process.env.NODE_ENV !== "production",
+  // ...other settings
+};
+```
+
+#### Inspect Generated Files
+
+Generated files are located at:
+
+- Type definitions: `node_modules/.intl-party/types`
+- Client package: `node_modules/@intl-party/client/generated`
+
+#### CLI Diagnostics
+
+```bash
+# Validate configuration
+npx intl-party check-config
+
+# Check for missing translations
+npx intl-party check --missing
+
+# Validate translation format
+npx intl-party check --format-errors
+
+# Get verbose output
+npx intl-party check --verbose
+```
+
+### Specific Package Issues
+
+#### Next.js Integration
+
+**Issue**: Middleware conflicts with other middleware
+
+**Solution**: Use the matcher option in `middleware.ts` to limit scope:
+
+```typescript
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+#### ESLint Plugin
+
+**Issue**: False positives for hardcoded strings
+
+**Solution**: Add patterns to ignore in your `.eslintrc.js`:
+
+```javascript
+{
+  "rules": {
+    "@intl-party/no-hardcoded-strings": ["error", {
+      "ignorePatterns": [
+        "^\\d+$", // Numbers
+        "^[A-Z_]+$", // Constants
+        "^https?://", // URLs
+      ]
+    }]
+  }
+}
+```
+
+#### React Integration
+
+**Issue**: Component re-renders on every locale change
+
+**Solution**: Use memoization:
+
+```jsx
+import { useTranslations, useLocale } from "@intl-party/react";
+import { memo } from "react";
+
+const MyComponent = memo(function MyComponent() {
+  const t = useTranslations("common");
+  return <div>{t("title")}</div>;
+});
+```
+
+### Getting Help
+
+If you can't solve your issue with this guide:
+
+1. Check existing [GitHub issues](https://github.com/intl-party/intl-party/issues)
+2. Search the documentation for your specific error
+3. Create a minimal reproduction in a new project
+4. Open a detailed issue with steps to reproduce
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.

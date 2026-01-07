@@ -55,7 +55,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         translations,
         ["en", "es"],
-        ["common", "auth"],
+        ["common", "auth"]
       );
 
       expect(result.valid).toBe(true);
@@ -71,7 +71,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         incompleteTranslations,
         ["en", "es"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
@@ -80,7 +80,7 @@ describe("TranslationValidator", () => {
           type: "missing_namespace",
           locale: "es",
           message: "Missing locale: es",
-        }),
+        })
       );
     });
 
@@ -96,7 +96,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         incompleteTranslations,
         ["en", "es"],
-        ["common", "auth"],
+        ["common", "auth"]
       );
 
       expect(result.valid).toBe(false);
@@ -106,7 +106,7 @@ describe("TranslationValidator", () => {
           locale: "en",
           namespace: "auth",
           message: 'Missing namespace "auth" for locale "en"',
-        }),
+        })
       );
     });
 
@@ -125,14 +125,14 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         incompleteTranslations,
         ["en", "es"],
-        ["common", "auth"],
+        ["common", "auth"]
       );
 
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
 
       const missingKeyErrors = result.errors.filter(
-        (error) => error.type === "missing_key",
+        (error) => error.type === "missing_key"
       );
       expect(missingKeyErrors.length).toBeGreaterThan(0);
     });
@@ -151,7 +151,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         invalidTranslations,
         ["en"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
@@ -160,7 +160,7 @@ describe("TranslationValidator", () => {
           type: "invalid_format",
           key: "invalid",
           message: expect.stringContaining("Unmatched interpolation brackets"),
-        }),
+        })
       );
     });
 
@@ -176,7 +176,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         invalidTranslations,
         ["en"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
@@ -185,7 +185,7 @@ describe("TranslationValidator", () => {
           type: "invalid_format",
           key: "invalid",
           message: expect.stringContaining("Invalid interpolation syntax"),
-        }),
+        })
       );
     });
 
@@ -206,7 +206,7 @@ describe("TranslationValidator", () => {
           type: "long_text",
           key: "veryLong",
           message: expect.stringContaining("very long"),
-        }),
+        })
       );
     });
 
@@ -226,7 +226,7 @@ describe("TranslationValidator", () => {
           type: "inconsistent_format",
           key: "withHtml",
           message: expect.stringContaining("HTML markup"),
-        }),
+        })
       );
     });
   });
@@ -246,7 +246,7 @@ describe("TranslationValidator", () => {
       const result = validator.validate(
         circularTranslations,
         ["en"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
@@ -254,7 +254,7 @@ describe("TranslationValidator", () => {
         expect.objectContaining({
           type: "circular_reference",
           message: expect.stringContaining("Circular reference detected"),
-        }),
+        })
       );
     });
   });
@@ -284,7 +284,7 @@ describe("TranslationValidator", () => {
       loggingValidator.validate(
         incompleteTranslations,
         ["en", "es"],
-        ["common"],
+        ["common"]
       );
 
       expect(consoleGroupSpy).toHaveBeenCalled();
@@ -299,6 +299,7 @@ describe("TranslationValidator", () => {
     it("should throw error when throwOnMissing is enabled", () => {
       const throwingValidator = createValidator({
         throwOnMissing: true,
+        logMissing: false,
       });
 
       const incompleteTranslations = {
@@ -310,7 +311,7 @@ describe("TranslationValidator", () => {
         throwingValidator.validate(
           incompleteTranslations,
           ["en", "es"],
-          ["common"],
+          ["common"]
         );
       }).toThrow("Translation validation failed");
     });
@@ -331,11 +332,11 @@ describe("TranslationValidator", () => {
       const result = noFormatValidator.validate(
         invalidTranslations,
         ["en"],
-        ["common"],
+        ["common"]
       );
 
       const formatErrors = result.errors.filter(
-        (error) => error.type === "invalid_format",
+        (error) => error.type === "invalid_format"
       );
       expect(formatErrors).toHaveLength(0);
     });
@@ -347,7 +348,7 @@ describe("TranslationValidator", () => {
         translations,
         "en", // base locale
         ["es"], // target locales
-        ["common", "auth"],
+        ["common", "auth"]
       );
 
       expect(result.valid).toBe(true);
@@ -364,7 +365,7 @@ describe("TranslationValidator", () => {
         translationsWithoutBase,
         "en",
         ["es"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
@@ -373,7 +374,7 @@ describe("TranslationValidator", () => {
           type: "missing_namespace",
           locale: "en",
           message: 'Base locale "en" not found',
-        }),
+        })
       );
     });
 
@@ -393,12 +394,12 @@ describe("TranslationValidator", () => {
         incompleteTarget,
         "en",
         ["es"],
-        ["common"],
+        ["common"]
       );
 
       expect(result.valid).toBe(false);
       const missingKeyErrors = result.errors.filter(
-        (error) => error.type === "missing_key",
+        (error) => error.type === "missing_key"
       );
       expect(missingKeyErrors.length).toBeGreaterThan(0);
     });
@@ -410,7 +411,7 @@ describe("TranslationValidator", () => {
         translations,
         ["en", "es"],
         ["common", "auth"],
-        { strict: false },
+        { strict: false }
       );
 
       expect(result.valid).toBe(true);

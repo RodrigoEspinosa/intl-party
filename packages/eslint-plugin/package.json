@@ -26,6 +26,10 @@
   ],
   "author": "IntlParty Team",
   "license": "MIT",
+  "homepage": "https://github.com/intl-party/intl-party#readme",
+  "bugs": {
+    "url": "https://github.com/intl-party/intl-party/issues"
+  },
   "dependencies": {
     "@typescript-eslint/utils": "^6.15.0",
     "fs-extra": "^11.2.0"
@@ -49,5 +53,8 @@
     "type": "git",
     "url": "https://github.com/intl-party/intl-party.git",
     "directory": "packages/eslint-plugin"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

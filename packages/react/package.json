@@ -35,6 +35,10 @@
   ],
   "author": "IntlParty Team",
   "license": "MIT",
+  "homepage": "https://github.com/intl-party/intl-party#readme",
+  "bugs": {
+    "url": "https://github.com/intl-party/intl-party/issues"
+  },
   "dependencies": {
     "@intl-party/core": "workspace:*"
   },
@@ -60,5 +64,9 @@
     "type": "git",
     "url": "https://github.com/intl-party/intl-party.git",
     "directory": "packages/react"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
+}
 }

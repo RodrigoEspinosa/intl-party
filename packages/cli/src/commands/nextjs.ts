@@ -5,19 +5,16 @@ import { existsSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import chalk from "chalk";
 
-export const nextjsCommand = new Command("nextjs")
-  .description("Next.js specific commands for IntlParty")
-  .option("--init", "Initialize IntlParty in a Next.js project")
-  .option("--simplified", "Use simplified setup (recommended)")
-  .action(async (options) => {
-    if (options.init) {
-      await initializeNextjsProject(options.simplified);
-    } else {
-      console.log("Please specify an action. Use --init to initialize.");
-    }
-  });
+export interface NextjsCommandOptions {
+  init?: boolean;
+  simplified?: boolean;
+  force?: boolean;
+}
 
-async function initializeNextjsProject(simplified = false) {
+export async function initializeNextjsProject(
+  simplified = false,
+  force = false,
+) {
   console.log(chalk.cyan("🚀 Initializing IntlParty for Next.js..."));
 
   // Check if it's already initialized
@@ -113,7 +110,7 @@ export default {
 
     writeFileSync(
       join(localeDir, "common.json"),
-      JSON.stringify(messages, null, 2)
+      JSON.stringify(messages, null, 2),
     );
   });
 
@@ -162,8 +159,8 @@ module.exports = createNextConfigWithIntl(
     writeFileSync(nextConfigIntlPath, nextConfigContent);
     console.log(
       chalk.green(
-        `✅ Created ${nextConfigIntlPath} (merge with your next.config.js)`
-      )
+        `✅ Created ${nextConfigIntlPath} (merge with your next.config.js)`,
+      ),
     );
   }
 
@@ -259,7 +256,7 @@ export default function HomePage() {
   console.log("\n📝 Next steps:");
   console.log("1. Review the generated configuration files");
   console.log(
-    `2. Move/merge ${appDir}/layout.intl-party.tsx into your RootLayout`
+    `2. Move/merge ${appDir}/layout.intl-party.tsx into your RootLayout`,
   );
   console.log("3. Add translations to your message files in ./messages");
   console.log("4. Run your development server");
@@ -272,4 +269,19 @@ export default function HomePage() {
   }
 
   console.log(`\n📚 For more information, visit: https://intl-party.ai/docs`);
+
+  return true;
 }
+
+export const nextjsCommand = new Command("nextjs")
+  .description("Next.js specific commands for IntlParty")
+  .option("--init", "Initialize IntlParty in a Next.js project")
+  .option("--simplified", "Use simplified setup (recommended)")
+  .option("--force", "Force overwrite existing files")
+  .action(async (options: NextjsCommandOptions) => {
+    if (options.init) {
+      await initializeNextjsProject(options.simplified, options.force);
+    } else {
+      console.log("Please specify an action. Use --init to initialize.");
+    }
+  });
