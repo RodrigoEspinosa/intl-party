@@ -1,0 +1,11 @@
+{
+  "summary": "Improve test coverage and fix JSON format issues",
+  "releases": [
+    { "name": "@intl-party/cli", "type": "minor" },
+    { "name": "@intl-party/core", "type": "minor" },
+    { "name": "@intl-party/eslint-plugin", "type": "minor" },
+    { "name": "@intl-party/nextjs", "type": "minor" },
+    { "name": "@intl-party/react", "type": "minor" },
+    { "name": "@intl-party/client", "type": "minor" }
+  ]
+}
