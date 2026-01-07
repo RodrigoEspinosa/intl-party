@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generated client for IntlParty - type-safe translations and runtime utilities",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
