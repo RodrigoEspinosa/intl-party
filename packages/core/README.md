@@ -193,7 +193,7 @@ const i18n = createI18n({
 });
 ```
 
-### Interpolation
+### Interpolation (Legacy Format)
 
 ```typescript
 const i18n = createI18n({
@@ -210,6 +210,69 @@ i18n.addTranslations("en", "common", {
 i18n.t("greeting", { interpolation: { name: "John", count: 5 } });
 // "Hello John! You have 5 messages."
 ```
+
+### ICU MessageFormat
+
+For advanced pluralization, gender selection, and locale-specific formatting, IntlParty supports [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/):
+
+```bash
+# Install the optional dependency
+npm install intl-messageformat
+```
+
+```typescript
+i18n.addTranslations("en", "common", {
+  // ICU plural
+  items: "{count, plural, one {# item} other {# items}}",
+  // ICU select
+  pronoun: "{gender, select, male {He} female {She} other {They}}",
+  // Simple ICU argument
+  welcome: "Hello {name}!",
+});
+
+// Usage
+i18n.t("items", { count: 1 }); // "1 item"
+i18n.t("items", { count: 5 }); // "5 items"
+i18n.t("pronoun", { interpolation: { gender: "female" } }); // "She"
+i18n.t("welcome", { interpolation: { name: "World" } }); // "Hello World!"
+```
+
+#### Locale-Specific Plural Rules
+
+ICU MessageFormat automatically uses the correct plural rules for each locale:
+
+```typescript
+// Russian has complex plural rules (one, few, many, other)
+i18n.addTranslations("ru", "common", {
+  items: "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}",
+});
+
+i18n.setLocale("ru");
+i18n.t("items", { count: 1 });  // "1 товар"
+i18n.t("items", { count: 2 });  // "2 товара"
+i18n.t("items", { count: 5 });  // "5 товаров"
+i18n.t("items", { count: 21 }); // "21 товар"
+```
+
+#### Format Detection
+
+IntlParty automatically detects which format each message uses:
+
+```typescript
+import { isICUFormat, isLegacyFormat, detectMessageFormat } from "@intl-party/core";
+
+isICUFormat("{count, plural, one {#} other {#}}"); // true
+isICUFormat("Hello {{name}}!");                    // false
+
+isLegacyFormat("Hello {{name}}!");                 // true
+isLegacyFormat("{count, plural, one {#} other {#}}"); // false
+
+detectMessageFormat("{count, plural, ...}"); // "icu"
+detectMessageFormat("Hello {{name}}!");      // "legacy"
+detectMessageFormat("Hello world!");         // "plain"
+```
+
+Both formats can coexist in the same project - use whichever is appropriate for each message.
 
 ### Validation
 

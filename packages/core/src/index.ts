@@ -27,6 +27,7 @@ export type {
   LocaleInfo,
   FormatOptions,
   DeepKeyOf,
+  MessageFormatConfig,
 } from "./types";
 
 // Import for internal use
@@ -40,6 +41,18 @@ export {
   flattenTranslations,
   unflattenTranslations,
 } from "./utils/translation";
+
+// ICU MessageFormat utilities
+export {
+  isICUFormat,
+  isLegacyFormat,
+  detectMessageFormat,
+  formatICUMessage,
+  isICULibraryAvailable,
+  clearICUCache,
+  getICUCacheStats,
+  DEFAULT_MESSAGE_FORMAT_CONFIG,
+} from "./utils/icu-formatter";
 
 // Detection
 export {

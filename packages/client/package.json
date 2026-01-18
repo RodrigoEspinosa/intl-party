@@ -61,7 +61,13 @@
   },
   "peerDependencies": {
     "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react-dom": ">=16.8.0",
+    "intl-messageformat": ">=10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "intl-messageformat": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",

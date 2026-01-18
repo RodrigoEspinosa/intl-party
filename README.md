@@ -133,7 +133,11 @@ const {
 
 ## 🌐 Translation Files
 
-Translation files are simple JSON:
+Translation files are simple JSON. IntlParty supports two message formats:
+
+### Legacy Format (Simple)
+
+The default `{{variable}}` syntax for basic interpolation and pluralization:
 
 ```json
 // messages/en/common.json
@@ -145,21 +149,45 @@ Translation files are simple JSON:
     "about": "About",
     "contact": "Contact"
   },
-  "greeting": "Hello {{name}}!"
+  "greeting": "Hello {{name}}!",
+  "items": "{{count|item|items}}"
+}
+```
+
+### ICU MessageFormat (Advanced)
+
+For complex pluralization, gender selection, and locale-specific formatting, use [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/):
+
+```json
+// messages/en/common.json
+{
+  "itemCount": "{count, plural, one {# item} other {# items}}",
+  "greeting": "{gender, select, male {He} female {She} other {They}} liked your post",
+  "welcome": "Hello {name}!"
 }
 ```
 
 ```json
-// messages/es/common.json
+// messages/ru/common.json (Russian with complex plural rules)
+{
+  "itemCount": "{count, plural, one {# товар} few {# товара} many {# товаров} other {# товара}}"
+}
+```
+
+To use ICU MessageFormat, install the optional dependency:
+
+```bash
+npm install intl-messageformat
+```
+
+**Auto-detection**: IntlParty automatically detects which format each message uses. You can mix both formats in the same project - legacy `{{variable}}` and ICU `{variable, type}` patterns coexist seamlessly.
+
+```json
+// messages/es/common.json (both formats work together)
 {
   "welcome": "¡Bienvenido a IntlParty!",
-  "description": "Una solución i18n moderna para Next.js",
-  "navigation": {
-    "home": "Inicio",
-    "about": "Acerca de",
-    "contact": "Contacto"
-  },
-  "greeting": "¡Hola {{name}}!"
+  "greeting": "¡Hola {{name}}!",
+  "itemCount": "{count, plural, one {# artículo} other {# artículos}}"
 }
 ```
 

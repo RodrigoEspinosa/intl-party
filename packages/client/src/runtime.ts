@@ -4,9 +4,14 @@ import type {
   TranslationValue,
   Translations,
 } from "@intl-party/core";
+import {
+  isICUFormat,
+  formatICUMessage,
+} from "@intl-party/core";
 
 /**
- * Creates a type-safe translation function for a specific locale
+ * Creates a type-safe translation function for a specific locale.
+ * Supports both ICU MessageFormat and legacy {{variable}} format.
  */
 export function createTranslationFunction(
   locale: Locale,
@@ -36,10 +41,17 @@ export function createTranslationFunction(
       return key;
     }
 
-    // Simple interpolation (can be enhanced with more sophisticated templating)
+    // Check if this is an ICU format message
+    if (isICUFormat(value)) {
+      // Build ICU values from options
+      const icuValues: Record<string, TranslationValue> = { ...options };
+      return formatICUMessage(value, locale, icuValues);
+    }
+
+    // Legacy format: simple interpolation with {{variable}}
     if (options) {
       return value.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-        return options[key] || match;
+        return options[key] !== undefined ? String(options[key]) : match;
       });
     }
 

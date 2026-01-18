@@ -196,3 +196,16 @@ export interface TypedI18nInstance<
 > extends Omit<I18nInstance, "t"> {
   t: TypedTranslationFunction<T>;
 }
+
+/**
+ * Configuration for message format handling.
+ * Controls which message formats are enabled.
+ */
+export interface MessageFormatConfig {
+  /** Enable ICU MessageFormat support (default: true) */
+  icu?: boolean;
+  /** Enable legacy {{variable}} format support (default: true) */
+  legacy?: boolean;
+  /** Maximum cache size for compiled ICU messages (default: 500) */
+  cacheSize?: number;
+}
