@@ -36,3 +36,4 @@ coverage/
 # Cache
 .eslintcache
 .parcel-cache/
+*.tsbuildinfo

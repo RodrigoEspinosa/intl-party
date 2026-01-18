@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslations, useLocale } from "@intl-party/react";
+import { useTranslations } from "@intl-party/react";
 import LocaleSelector from "./components/LocaleSelector";
 import Home from "./pages/Home";
 import About from "./pages/About";
