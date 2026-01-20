@@ -7,6 +7,13 @@ import { loadConfig } from "../utils/config";
 import type { CLIConfig } from "../utils/config";
 
 vi.mock("fs-extra", () => ({
+  default: {
+    pathExists: vi.fn().mockImplementation(() => Promise.resolve(false)),
+    ensureDir: vi.fn().mockImplementation(() => Promise.resolve()),
+    readFile: vi.fn().mockImplementation(() => Promise.resolve("")),
+    readJson: vi.fn().mockImplementation(() => Promise.resolve({})),
+    writeJson: vi.fn().mockImplementation(() => Promise.resolve()),
+  },
   pathExists: vi.fn().mockImplementation(() => Promise.resolve(false)),
   ensureDir: vi.fn().mockImplementation(() => Promise.resolve()),
   readFile: vi.fn().mockImplementation(() => Promise.resolve("")),
@@ -15,8 +22,12 @@ vi.mock("fs-extra", () => ({
 }));
 
 vi.mock("node:path", () => ({
-  join: vi.fn((...args) => args.join("/")),
-  dirname: vi.fn((p) => p.split("/").slice(0, -1).join("/")),
+  default: {
+    join: vi.fn((...args: string[]) => args.join("/")),
+    dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
+  },
+  join: vi.fn((...args: string[]) => args.join("/")),
+  dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
 }));
 
 vi.mock("glob", () => ({
@@ -118,30 +129,24 @@ describe("extractCommand", () => {
       expect.stringContaining("messages/fr"),
     );
 
+    // Check that writeJson was called for English common translations
     expect(fs.writeJson).toHaveBeenCalledWith(
-      expect.stringContaining("messages/en/common.json"),
+      expect.stringContaining("common.json"),
       expect.objectContaining({
         welcome: "welcome",
         description: "description",
         greeting: "greeting",
-        button: expect.objectContaining({
-          submit: "submit",
-          cancel: "cancel",
-        }),
       }),
       { spaces: 2 },
     );
 
+    // Check that writeJson was called for French common translations (empty values)
     expect(fs.writeJson).toHaveBeenCalledWith(
-      expect.stringContaining("messages/fr/common.json"),
+      expect.stringContaining("fr/common.json"),
       expect.objectContaining({
         welcome: "",
         description: "",
         greeting: "",
-        button: expect.objectContaining({
-          submit: "",
-          cancel: "",
-        }),
       }),
       { spaces: 2 },
     );

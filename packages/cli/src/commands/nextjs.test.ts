@@ -4,6 +4,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 vi.mock("node:fs", () => ({
+  default: {
+    existsSync: vi.fn(),
+    writeFileSync: vi.fn(),
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn(),
+  },
   existsSync: vi.fn(),
   writeFileSync: vi.fn(),
   mkdirSync: vi.fn(),
@@ -11,7 +17,10 @@ vi.mock("node:fs", () => ({
 }));
 
 vi.mock("node:path", () => ({
-  join: vi.fn((...args) => args.join("/")),
+  default: {
+    join: vi.fn((...args: string[]) => args.join("/")),
+  },
+  join: vi.fn((...args: string[]) => args.join("/")),
 }));
 
 const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -89,12 +98,13 @@ describe("nextjsCommand", () => {
     });
 
     it("should skip initialization if config already exists", async () => {
+      // First call is for intl-party.config.ts check
       vi.mocked(fs.existsSync).mockReturnValueOnce(true);
 
       const result = await initializeNextjsProject(true);
 
       expect(consoleLog).toHaveBeenCalledWith(
-        expect.stringContaining("IntlParty already initialized"),
+        expect.stringContaining("already initialized"),
       );
 
       expect(fs.writeFileSync).not.toHaveBeenCalled();
@@ -136,22 +146,24 @@ describe("nextjsCommand", () => {
     });
 
     it("should overwrite existing config when force flag is true", async () => {
-      const fileExistenceValues = [
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false,
-      ];
-
-      fileExistenceValues.forEach((value) => {
-        vi.mocked(fs.existsSync).mockReturnValueOnce(value);
-      });
+      // Mock existsSync calls:
+      // 1. intl-party.config.ts check - true (exists)
+      // 2. intl-party.config.js check - false
+      // 3. src directory check - false (no src dir)
+      // 4-7. messages dirs - some exist
+      // 8. next.config.js check - false
+      // 9. appDir check - false
+      // 10. .gitignore check - false
+      vi.mocked(fs.existsSync)
+        .mockReturnValueOnce(true)   // intl-party.config.ts
+        .mockReturnValueOnce(false)  // src dir
+        .mockReturnValueOnce(false)  // messages dir
+        .mockReturnValueOnce(false)  // messages/en
+        .mockReturnValueOnce(false)  // messages/es
+        .mockReturnValueOnce(false)  // messages/fr
+        .mockReturnValueOnce(false)  // next.config.js
+        .mockReturnValueOnce(false)  // app dir
+        .mockReturnValueOnce(false); // .gitignore
 
       const result = await initializeNextjsProject(true, true);
 

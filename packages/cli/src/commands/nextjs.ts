@@ -22,8 +22,11 @@ export async function initializeNextjsProject(
     existsSync("intl-party.config.ts") ||
     existsSync("intl-party.config.js")
   ) {
-    console.log(chalk.yellow("⚠️  IntlParty already initialized!"));
-    return;
+    if (!force) {
+      console.log(chalk.yellow("⚠️  IntlParty already initialized!"));
+      return true;
+    }
+    console.log(chalk.yellow("⚠️  Force flag set, overwriting existing files..."));
   }
 
   // Detect src directory
