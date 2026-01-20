@@ -77,9 +77,10 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
           const content = await fs.readFile(configFile, "utf-8");
           config = JSON.parse(content);
         } else {
-          // For JS/TS files, we'd need to use dynamic import or require
-          // For now, let's handle JSON configs
+          // For JS/TS files, we need dynamic require to load config at runtime
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           delete require.cache[path.resolve(configFile)];
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           config = require(path.resolve(configFile));
 
           // Handle ES modules
