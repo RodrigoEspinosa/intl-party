@@ -1,8 +1,7 @@
-import path from "path";
-import { ESLintUtils } from "@typescript-eslint/utils";
+import { RuleTester } from "@typescript-eslint/rule-tester";
 import { noHardcodedStrings } from "./no-hardcoded-strings";
 
-const ruleTester = new ESLintUtils.RuleTester({
+const ruleTester = new RuleTester({
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: 2020,
@@ -17,13 +16,7 @@ ruleTester.run("no-hardcoded-strings", noHardcodedStrings, {
   valid: [
     { code: `function Component() { return <div>{t('greeting')}</div>; }` },
     { code: `function Component() { return <div>Hi</div>; }` },
-    {
-      code: `function Component() { return <a href="https://example.com">Link</a>; }`,
-    },
     { code: `function Component() { return <div>CONSTANT_VALUE</div>; }` },
-    {
-      code: `function Component() { return <div style={{ width: '100px' }}>Content</div>; }`,
-    },
     { code: `function Component() { return <div>div</div>; }` },
     {
       code: `function Component() { return <div>Allowed String</div>; }`,
@@ -33,15 +26,27 @@ ruleTester.run("no-hardcoded-strings", noHardcodedStrings, {
       code: `function Component() { return <div>IGNORE-123</div>; }`,
       options: [{ ignorePattern: "^IGNORE-\\d+$" }],
     },
-    {
-      code: `function Component() { return <div className="some-class">Content</div>; }`,
-    },
   ],
   invalid: [
     {
       code: `function Component() { return <div>Hello world</div>; }`,
       errors: [{ messageId: "hardcodedString" }],
       output: `function Component() { return <div>{t('hello_world')}</div>; }`,
+    },
+    {
+      code: `function Component() { return <a href="https://example.com">Link</a>; }`,
+      errors: [{ messageId: "hardcodedString" }],
+      output: `function Component() { return <a href="https://example.com">{t('link')}</a>; }`,
+    },
+    {
+      code: `function Component() { return <div style={{ width: '100px' }}>Content</div>; }`,
+      errors: [{ messageId: "hardcodedString" }],
+      output: `function Component() { return <div style={{ width: '100px' }}>{t('content')}</div>; }`,
+    },
+    {
+      code: `function Component() { return <div className="some-class">Content</div>; }`,
+      errors: [{ messageId: "hardcodedString" }],
+      output: `function Component() { return <div className="some-class">{t('content')}</div>; }`,
     },
     {
       code: `function Component() { return <input placeholder="Enter your name" />; }`,
@@ -51,8 +56,11 @@ ruleTester.run("no-hardcoded-strings", noHardcodedStrings, {
     {
       code: `function Component() { return <div data-tooltip="Click me">Content</div>; }`,
       options: [{ attributes: ["data-tooltip"] }],
-      errors: [{ messageId: "hardcodedStringInAttribute" }],
-      output: `function Component() { return <div data-tooltip={t('click_me')}>Content</div>; }`,
+      errors: [
+        { messageId: "hardcodedStringInAttribute" },
+        { messageId: "hardcodedString" },
+      ],
+      output: `function Component() { return <div data-tooltip={t('click_me')}>{t('content')}</div>; }`,
     },
     {
       code: `
@@ -72,6 +80,17 @@ ruleTester.run("no-hardcoded-strings", noHardcodedStrings, {
         { messageId: "hardcodedStringInAttribute" },
         { messageId: "hardcodedString" },
       ],
+      output: `
+        function Component() {
+          return (
+            <div>
+              <h1>{t('welcome_to_our_app')}</h1>
+              <p>{t('this_is_a_description')}</p>
+              <button aria-label={t('close_dialog')}>{t('close')}</button>
+            </div>
+          );
+        }
+      `,
     },
     {
       code: `function Component() { return <div>Hi</div>; }`,
