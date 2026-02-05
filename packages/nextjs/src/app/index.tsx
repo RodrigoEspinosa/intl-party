@@ -1,6 +1,7 @@
+"use client";
+
 import React from "react";
 import {
-  I18n,
   createI18n,
   type I18nConfig,
   type Locale,
@@ -27,8 +28,6 @@ export interface AppI18nProviderProps
   /** Enable client-side locale switching without URL changes */
   enableClientSideRouting?: boolean;
 }
-
-("use client");
 
 export function AppI18nProvider({
   locale,

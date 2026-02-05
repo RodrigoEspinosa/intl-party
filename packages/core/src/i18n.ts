@@ -59,7 +59,7 @@ export class I18n implements I18nInstance {
   private currentNamespace: Namespace;
 
   /** Event listener registry for I18n events */
-  private eventListeners: Map<string, Set<Function>> = new Map();
+  private eventListeners: Map<string, Set<(data: unknown) => void>> = new Map();
 
   /**
    * Creates a new I18n instance with the provided configuration.
@@ -450,7 +450,7 @@ export class I18n implements I18nInstance {
    * });
    * ```
    */
-  on(event: string, listener: Function): void {
+  on(event: string, listener: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
@@ -475,7 +475,7 @@ export class I18n implements I18nInstance {
    * i18n.off("localeChange", onLocaleChange);
    * ```
    */
-  off(event: string, listener: Function): void {
+  off(event: string, listener: (data: unknown) => void): void {
     this.eventListeners.get(event)?.delete(listener);
   }
 

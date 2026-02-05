@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import path from "node:path";
+import crypto from "crypto";
 import chalk from "chalk";
 import ora from "ora";
 import { watch } from "chokidar";
@@ -632,7 +633,6 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
 }
 
 function generateCacheHash(data: MessageData): string {
-  const crypto = require("crypto");
   const content = JSON.stringify({
     locales: data.locales.sort(),
     namespaces: data.namespaces.sort(),

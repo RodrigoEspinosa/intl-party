@@ -7,6 +7,15 @@ import type { CLIConfig } from "../utils/config";
 import { loadTranslations } from "../utils/translations";
 
 vi.mock("fs-extra", () => ({
+  default: {
+    pathExists: vi.fn(() => Promise.resolve(false)),
+    readdir: vi.fn(() => Promise.resolve([])),
+    readFile: vi.fn(() => Promise.resolve("")),
+    writeFile: vi.fn(() => Promise.resolve()),
+    ensureDir: vi.fn(() => Promise.resolve()),
+    stat: vi.fn(() => Promise.resolve({ isDirectory: () => true })),
+    readJson: vi.fn(() => Promise.resolve({})),
+  },
   pathExists: vi.fn(() => Promise.resolve(false)),
   readdir: vi.fn(() => Promise.resolve([])),
   readFile: vi.fn(() => Promise.resolve("")),
@@ -17,9 +26,14 @@ vi.mock("fs-extra", () => ({
 }));
 
 vi.mock("node:path", () => ({
-  join: vi.fn((...args) => args.join("/")),
-  basename: vi.fn((path, ext) => path.split("/").pop().replace(ext, "")),
-  dirname: vi.fn((p) => p.split("/").slice(0, -1).join("/")),
+  default: {
+    join: vi.fn((...args: string[]) => args.join("/")),
+    basename: vi.fn((p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? ""),
+    dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
+  },
+  join: vi.fn((...args: string[]) => args.join("/")),
+  basename: vi.fn((p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? ""),
+  dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
 }));
 
 vi.mock("../utils/config", () => ({
@@ -97,11 +111,15 @@ describe("generateCommand", () => {
 
     vi.mocked(loadConfig).mockResolvedValue(mockConfig);
     vi.mocked(loadTranslations).mockResolvedValue(mockMessages);
-    vi.mocked(fs.pathExists).mockImplementation(() => Promise.resolve(false));
+    vi.mocked(fs.pathExists).mockImplementation((p) => {
+      // Config file exists so loadConfig gets called
+      if (String(p).includes("intl-party.config")) return Promise.resolve(true);
+      return Promise.resolve(false);
+    });
     vi.mocked(fs.ensureDir).mockImplementation(() => Promise.resolve());
     vi.mocked(fs.writeFile).mockImplementation(() => Promise.resolve());
 
-    await generateCommand({ types: true });
+    await generateCommand({ types: true, config: "intl-party.config.json" });
 
     expect(loadConfig).toHaveBeenCalled();
     expect(loadTranslations).toHaveBeenCalledWith(
@@ -130,8 +148,13 @@ describe("generateCommand", () => {
 
   it("should handle errors gracefully", async () => {
     vi.mocked(loadConfig).mockRejectedValue(new Error("Config error"));
+    vi.mocked(fs.pathExists).mockImplementation((p) => {
+      // Config file exists so loadConfig gets called
+      if (String(p).includes("intl-party.config")) return Promise.resolve(true);
+      return Promise.resolve(false);
+    });
 
-    await expect(generateCommand({})).rejects.toThrow(
+    await expect(generateCommand({ config: "intl-party.config.json" })).rejects.toThrow(
       "Process exit with code 1",
     );
 
@@ -171,7 +194,7 @@ describe("generateCommand", () => {
     vi.mocked(fs.ensureDir).mockImplementation(() => Promise.resolve());
     vi.mocked(fs.writeFile).mockImplementation(() => Promise.resolve());
 
-    await generateCommand({ types: true, client: true });
+    await generateCommand({ types: true, client: true, config: "intl-party.config.json" });
 
     expect(fs.ensureDir).toHaveBeenCalledWith(
       expect.stringContaining("packages/client/generated"),

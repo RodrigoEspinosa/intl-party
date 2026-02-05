@@ -1,10 +1,7 @@
-import { Inter } from "next/font/google";
 import { Provider } from "@intl-party/nextjs/client";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "IntlParty Next.js Example",
@@ -15,8 +12,8 @@ export const metadata = {
 // Load messages server-side for all locales
 async function loadMessages() {
   try {
-    // Try to load from generated files in node_modules (Prisma-style)
-    const { defaultMessages } = await import(".intl-party/messages.generated");
+    // Try to load from generated files (Prisma-style)
+    const { defaultMessages } = await import("./.intl-party/messages.generated");
     return defaultMessages;
   } catch {
     // Fallback to loading from messages directory for all locales

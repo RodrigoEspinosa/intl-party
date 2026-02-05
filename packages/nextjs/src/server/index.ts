@@ -150,6 +150,7 @@ export function useServerTranslations(
   messages?: Record<string, any>
 ): (key: string, options?: any) => string {
   // Import here to avoid circular dependency
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { getServerTranslations } = require("./translations");
   return getServerTranslations(locale, namespace, undefined, messages);
 }

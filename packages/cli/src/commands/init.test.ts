@@ -6,6 +6,12 @@ import inquirer from "inquirer";
 import { saveConfig } from "../utils/config";
 
 vi.mock("fs-extra", () => ({
+  default: {
+    pathExists: vi.fn(() => Promise.resolve(false)),
+    ensureDir: vi.fn(() => Promise.resolve()),
+    writeJson: vi.fn(() => Promise.resolve()),
+    writeFile: vi.fn(() => Promise.resolve()),
+  },
   pathExists: vi.fn(() => Promise.resolve(false)),
   ensureDir: vi.fn(() => Promise.resolve()),
   writeJson: vi.fn(() => Promise.resolve()),
@@ -13,7 +19,10 @@ vi.mock("fs-extra", () => ({
 }));
 
 vi.mock("node:path", () => ({
-  join: vi.fn((...args) => args.join("/")),
+  default: {
+    join: vi.fn((...args: string[]) => args.join("/")),
+  },
+  join: vi.fn((...args: string[]) => args.join("/")),
 }));
 
 vi.mock("inquirer", () => ({
@@ -91,8 +100,7 @@ describe("initCommand", () => {
     expect(saveConfig).toHaveBeenCalled();
 
     expect(consoleLog).toHaveBeenCalledWith(
-      expect.anything(),
-      "Configuration created:",
+      expect.stringContaining("Configuration created"),
       expect.anything(),
     );
   });
