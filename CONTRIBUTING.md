@@ -348,7 +348,7 @@ We use [Semantic Versioning](https://semver.org/):
 
 ### Code of Conduct
 
-Please read and follow our [Code of Conduct](./CODE_OF_CONDUCT.md).
+We are committed to providing a welcoming and inclusive experience for everyone. Please be respectful and constructive in all interactions.
 
 ### Communication
 
