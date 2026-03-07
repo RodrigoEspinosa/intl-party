@@ -12,7 +12,7 @@ export interface NoMissingKeysOptions {
 
 export const noMissingKeys = ESLintUtils.RuleCreator(
   (name) =>
-    `https://github.com/intl-party/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`
+    `https://github.com/RodrigoEspinosa/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`
 )<[NoMissingKeysOptions], MessageIds>({
   name: "no-missing-keys",
   meta: {

@@ -322,7 +322,7 @@ The simplified setup works out of the box with:
 
 ## 🤝 Contributing
 
-This is a demo project. For contributing to IntlParty itself, see the [main repository](https://github.com/intl-party/intl-party).
+This is a demo project. For contributing to IntlParty itself, see the [main repository](https://github.com/RodrigoEspinosa/intl-party).
 
 ## 📄 License
 

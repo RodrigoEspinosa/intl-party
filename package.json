@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "A comprehensive, type-safe internationalization library for modern web applications",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RodrigoEspinosa/intl-party.git"
+  },
+  "homepage": "https://github.com/RodrigoEspinosa/intl-party#readme",
+  "bugs": {
+    "url": "https://github.com/RodrigoEspinosa/intl-party/issues"
+  },
+  "license": "MIT",
+  "author": "RodrigoEspinosa",
   "workspaces": [
     "packages/*",
     "examples/*",

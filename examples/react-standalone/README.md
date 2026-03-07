@@ -95,4 +95,4 @@ const [locale, setLocale] = useLocale();
 
 ## Learn More
 
-See the [IntlParty documentation](https://github.com/intl-party/intl-party) for more details.
+See the [IntlParty documentation](https://github.com/RodrigoEspinosa/intl-party) for more details.

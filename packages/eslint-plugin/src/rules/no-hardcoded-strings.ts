@@ -11,7 +11,7 @@ export interface NoHardcodedStringsOptions {
 
 export const noHardcodedStrings = ESLintUtils.RuleCreator(
   (name) =>
-    `https://github.com/intl-party/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
+    `https://github.com/RodrigoEspinosa/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
 )<[NoHardcodedStringsOptions], MessageIds>({
   name: "no-hardcoded-strings",
   meta: {

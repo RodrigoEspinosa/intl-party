@@ -528,7 +528,7 @@ const MyComponent = memo(function MyComponent() {
 
 If you can't solve your issue with this guide:
 
-1. Check existing [GitHub issues](https://github.com/intl-party/intl-party/issues)
+1. Check existing [GitHub issues](https://github.com/RodrigoEspinosa/intl-party/issues)
 2. Search the documentation for your specific error
 3. Create a minimal reproduction in a new project
 4. Open a detailed issue with steps to reproduce
@@ -541,7 +541,7 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 
 ```bash
 # Clone the repository
-git clone https://github.com/intl-party/intl-party.git
+git clone https://github.com/RodrigoEspinosa/intl-party.git
 cd intl-party
 
 # Install dependencies

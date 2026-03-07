@@ -171,7 +171,7 @@ MIT License - see LICENSE file for details.
 
 Get started today and join our community of developers building globally accessible applications!
 
-- 📚 [Documentation](https://github.com/intl-party/intl-party/docs)
-- 🐛 [Report Issues](https://github.com/intl-party/intl-party/issues)
-- 💬 [Discussions](https://github.com/intl-party/intl-party/discussions)
-- 🌟 [Star on GitHub](https://github.com/intl-party/intl-party)
+- 📚 [Documentation](https://github.com/RodrigoEspinosa/intl-party/docs)
+- 🐛 [Report Issues](https://github.com/RodrigoEspinosa/intl-party/issues)
+- 💬 [Discussions](https://github.com/RodrigoEspinosa/intl-party/discussions)
+- 🌟 [Star on GitHub](https://github.com/RodrigoEspinosa/intl-party)

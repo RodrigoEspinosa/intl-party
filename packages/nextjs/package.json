@@ -49,11 +49,11 @@
     "ssr",
     "ssg"
   ],
-  "author": "IntlParty Team",
+  "author": "RodrigoEspinosa",
   "license": "MIT",
-  "homepage": "https://github.com/intl-party/intl-party#readme",
+  "homepage": "https://github.com/RodrigoEspinosa/intl-party#readme",
   "bugs": {
-    "url": "https://github.com/intl-party/intl-party/issues"
+    "url": "https://github.com/RodrigoEspinosa/intl-party/issues"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.5.10",
@@ -80,7 +80,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/intl-party/intl-party.git",
+    "url": "https://github.com/RodrigoEspinosa/intl-party.git",
     "directory": "packages/nextjs"
   },
   "engines": {
