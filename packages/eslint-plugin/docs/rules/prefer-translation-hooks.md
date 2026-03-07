@@ -4,7 +4,7 @@ Prefer using translation hooks over direct i18n instance usage in React componen
 
 ## Rule Details
 
-In React applications, it's better to use the `useTranslations` or `useSimplifiedTranslations` hooks. These hooks handle locale changes and subscription to translation updates automatically. Direct usage of the `i18n` instance might not trigger re-renders when the locale changes.
+In React applications, it's better to use the `useTranslations` hook. These hooks handle locale changes and subscription to translation updates automatically. Direct usage of the `i18n` instance might not trigger re-renders when the locale changes.
 
 ### Examples
 

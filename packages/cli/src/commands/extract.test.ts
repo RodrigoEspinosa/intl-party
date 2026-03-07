@@ -102,7 +102,7 @@ describe("extractCommand", () => {
             <h1>{t('welcome')}</h1>
             <p>{t('description')}</p>
             <p>{useTranslations()('greeting')}</p>
-            <p>{useSimplifiedTranslations('common')('button.submit')}</p>
+            <p>{useTranslations('common')('button.submit')}</p>
             <button i18nKey="button.cancel">Cancel</button>
           </div>
         );

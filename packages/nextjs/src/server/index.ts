@@ -143,7 +143,7 @@ export {
 // Server utilities
 export { detectAvailableNamespaces } from "./utils";
 
-// Simplified server-side useTranslations equivalent
+// Server-side useTranslations equivalent
 export function useServerTranslations(
   locale: string,
   namespace?: string,

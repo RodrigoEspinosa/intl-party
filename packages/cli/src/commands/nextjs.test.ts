@@ -40,7 +40,7 @@ describe("nextjsCommand", () => {
   });
 
   describe("initializeNextjsProject", () => {
-    it("should initialize a Next.js project with simplified setup", async () => {
+    it("should initialize a Next.js project", async () => {
       const fileExistenceValues = [
         false,
         false,
@@ -60,11 +60,11 @@ describe("nextjsCommand", () => {
 
       vi.mocked(fs.readFileSync).mockReturnValue(Buffer.from("node_modules"));
 
-      const result = await initializeNextjsProject(true);
+      const result = await initializeNextjsProject();
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "intl-party.config.ts",
-        expect.stringContaining("Simplified IntlParty configuration"),
+        expect.stringContaining("IntlParty configuration"),
       );
 
       expect(fs.mkdirSync).toHaveBeenCalledWith("messages", {
@@ -82,7 +82,7 @@ describe("nextjsCommand", () => {
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "middleware.ts",
-        expect.stringContaining("createSimplifiedSetup"),
+        expect.stringContaining("createSetup"),
       );
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
@@ -101,7 +101,7 @@ describe("nextjsCommand", () => {
       // First call is for intl-party.config.ts check
       vi.mocked(fs.existsSync).mockReturnValueOnce(true);
 
-      const result = await initializeNextjsProject(true);
+      const result = await initializeNextjsProject();
 
       expect(consoleLog).toHaveBeenCalledWith(
         expect.stringContaining("already initialized"),
@@ -130,11 +130,11 @@ describe("nextjsCommand", () => {
         vi.mocked(fs.existsSync).mockReturnValueOnce(value);
       });
 
-      await initializeNextjsProject(true);
+      await initializeNextjsProject();
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "src/middleware.ts",
-        expect.stringContaining("createSimplifiedSetup"),
+        expect.stringContaining("createSetup"),
       );
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
@@ -165,16 +165,16 @@ describe("nextjsCommand", () => {
         .mockReturnValueOnce(false)  // app dir
         .mockReturnValueOnce(false); // .gitignore
 
-      const result = await initializeNextjsProject(true, true);
+      const result = await initializeNextjsProject(true);
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "intl-party.config.ts",
-        expect.stringContaining("Simplified IntlParty configuration"),
+        expect.stringContaining("IntlParty configuration"),
       );
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "middleware.ts",
-        expect.stringContaining("createSimplifiedSetup"),
+        expect.stringContaining("createSetup"),
       );
 
       expect(result).toBe(true);

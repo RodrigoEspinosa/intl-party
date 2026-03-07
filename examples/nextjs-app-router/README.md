@@ -1,6 +1,6 @@
 # IntlParty Next.js App Router Example
 
-This example demonstrates the **simplified setup** for IntlParty with Next.js App Router.
+This example demonstrates IntlParty with Next.js App Router.
 
 ## 🚀 Features Demonstrated
 
@@ -15,7 +15,7 @@ This example demonstrates the **simplified setup** for IntlParty with Next.js Ap
 
 ```
 nextjs-app-router/
-├── intl-party.config.ts          # Simplified configuration
+├── intl-party.config.ts          # IntlParty configuration
 ├── middleware.ts                 # Automatic locale detection
 ├── messages/                    # Translation files
 │   ├── en/
@@ -85,10 +85,10 @@ export default {
 ### middleware.ts
 
 ```typescript
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+const { middleware, middlewareConfig } = createSetup(config);
 
 export { middleware };
 export const config = middlewareConfig;
@@ -97,10 +97,10 @@ export const config = middlewareConfig;
 ### app/layout.tsx
 
 ```tsx
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "../../intl-party.config";
 
-const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
+const { getLocale, getMessages, Provider } = createSetup(config);
 
 export default async function RootLayout({ children }) {
   const locale = await getLocale();
@@ -123,10 +123,10 @@ export default async function RootLayout({ children }) {
 ### Basic Usage
 
 ```tsx
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
-  const t = useSimplifiedTranslations("common");
+  const t = useTranslations("common");
 
   return (
     <div>
@@ -141,7 +141,7 @@ export default function HomePage() {
 
 ```tsx
 export default function Greeting() {
-  const t = useSimplifiedTranslations("common");
+  const t = useTranslations("common");
 
   return <p>{t("greeting", { name: "John", count: 5 })}</p>;
 }
@@ -151,7 +151,7 @@ export default function Greeting() {
 
 ```tsx
 export default function Navigation() {
-  const t = useSimplifiedTranslations("navigation");
+  const t = useTranslations("navigation");
 
   return (
     <nav>
@@ -167,8 +167,8 @@ export default function Navigation() {
 
 ```tsx
 export default function ComplexPage() {
-  const commonT = useSimplifiedTranslations("common");
-  const navT = useSimplifiedTranslations("navigation");
+  const commonT = useTranslations("common");
+  const navT = useTranslations("navigation");
 
   return (
     <div>
@@ -223,11 +223,11 @@ export default function ComplexPage() {
 "use client";
 
 import { useState } from "react";
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function LocaleSwitcher() {
   const [currentLocale, setCurrentLocale] = useState("en");
-  const t = useSimplifiedTranslations();
+  const t = useTranslations();
 
   const switchLocale = (locale: string) => {
     // Set cookie and reload
@@ -249,10 +249,10 @@ export default function LocaleSwitcher() {
 ### Server Component with Dynamic Loading
 
 ```tsx
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "../../../intl-party.config";
 
-const { getMessages } = createSimplifiedSetup(config);
+const { getMessages } = createSetup(config);
 
 export default async function DynamicPage({ params }) {
   const locale = params.locale || "en";
@@ -284,7 +284,7 @@ Types are automatically generated from your translation files:
 
 ```typescript
 // Auto-generated types give you:
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 
 t("welcome"); // ✅ Type-safe
 t("navigation.home"); // ✅ Type-safe
@@ -301,7 +301,7 @@ t("invalid.key"); // ❌ TypeScript error
 
 ## 🚀 Deployment
 
-The simplified setup works out of the box with:
+IntlParty works out of the box with:
 
 - ✅ **Vercel** - No configuration needed
 - ✅ **Netlify** - No configuration needed
@@ -309,16 +309,16 @@ The simplified setup works out of the box with:
 - ✅ **Docker** - Works with standard Next.js Docker setup
 - ✅ **Static Export** - Works with `next export`
 
-## 🆚 Traditional vs Simplified
+## 🆚 Why IntlParty?
 
-| Feature            | Traditional Setup | Simplified Setup |
-| ------------------ | ----------------- | ---------------- |
-| **Files Required** | 5+ files          | 2 files          |
-| **Setup Time**     | 15-30 minutes     | 2 minutes        |
-| **Configuration**  | Complex           | Minimal          |
-| **Type Safety**    | Manual casting    | Automatic        |
-| **Hot Reloading**  | Manual setup      | Built-in         |
-| **Learning Curve** | Medium            | Easy             |
+| Feature            | IntlParty     | Other Libraries  |
+| ------------------ | ------------- | ---------------- |
+| **Files Required** | 2 files       | 5+ files         |
+| **Setup Time**     | 2 minutes     | 15-30 minutes    |
+| **Configuration**  | Minimal       | Complex          |
+| **Type Safety**    | Automatic     | Manual casting   |
+| **Hot Reloading**  | Built-in      | Manual setup     |
+| **Learning Curve** | Easy          | Medium           |
 
 ## 🤝 Contributing
 

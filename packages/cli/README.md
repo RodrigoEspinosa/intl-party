@@ -32,7 +32,7 @@ npm install --save-dev @intl-party/cli
 ### Initialize Configuration
 
 ```bash
-intl-party nextjs --init --simplified
+intl-party nextjs --init
 ```
 
 This creates an `intl-party.config.ts` file:
@@ -56,7 +56,7 @@ intl-party extract
 This scans your source files for translation keys like:
 
 - `t('welcome')`
-- `useSimplifiedTranslations('common')('title')`
+- `useTranslations('common')('title')`
 - `i18nKey="description"`
 
 ### Validate Translations

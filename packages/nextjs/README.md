@@ -22,16 +22,16 @@ npm install @intl-party/nextjs
 ### 2. Initialize
 
 ```bash
-npx intl-party nextjs --init --simplified
+npx intl-party nextjs --init
 ```
 
 ### 3. Use
 
 ```tsx
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function Page() {
-  const t = useSimplifiedTranslations("common");
+  const t = useTranslations("common");
   return <h1>{t("welcome")}</h1>;
 }
 ```
@@ -50,10 +50,10 @@ export default {
 
 ## 🎯 API Reference
 
-### Simplified Setup
+### Setup
 
 ```typescript
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
 const {
@@ -62,21 +62,21 @@ const {
   getLocale, // Server-side locale detection
   getMessages, // Server-side message loading
   Provider, // React provider
-} = createSimplifiedSetup(config);
+} = createSetup(config);
 ```
 
 ### Hooks
 
-#### `useSimplifiedTranslations(namespace?)`
+#### `useTranslations(namespace?)`
 
 The main hook for using translations.
 
 ```tsx
 // Without namespace
-const t = useSimplifiedTranslations();
+const t = useTranslations();
 
 // With namespace
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 
 // Usage
 t("welcome"); // "Welcome!"
@@ -87,7 +87,7 @@ t("navigation.home"); // "Home"
 ### Configuration Types
 
 ```typescript
-interface SimplifiedConfig {
+interface I18nConfig {
   // Required
   locales: string[];
   defaultLocale: string;
@@ -106,10 +106,10 @@ interface SimplifiedConfig {
 
 ```typescript
 // middleware.ts
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+const { middleware, middlewareConfig } = createSetup(config);
 
 export { middleware };
 export const config = middlewareConfig;
@@ -119,10 +119,10 @@ export const config = middlewareConfig;
 
 ```tsx
 // app/layout.tsx
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "../intl-party.config";
 
-const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
+const { getLocale, getMessages, Provider } = createSetup(config);
 
 export default async function RootLayout({ children }) {
   const locale = await getLocale();
@@ -224,7 +224,7 @@ export default {
 Get full TypeScript support:
 
 ```typescript
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 
 t("welcome"); // ✅ Type-safe with auto-completion
 t("navigation.home"); // ✅ Type-safe
@@ -249,9 +249,9 @@ The middleware automatically detects locale from:
 ### Server-Side Functions
 
 ```typescript
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 
-const { getLocale, getMessages } = createSimplifiedSetup(config);
+const { getLocale, getMessages } = createSetup(config);
 
 // Get current locale
 const locale = await getLocale(request);
@@ -260,9 +260,9 @@ const locale = await getLocale(request);
 const messages = await getMessages("es");
 ```
 
-## 🛠️ Traditional Setup (Legacy)
+## 🛠️ Advanced Setup
 
-If you need more control, you can use traditional setup:
+If you need more control, you can use the advanced setup:
 
 ```typescript
 import {
@@ -289,10 +289,10 @@ import { useTranslations, useLocale } from "next-intl";
 const t = useTranslations("common");
 const locale = useLocale();
 
-// intl-party (simplified)
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+// intl-party
+import { useTranslations } from "@intl-party/nextjs";
 
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 // Locale is handled automatically
 ```
 
@@ -307,13 +307,13 @@ const t = useSimplifiedTranslations("common");
 ## 📦 Exports
 
 ```typescript
-// Simplified setup (recommended)
+// Main setup
 export {
-  createSimplifiedSetup,
-  SimplifiedI18nProvider,
-  useSimplifiedTranslations,
-  type SimplifiedConfig,
-} from "./simplified-setup";
+  createSetup,
+  I18nProvider,
+  useTranslations,
+  type I18nConfig,
+} from "./setup";
 
 // Next.js integration
 export {
@@ -322,7 +322,7 @@ export {
   type NextIntegrationOptions,
 } from "./next-integration";
 
-// Traditional setup
+// Advanced setup
 export {
   createSharedI18nConfig,
   AppI18nProvider,

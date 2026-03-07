@@ -26,7 +26,7 @@ yarn add @intl-party/nextjs
 ### 2. Initialize (One Command)
 
 ```bash
-npx intl-party nextjs --init --simplified
+npx intl-party nextjs --init
 ```
 
 This creates:
@@ -40,10 +40,10 @@ This creates:
 
 ```tsx
 // app/page.tsx
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
-  const t = useSimplifiedTranslations("common");
+  const t = useTranslations("common");
 
   return (
     <div>
@@ -93,16 +93,16 @@ export default {
 
 ## 🎯 API Reference
 
-### `useSimplifiedTranslations(namespace?)`
+### `useTranslations(namespace?)`
 
 The main hook for using translations.
 
 ```tsx
 // Without namespace (uses default)
-const t = useSimplifiedTranslations();
+const t = useTranslations();
 
 // With namespace
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 
 // Simple usage
 t("welcome"); // "Welcome!"
@@ -114,12 +114,12 @@ t("greeting", { name: "John" }); // "Hello John!"
 t("navigation.home"); // "Home"
 ```
 
-### `createSimplifiedSetup(config)`
+### `createSetup(config)`
 
 Creates the complete i18n setup for Next.js.
 
 ```typescript
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
 const {
@@ -128,7 +128,7 @@ const {
   getLocale, // Server-side locale detection
   getMessages, // Server-side message loading
   Provider, // React provider
-} = createSimplifiedSetup(config);
+} = createSetup(config);
 ```
 
 ## 🌐 Translation Files
@@ -197,10 +197,10 @@ npm install intl-messageformat
 
 ```typescript
 // middleware.ts
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+const { middleware, middlewareConfig } = createSetup(config);
 
 export { middleware };
 export const config = middlewareConfig;
@@ -210,10 +210,10 @@ export const config = middlewareConfig;
 
 ```tsx
 // app/layout.tsx
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "../intl-party.config";
 
-const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
+const { getLocale, getMessages, Provider } = createSetup(config);
 
 export default async function RootLayout({ children }) {
   const locale = await getLocale();
@@ -291,7 +291,7 @@ Get full TypeScript support without any manual work:
 
 ```typescript
 // Fully typed translation keys
-const t = useSimplifiedTranslations("common");
+const t = useTranslations("common");
 
 t("welcome"); // ✅ Type-safe
 t("navigation.home"); // ✅ Type-safe
@@ -314,10 +314,7 @@ Translation changes automatically reload in development:
 ### Initialize Project
 
 ```bash
-# Initialize with simplified setup (recommended)
-npx intl-party nextjs --init --simplified
-
-# Initialize with traditional setup
+# Initialize your project
 npx intl-party nextjs --init
 ```
 
@@ -372,7 +369,7 @@ Want to migrate from another i18n library? Check our detailed [Migration Guide](
 
 **Solutions**:
 
-1. Ensure the correct namespace is being used: `useSimplifiedTranslations("common")`
+1. Ensure the correct namespace is being used: `useTranslations("common")`
 2. Check that the translation file exists in your locale directory (e.g., `/messages/en/common.json`)
 3. Verify the key exists in your translation file with exact spelling and casing
 4. Run `npx intl-party check --missing` to identify all missing translations

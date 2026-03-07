@@ -51,10 +51,10 @@ export default {
 };
 
 // middleware.ts
-import { createSimplifiedSetup } from "@intl-party/nextjs";
+import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+const { middleware, middlewareConfig } = createSetup(config);
 
 export { middleware };
 export const config = middlewareConfig;
@@ -86,10 +86,10 @@ export default function LocaleSwitcher() {
 ```tsx
 "use client";
 
-import { useSimplifiedTranslations } from "@intl-party/nextjs";
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function LocaleSwitcher() {
-  const t = useSimplifiedTranslations("LocaleSwitcher");
+  const t = useTranslations("LocaleSwitcher");
 
   return (
     <div>
@@ -104,7 +104,7 @@ export default function LocaleSwitcher() {
 
 1. **Type Safety**: IntlParty provides better TypeScript integration without explicit type assertions
 2. **Interpolation**: Use `interpolation` object instead of direct parameter passing
-3. **Setup**: Simpler configuration with `createSimplifiedSetup` and a single config file
+3. **Setup**: Simple configuration with `createSetup` and a single config file
 4. **Clean URLs**: Default is clean URLs (no locale prefix)
 
 ## From react-i18next
@@ -201,7 +201,7 @@ function MyComponent() {
 
 ### Key Differences
 
-1. **Simplified API**: No need for destructuring, just use the returned function
+1. **Cleaner API**: No need for destructuring, just use the returned function
 2. **Interpolation**: Use `interpolation` object for variable replacement
 3. **Namespaces**: Explicitly specify the namespace during hook initialization
 4. **Type Safety**: Better TypeScript integration without manual type assertions

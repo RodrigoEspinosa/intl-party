@@ -199,7 +199,7 @@ function mergeConfig(defaultConfig: CLIConfig, userConfig: any): CLIConfig {
     },
   };
 
-  // Support simplified config aliases
+  // Support config aliases
   if (userConfig.messages && !userConfig.outputDir) {
     merged.outputDir = userConfig.messages;
   }

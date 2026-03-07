@@ -80,8 +80,7 @@ function extractKeysFromContent(content: string): string[] {
   const patterns = [
     /t\(['"`]([^'"`]+)['"`]\)/g, // t('key')
     /useTranslations\(\)\(['"`]([^'"`]+)['"`]\)/g, // useTranslations()('key')
-    /useSimplifiedTranslations\(\)\(['"`]([^'"`]+)['"`]\)/g, // useSimplifiedTranslations()('key')
-    /useSimplifiedTranslations\(['"`]([^'"`]+)['"`]\)\(['"`]([^'"`]+)['"`]\)/g, // useSimplifiedTranslations('ns')('key')
+    /useTranslations\(['"`]([^'"`]+)['"`]\)\(['"`]([^'"`]+)['"`]\)/g, // useTranslations('ns')('key')
     /i18nKey=['"`]([^'"`]+)['"`]/g, // i18nKey="key"
     /\{\s*t\(['"`]([^'"`]+)['"`]\)\s*\}/g, // { t('key') }
   ];

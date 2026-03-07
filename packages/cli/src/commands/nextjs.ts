@@ -7,12 +7,10 @@ import chalk from "chalk";
 
 export interface NextjsCommandOptions {
   init?: boolean;
-  simplified?: boolean;
   force?: boolean;
 }
 
 export async function initializeNextjsProject(
-  simplified = false,
   force = false,
 ) {
   console.log(chalk.cyan("🚀 Initializing IntlParty for Next.js..."));
@@ -35,35 +33,13 @@ export async function initializeNextjsProject(
   const appDir = join(baseDir, "app");
 
   // Create config file
-  const configContent = simplified
-    ? `// Simplified IntlParty configuration for Next.js
+  const configContent = `// IntlParty configuration for Next.js
 export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
   messages: "./messages",
   // localePrefix defaults to "never" for clean URLs
   // cookieName defaults to "INTL_LOCALE"
-};`
-    : `// Standard IntlParty configuration for Next.js
-export default {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  namespaces: ["common"],
-  messagesPath: "./messages",
-
-  // Next.js specific settings
-  nextjs: {
-    defaultLocale: "en",
-    cookieName: "INTL_LOCALE",
-    localePrefix: "never" as const,
-  },
-
-  // Generation settings
-  generate: {
-    client: true,
-    types: true,
-    watch: false,
-  },
 };`;
 
   writeFileSync("intl-party.config.ts", configContent);
@@ -121,27 +97,19 @@ export default {
 
   // Create middleware
   const middlewarePath = hasSrcDir ? "src/middleware.ts" : "middleware.ts";
-  const middlewareContent = simplified
-    ? `import { createSimplifiedSetup } from "@intl-party/nextjs";
+  const middlewareContent = `import { createSetup } from "@intl-party/nextjs";
 import config from "${hasSrcDir ? "../" : "./"}intl-party.config";
 
-const { middleware, middlewareConfig } = createSimplifiedSetup(config);
+const { middleware, middlewareConfig } = createSetup(config);
 
 export { middleware };
-export const config = middlewareConfig;`
-    : `import { createLocaleMatcher } from "@intl-party/nextjs";
-import { middleware, shared } from "./lib/i18n-setup";
-
-export { middleware };
-export const config = {
-  matcher: createLocaleMatcher(shared),
-};`;
+export const config = middlewareConfig;`;
 
   writeFileSync(middlewarePath, middlewareContent);
   console.log(chalk.green(`✅ Created ${middlewarePath}`));
 
   // Update next.config.js if it exists
-  if (simplified && existsSync("next.config.js")) {
+  if (existsSync("next.config.js")) {
     const nextConfigIntlPath = "next.config.intl-party.js";
     const nextConfigContent = `const { createNextConfigWithIntl } = require("@intl-party/nextjs");
 
@@ -172,11 +140,10 @@ module.exports = createNextConfigWithIntl(
     mkdirSync(appDir, { recursive: true });
   }
 
-  const layoutContent = simplified
-    ? `import { createSimplifiedSetup } from "@intl-party/nextjs";
+  const layoutContent = `import { createSetup } from "@intl-party/nextjs";
 import config from "${hasSrcDir ? "../../" : "../"}intl-party.config";
 
-const { getLocale, getMessages, Provider } = createSimplifiedSetup(config);
+const { getLocale, getMessages, Provider } = createSetup(config);
 
 export default async function RootLayout({
   children,
@@ -195,36 +162,14 @@ export default async function RootLayout({
       </body>
     </html>
   );
-}`
-    : `import { getLocale } from "@intl-party/nextjs/server";
-import { ClientProvider } from "./client-provider";
-import { defaultMessages } from "${hasSrcDir ? "../../" : "../"}lib/generated/translations.generated";
-import { client } from "${hasSrcDir ? "../../" : "../"}lib/i18n-setup";
-
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const locale = await getLocale(client);
-
-  return (
-    <html lang={locale}>
-      <body>
-        <ClientProvider locale={locale} initialData={defaultMessages}>
-          {children}
-        </ClientProvider>
-      </body>
-    </html>
-  );
 }`;
 
   writeFileSync(join(appDir, "layout.intl-party.tsx"), layoutContent);
 
-  const pageContent = `import { useSimplifiedTranslations } from "@intl-party/nextjs";
+  const pageContent = `import { useTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
-  const t = useSimplifiedTranslations("common");
+  const t = useTranslations("common");
 
   return (
     <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
@@ -264,13 +209,6 @@ export default function HomePage() {
   console.log("3. Add translations to your message files in ./messages");
   console.log("4. Run your development server");
 
-  if (simplified) {
-    console.log(chalk.magenta("\n✨ You're using the simplified setup!"));
-    console.log("   - Minimal configuration required");
-    console.log("   - Clean URLs without locale prefixes");
-    console.log("   - Automatic type generation");
-  }
-
   console.log(`\n📚 For more information, visit: https://intl-party.ai/docs`);
 
   return true;
@@ -279,11 +217,10 @@ export default function HomePage() {
 export const nextjsCommand = new Command("nextjs")
   .description("Next.js specific commands for IntlParty")
   .option("--init", "Initialize IntlParty in a Next.js project")
-  .option("--simplified", "Use simplified setup (recommended)")
   .option("--force", "Force overwrite existing files")
   .action(async (options: NextjsCommandOptions) => {
     if (options.init) {
-      await initializeNextjsProject(options.simplified, options.force);
+      await initializeNextjsProject(options.force);
     } else {
       console.log("Please specify an action. Use --init to initialize.");
     }
