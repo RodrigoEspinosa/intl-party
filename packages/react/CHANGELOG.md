@@ -1,5 +1,12 @@
 # @intl-party/react
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [88dd642]
+  - @intl-party/core@1.2.0
+
 ## 1.1.3
 
 ### Patch Changes
