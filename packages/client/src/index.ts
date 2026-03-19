@@ -18,10 +18,6 @@ export type {
 export {
   createTranslationFunction,
   getLocaleMessages,
-  getAllMessages,
-  validateTranslationKey,
-  getAvailableLocales,
-  getAvailableNamespaces,
 } from "./runtime";
 
 // Export a default client instance for convenience

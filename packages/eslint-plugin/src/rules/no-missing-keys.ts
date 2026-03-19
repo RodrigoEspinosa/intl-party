@@ -7,7 +7,6 @@ export interface NoMissingKeysOptions {
   translationFiles?: string[];
   defaultLocale?: string;
   configPath?: string;
-  cacheTimeout?: number;
 }
 
 export const noMissingKeys = ESLintUtils.RuleCreator(
@@ -39,11 +38,6 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
             type: "string",
             description: "Path to intl-party configuration file",
           },
-          cacheTimeout: {
-            type: "number",
-            default: 300000,
-            description: "Cache timeout in milliseconds (default: 5 minutes)",
-          },
         },
         additionalProperties: false,
       },
@@ -60,7 +54,6 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       translationFiles = [],
       defaultLocale = "en",
       configPath,
-      cacheTimeout = 300000,
     } = options || {};
 
     // Initialize translation utilities
@@ -68,17 +61,7 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       translationFiles,
       defaultLocale,
       configPath,
-      cacheTimeout,
     });
-
-    // Cache for translation keys per file
-    const fileTranslationCache = new Map<
-      string,
-      {
-        keys: Set<string>;
-        timestamp: number;
-      }
-    >();
 
     function isValidTranslationKey(key: string): boolean {
       return translationUtils.isValidTranslationKey(key);

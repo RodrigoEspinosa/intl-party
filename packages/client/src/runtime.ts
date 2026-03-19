@@ -4,6 +4,7 @@ import type {
   TranslationValue,
   Translations,
 } from "@intl-party/core";
+
 import {
   isICUFormat,
   formatICUMessage,
@@ -70,53 +71,12 @@ export function getLocaleMessages(
 }
 
 /**
- * Gets all messages for all locales
- */
-export function getAllMessages(): Record<
-  Locale,
-  Translations
-> {
-  // In a real implementation, this would load from generated files
-  // For now, return empty object
-  return {} as Record<Locale, Translations>;
-}
-
-/**
- * Validates if a translation key exists in generated types
- */
-export function validateTranslationKey(key: string): key is TranslationKey {
-  // This is a runtime check - in practice, TypeScript will catch this at compile time
-  // But this can be useful for dynamic key validation
-  return typeof key === "string" && key.length > 0;
-}
-
-/**
- * Gets all available locales from generated types
- */
-export function getAvailableLocales(): Locale[] {
-  // In a real implementation, this would return from generated types
-  return ["en", "es", "fr", "de"] as Locale[];
-}
-
-/**
- * Gets all available namespaces from generated types
- */
-export function getAvailableNamespaces(): string[] {
-  // In a real implementation, this would return from generated types
-  return ["common", "navigation"];
-}
-
-/**
  * Creates a client instance with utilities
  */
 export function createClient() {
   return {
     t: createTranslationFunction,
     getLocaleMessages,
-    getAllMessages,
-    validateTranslationKey,
-    getAvailableLocales,
-    getAvailableNamespaces,
     messages: {},
   };
 }
