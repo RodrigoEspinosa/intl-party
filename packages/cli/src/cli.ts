@@ -78,10 +78,7 @@ program
   .command("check")
   .description("check for issues in translations and configuration")
   .option("--missing", "check for missing translations")
-  .option("--unused", "check for unused translation keys")
-  .option("--duplicates", "check for duplicate keys")
   .option("--format-errors", "check for format errors in translations")
-  .option("--fix", "automatically fix issues where possible")
   .action(checkCommand);
 
 // Check-config command
@@ -129,15 +126,6 @@ program
 
 // Next.js command
 program.addCommand(nextjsCommand);
-
-// Add subcommands
-program
-  .command("completion")
-  .description("generate shell completion scripts")
-  .option("--shell <shell>", "shell type (bash|zsh|fish)", "bash")
-  .action((_options) => {
-    console.log("Shell completion not implemented yet");
-  });
 
 // Error handling
 program.exitOverride((err) => {

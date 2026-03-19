@@ -567,13 +567,6 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
 
   // Auto-detect locales from directory structure
   const localeDirs = await fs.readdir(messagesDir);
-  const detectedLocales = localeDirs.filter(async (dir) => {
-    const localePath = path.join(messagesDir!, dir);
-    const stat = await fs.stat(localePath);
-    return stat.isDirectory();
-  });
-
-  // Wait for all stat checks to complete
   const validLocales = [];
   for (const dir of localeDirs) {
     const localePath = path.join(messagesDir!, dir);
