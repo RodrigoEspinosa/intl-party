@@ -8,7 +8,7 @@ import {
 } from "@intl-party/core";
 import { I18nProvider, type I18nProviderProps } from "@intl-party/react";
 
-interface NextI18nConfig extends I18nConfig {
+export interface NextI18nConfig extends I18nConfig {
   cookieName?: string;
   paramName?: string;
   pathSegment?: number;
