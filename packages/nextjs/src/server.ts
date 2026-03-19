@@ -6,13 +6,8 @@ export {
   getLocale,
   getLocaleFromParams,
   setLocale,
-  getRequestConfig,
-  getMessages,
-  setRequestLocale,
-  defineRouting,
   useServerTranslations,
   type NextI18nConfig,
-  type RequestConfig,
 } from "./server/index";
 
 // Server-side translations
@@ -29,17 +24,6 @@ export {
   loadAllMessages,
   type MessageLoadOptions,
 } from "./messages";
-
-// App Router specific utilities (server-side)
-export {
-  I18nLayout,
-  generateStaticParams,
-  generateMetadata,
-  changeLocaleAction,
-  withLocale,
-  type I18nLayoutProps,
-  type MetadataConfig,
-} from "./app";
 
 // Note: Client components and providers are available from the main export
 // to maintain proper server/client separation.

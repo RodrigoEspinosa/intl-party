@@ -100,32 +100,3 @@ export async function detectConfig(
   };
 }
 
-/**
- * Create zero-config setup that auto-detects everything
- */
-export async function createAutoConfig() {
-  const config = await detectConfig();
-
-  // Auto-load all messages for all locales
-  const allMessages: Record<string, Record<string, any>> = {};
-
-  for (const locale of config.locales) {
-    try {
-      const { loadMessagesForLocale } = await import("./messages");
-      allMessages[locale] = await loadMessagesForLocale(locale, {
-        messagesPath: config.messagesPath,
-        namespaces: config.namespaces,
-      });
-    } catch (error) {
-      console.warn(`Failed to load messages for ${locale}:`, error);
-      allMessages[locale] = {};
-    }
-  }
-
-  return {
-    config,
-    allMessages, // Pre-loaded messages for all locales
-    // Re-export the zero-config setup
-    ...(await import("./config")).createZeroConfigSetup(),
-  };
-}
