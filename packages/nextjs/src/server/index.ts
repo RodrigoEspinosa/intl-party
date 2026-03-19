@@ -102,37 +102,6 @@ export async function setLocale(locale: string): Promise<void> {
   }
 }
 
-export interface RequestConfig {
-  locale: string;
-  messages: Record<string, any>;
-}
-
-export function setRequestLocale(_locale: string): void {
-  // This is a no-op in our implementation since we handle locale via middleware/cookies
-}
-
-export async function getRequestConfig({
-  locale,
-}: {
-  locale: string;
-}): Promise<RequestConfig> {
-  return {
-    locale,
-    messages: {},
-  };
-}
-
-export async function getMessages(
-  _locale: string
-): Promise<Record<string, any>> {
-  // This would load from your i18n/messages directory
-  return {};
-}
-
-export function defineRouting<T>(config: T): T {
-  return config;
-}
-
 // Server-side translation utilities
 export {
   createServerTranslations,
