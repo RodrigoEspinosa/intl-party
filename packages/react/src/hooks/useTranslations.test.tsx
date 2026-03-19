@@ -5,7 +5,6 @@ import { createI18n } from "@intl-party/core";
 import { I18nProvider } from "../context/I18nContext";
 import {
   useTranslations,
-  useOptionalTranslation,
   useHasTranslation,
 } from "./useTranslations";
 import type { ReactNode } from "react";
@@ -97,40 +96,6 @@ describe("useTranslations", () => {
     });
 
     expect(result.current("welcome")).toBe("¡Bienvenido!");
-  });
-});
-
-describe("useOptionalTranslation", () => {
-  let i18n: ReturnType<typeof createI18n>;
-
-  beforeEach(() => {
-    i18n = createI18n({
-      locales: ["en"],
-      defaultLocale: "en",
-      namespaces: ["common"],
-    });
-
-    i18n.addTranslations("en", "common", {
-      existing: "Exists",
-    });
-  });
-
-  it("should return translation if key exists", () => {
-    const wrapper = createWrapper(i18n);
-    const { result } = renderHook(() => useOptionalTranslation("existing"), {
-      wrapper,
-    });
-
-    expect(result.current).toBe("Exists");
-  });
-
-  it("should return undefined if key does not exist", () => {
-    const wrapper = createWrapper(i18n);
-    const { result } = renderHook(() => useOptionalTranslation("missing"), {
-      wrapper,
-    });
-
-    expect(result.current).toBeUndefined();
   });
 });
 

@@ -1,21 +1,18 @@
-import React, {
+import {
   createContext,
   useContext,
   useMemo,
   useState,
   useEffect,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import {
-  I18n,
   createI18n,
   type I18nConfig,
   type I18nInstance,
   type Locale,
   type Namespace,
   type TranslationFunction,
-  type TypedTranslationFunction,
-  type DeepKeyOf,
 } from "@intl-party/core";
 
 export interface I18nContextValue {
@@ -26,12 +23,6 @@ export interface I18nContextValue {
   setLocale: (locale: Locale) => void;
   setNamespace: (namespace: Namespace) => void;
   isLoading: boolean;
-}
-
-export interface TypedI18nContextValue<
-  T extends Record<string, any> = Record<string, any>,
-> extends Omit<I18nContextValue, "t"> {
-  t: TypedTranslationFunction<T>;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -225,135 +216,3 @@ export function useI18nContext(): I18nContextValue {
   return context;
 }
 
-// Typed version of the provider and hook
-const TypedI18nContext = createContext<TypedI18nContextValue | null>(null);
-
-export interface TypedI18nProviderProps<T extends Record<string, any>>
-  extends Omit<I18nProviderProps, "i18n"> {
-  i18n?: I18nInstance;
-}
-
-export function TypedI18nProvider<T extends Record<string, any>>({
-  children,
-  ...props
-}: TypedI18nProviderProps<T>) {
-  return (
-    <I18nProvider {...props}>
-      <TypedI18nContextWrapper<T>>{children}</TypedI18nContextWrapper>
-    </I18nProvider>
-  );
-}
-
-function TypedI18nContextWrapper<T extends Record<string, any>>({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const { i18n, locale, namespace, setLocale, setNamespace, isLoading } =
-    useI18nContext();
-
-  const typedContextValue = useMemo(
-    (): TypedI18nContextValue<T> => ({
-      i18n,
-      locale,
-      namespace,
-      t: i18n.t as TypedTranslationFunction<T>,
-      setLocale,
-      setNamespace,
-      isLoading,
-    }),
-    [i18n, locale, namespace, setLocale, setNamespace, isLoading],
-  );
-
-  return (
-    <TypedI18nContext.Provider value={typedContextValue}>
-      {children}
-    </TypedI18nContext.Provider>
-  );
-}
-
-export function useTypedI18nContext<
-  T extends Record<string, any>,
->(): TypedI18nContextValue<T> {
-  const context = useContext(
-    TypedI18nContext,
-  ) as TypedI18nContextValue<T> | null;
-
-  if (!context) {
-    // Check if we're in SSR environment
-    if (typeof window === "undefined") {
-      // During SSR, create a minimal fallback context to prevent errors
-      const fallbackI18n = createI18n({
-        locales: ["en"],
-        defaultLocale: "en",
-        namespaces: ["common"],
-      });
-
-      return {
-        i18n: fallbackI18n,
-        locale: "en",
-        namespace: "common",
-        t: fallbackI18n.t as TypedTranslationFunction<T>,
-        setLocale: () => {},
-        setNamespace: () => {},
-        isLoading: false,
-      };
-    }
-
-    throw new Error(
-      "useTypedI18nContext must be used within a TypedI18nProvider",
-    );
-  }
-
-  return context;
-}
-
-// Higher-order component for class components
-export interface WithI18nProps {
-  i18n: I18nContextValue;
-}
-
-export function withI18n<P extends object>(
-  Component: React.ComponentType<P & WithI18nProps>,
-): React.ComponentType<P> {
-  const WrappedComponent = (props: P) => {
-    const i18nContext = useI18nContext();
-
-    return <Component {...props} i18n={i18nContext} />;
-  };
-
-  WrappedComponent.displayName = `withI18n(${Component.displayName || Component.name})`;
-
-  return WrappedComponent;
-}
-
-// Context providers for nested scoping
-export interface ScopedI18nProviderProps {
-  children: ReactNode;
-  namespace: Namespace;
-  locale?: Locale;
-}
-
-export function ScopedI18nProvider({
-  children,
-  namespace,
-  locale,
-}: ScopedI18nProviderProps) {
-  const parentContext = useI18nContext();
-
-  const scopedContextValue = useMemo(
-    (): I18nContextValue => ({
-      ...parentContext,
-      namespace,
-      locale: locale || parentContext.locale,
-      t: parentContext.i18n.createScopedTranslator(namespace),
-    }),
-    [parentContext, namespace, locale],
-  );
-
-  return (
-    <I18nContext.Provider value={scopedContextValue}>
-      {children}
-    </I18nContext.Provider>
-  );
-}
