@@ -6,10 +6,7 @@ import { validateTranslations } from "@intl-party/core";
 
 export interface CheckOptions {
   missing?: boolean;
-  unused?: boolean;
-  duplicates?: boolean;
   formatErrors?: boolean;
-  fix?: boolean;
   config?: string;
   verbose?: boolean;
 }
@@ -100,21 +97,6 @@ export async function checkCommand(options: CheckOptions) {
       spinner.succeed("Format errors check completed");
     }
 
-    // Check for unused keys (placeholder)
-    if (options.unused) {
-      spinner.start("Checking for unused keys...");
-      // This would require analyzing source code
-      // For now, just a placeholder
-      spinner.succeed("Unused keys check completed");
-    }
-
-    // Check for duplicates (placeholder)
-    if (options.duplicates) {
-      spinner.start("Checking for duplicate keys...");
-      // This would check for duplicate values or similar keys
-      spinner.succeed("Duplicate keys check completed");
-    }
-
     // Report results
     if (issues.length === 0) {
       console.log(chalk.green("✓ No issues found!"));
@@ -155,21 +137,6 @@ export async function checkCommand(options: CheckOptions) {
       });
 
       console.log();
-    }
-
-    // Auto-fix if requested
-    if (options.fix) {
-      spinner.start("Attempting to fix issues...");
-
-      let fixedCount = 0;
-      // Implement auto-fixing logic here
-      // For now, just a placeholder
-
-      if (fixedCount > 0) {
-        spinner.succeed(`Fixed ${fixedCount} issue(s)`);
-      } else {
-        spinner.info("No issues could be automatically fixed");
-      }
     }
 
     // Exit with error code if there are errors
