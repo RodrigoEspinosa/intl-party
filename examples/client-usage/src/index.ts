@@ -5,9 +5,10 @@
  *
  * This demonstrates how the generated client package provides:
  * 1. Type-safe translation keys
- * 2. Runtime message data
- * 3. Utility functions
- * 4. Similar DX to @prisma/client
+ * 2. Translation functions
+ * 3. Client instance
+ * 4. Direct message access
+ * 5. Dynamic usage
  */
 
 import {
@@ -19,10 +20,6 @@ import {
   // Runtime utilities
   createTranslationFunction,
   getLocaleMessages,
-  getAllMessages,
-  validateTranslationKey,
-  getAvailableLocales,
-  getAvailableNamespaces,
   createClient,
 } from "@intl-party/client";
 
@@ -64,16 +61,7 @@ namespaces.forEach((ns) => {
 });
 
 // ===========================================
-// 2. Runtime message access
-// ===========================================
-
-console.log("\n💾 Runtime message data:");
-console.log("All messages:", Object.keys(getAllMessages()));
-console.log("Available locales:", getAvailableLocales());
-console.log("Available namespaces:", getAvailableNamespaces());
-
-// ===========================================
-// 3. Translation function (like Prisma's query builder)
+// 2. Translation function (like Prisma's query builder)
 // ===========================================
 
 console.log("\n🔧 Translation functions:");
@@ -99,7 +87,7 @@ console.log(`  Welcome: ${tFr("common.welcome", { appName: "IntlParty" })}`);
 console.log(`  Features: ${tFr("common.features.title")}`);
 
 // ===========================================
-// 4. Client instance (like PrismaClient)
+// 3. Client instance (like PrismaClient)
 // ===========================================
 
 console.log("\n🏗️  Client instance (like PrismaClient):");
@@ -109,23 +97,13 @@ const client = createClient();
 console.log("Client methods available:");
 console.log(`  - t: ${typeof client.t}`);
 console.log(`  - getLocaleMessages: ${typeof client.getLocaleMessages}`);
-console.log(`  - getAllMessages: ${typeof client.getAllMessages}`);
-console.log(
-  `  - validateTranslationKey: ${typeof client.validateTranslationKey}`
-);
 
 // Use client methods
 console.log("\nUsing client methods:");
 console.log(`  English title: ${client.t("en", {})("common.title")}`);
-console.log(
-  `  Is 'common.title' valid? ${client.validateTranslationKey("common.title")}`
-);
-console.log(
-  `  Is 'invalid.key' valid? ${client.validateTranslationKey("invalid.key")}`
-);
 
 // ===========================================
-// 5. Direct message access (like Prisma's data access)
+// 4. Direct message access (like Prisma's data access)
 // ===========================================
 
 console.log("\n📊 Direct message access:");
@@ -139,25 +117,7 @@ console.log(
 );
 
 // ===========================================
-// 6. Validation and error handling
-// ===========================================
-
-console.log("\n✅ Validation examples:");
-
-const testKeys = [
-  "common.title", // Valid
-  "navigation.home", // Valid
-  "invalid.key", // Invalid
-  "common.features.title", // Valid
-];
-
-testKeys.forEach((key) => {
-  const isValid = validateTranslationKey(key);
-  console.log(`  ${key}: ${isValid ? "✅ Valid" : "❌ Invalid"}`);
-});
-
-// ===========================================
-// 7. Dynamic usage (like Prisma's dynamic queries)
+// 5. Dynamic usage (like Prisma's dynamic queries)
 // ===========================================
 
 console.log("\n🔄 Dynamic usage:");
@@ -185,5 +145,4 @@ console.log("  ✓ Type-safe translation keys (like Prisma model fields)");
 console.log("  ✓ Runtime message data (like Prisma database data)");
 console.log("  ✓ Utility functions (like Prisma query methods)");
 console.log("  ✓ Client instance (like PrismaClient)");
-console.log("  ✓ Validation helpers (like Prisma schema validation)");
 console.log("  ✓ Similar developer experience to @prisma/client");
