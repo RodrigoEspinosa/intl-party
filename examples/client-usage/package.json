@@ -15,7 +15,7 @@
   "dependencies": {
     "@intl-party/client": "workspace:*",
     "@intl-party/cli": "workspace:*",
-    "tsx": "^4.6.0"
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
