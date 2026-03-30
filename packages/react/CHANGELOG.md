@@ -1,5 +1,16 @@
 # @intl-party/react
 
+## 1.2.0
+
+### Minor Changes
+
+- Improve test coverage, fix JSON format issues, and update dependencies
+
+### Patch Changes
+
+- Updated dependencies
+  - @intl-party/core@1.3.0
+
 ## 1.1.4
 
 ### Patch Changes

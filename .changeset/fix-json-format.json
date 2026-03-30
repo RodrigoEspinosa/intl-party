@@ -1,6 +1,0 @@
-{
-  "summary": "Fix JSON format issues in package.json files",
-  "releases": [
-    { "name": "@intl-party/react", "type": "patch" }
-  ]
-}

@@ -1,5 +1,11 @@
 # @intl-party/core
 
+## 1.3.0
+
+### Minor Changes
+
+- Improve test coverage, fix JSON format issues, and update dependencies
+
 ## 1.2.0
 
 ### Minor Changes

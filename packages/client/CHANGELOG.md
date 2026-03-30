@@ -1,5 +1,17 @@
 # @intl-party/client
 
+## 1.3.0
+
+### Minor Changes
+
+- Improve test coverage, fix JSON format issues, and update dependencies
+
+### Patch Changes
+
+- Updated dependencies
+  - @intl-party/core@1.3.0
+  - @intl-party/react@1.2.0
+
 ## 1.2.0
 
 ### Minor Changes

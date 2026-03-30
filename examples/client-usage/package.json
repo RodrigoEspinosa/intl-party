@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/example-client-usage",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Example showing how to use @intl-party/client like @prisma/client",
   "main": "index.js",

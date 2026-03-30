@@ -1,5 +1,11 @@
 # @intl-party/eslint-plugin
 
+## 1.2.0
+
+### Minor Changes
+
+- Improve test coverage, fix JSON format issues, and update dependencies
+
 ## 1.0.2
 
 ### Patch Changes
