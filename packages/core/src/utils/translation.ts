@@ -70,6 +70,38 @@ function createStableCacheKey(options: TranslationOptions | undefined): string {
   }
 }
 
+/**
+ * Splits a dot-separated path while respecting escaped dots (`\\.`).
+ * - Unescaped dots are treated as nesting separators.
+ * - `\\.` sequences are treated as literal dots within a single key segment.
+ *
+ * Examples:
+ *   "a.b"     → ["a", "b"]
+ *   "a\\.b"   → ["a.b"]
+ *   "a\\.b.c" → ["a.b", "c"]
+ */
+export function splitEscapedDots(path: string): string[] {
+  const segments: string[] = [];
+  let current = "";
+
+  for (let i = 0; i < path.length; i++) {
+    if (path[i] === "\\" && i + 1 < path.length && path[i + 1] === ".") {
+      // Escaped dot — include literal dot
+      current += ".";
+      i++; // skip the dot
+    } else if (path[i] === ".") {
+      // Unescaped dot — segment separator
+      segments.push(current);
+      current = "";
+    } else {
+      current += path[i];
+    }
+  }
+
+  segments.push(current);
+  return segments;
+}
+
 export interface TranslationStoreOptions {
   fallbackChain?: Record<Locale, Locale>;
   maxCacheSize?: number;
@@ -204,7 +236,7 @@ export class TranslationStore {
   ): TranslationValue | undefined {
     if (!obj || typeof obj !== "object") return undefined;
 
-    const keys = path.split(".");
+    const keys = splitEscapedDots(path);
     let current: TranslationValue | NestedTranslations | Translations = obj;
 
     for (const key of keys) {
@@ -468,7 +500,9 @@ export function flattenTranslations(
   const result: Record<string, TranslationValue> = {};
 
   for (const [key, value] of Object.entries(translations)) {
-    const fullKey = prefix ? `${prefix}.${key}` : key;
+    // Escape literal dots in key segments so they are not confused with nesting separators
+    const escapedKey = key.replace(/\./g, "\\.");
+    const fullKey = prefix ? `${prefix}.${escapedKey}` : escapedKey;
 
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       Object.assign(
@@ -489,7 +523,7 @@ export function unflattenTranslations(
   const result: NestedTranslations = {};
 
   for (const [key, value] of Object.entries(flat)) {
-    const keys = key.split(".");
+    const keys = splitEscapedDots(key);
     let current = result;
 
     for (let i = 0; i < keys.length - 1; i++) {
