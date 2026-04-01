@@ -22,7 +22,73 @@ export interface I18nMiddlewareConfig {
   basePath?: string;
 }
 
+function validateMiddlewareConfig(config: I18nMiddlewareConfig): void {
+  if (!Array.isArray(config.locales) || config.locales.length === 0) {
+    throw new Error(
+      "Invalid config: `locales` must be a non-empty array",
+    );
+  }
+
+  if (!config.locales.includes(config.defaultLocale)) {
+    throw new Error(
+      `Invalid config: \`defaultLocale\` "${config.defaultLocale}" is not in \`locales\``,
+    );
+  }
+
+  if (config.excludePaths !== undefined) {
+    if (
+      !Array.isArray(config.excludePaths) ||
+      !config.excludePaths.every((p) => typeof p === "string")
+    ) {
+      throw new Error(
+        "Invalid config: `excludePaths` must be an array of strings",
+      );
+    }
+  }
+
+  if (config.includePaths !== undefined) {
+    if (
+      !Array.isArray(config.includePaths) ||
+      !config.includePaths.every((p) => typeof p === "string")
+    ) {
+      throw new Error(
+        "Invalid config: `includePaths` must be an array of strings",
+      );
+    }
+  }
+
+  if (config.basePath !== undefined) {
+    if (
+      typeof config.basePath !== "string" ||
+      (config.basePath !== "" &&
+        (!config.basePath.startsWith("/") || config.basePath.endsWith("/")))
+    ) {
+      throw new Error(
+        'Invalid config: `basePath` must start with "/" and not end with "/"',
+      );
+    }
+  }
+
+  if (config.cookieName !== undefined) {
+    if (typeof config.cookieName !== "string" || config.cookieName === "") {
+      throw new Error(
+        "Invalid config: `cookieName` must be a non-empty string",
+      );
+    }
+  }
+
+  if (config.headerName !== undefined) {
+    if (typeof config.headerName !== "string" || config.headerName === "") {
+      throw new Error(
+        "Invalid config: `headerName` must be a non-empty string",
+      );
+    }
+  }
+}
+
 export function createI18nMiddleware(config: I18nMiddlewareConfig) {
+  validateMiddlewareConfig(config);
+
   const {
     locales,
     defaultLocale,
