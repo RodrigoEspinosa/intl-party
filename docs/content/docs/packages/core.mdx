@@ -1,0 +1,107 @@
+---
+title: "@intl-party/core"
+description: Core internationalization library that powers the IntlParty ecosystem.
+---
+
+The core package is a framework-agnostic internationalization engine. It handles translation storage, interpolation, locale management, and message formatting.
+
+## Installation
+
+```bash
+npm install @intl-party/core
+```
+
+## Creating an Instance
+
+Use `createI18n` to create a new i18n instance:
+
+```typescript
+import { createI18n } from "@intl-party/core";
+
+const i18n = createI18n({
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  namespaces: ["common", "navigation"],
+});
+```
+
+### Configuration Options
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `locales` | `string[]` | Supported locale codes |
+| `defaultLocale` | `string` | Fallback locale |
+| `namespaces` | `string[]` | Translation namespace identifiers |
+
+## Adding Translations
+
+```typescript
+i18n.addTranslations("en", "common", {
+  welcome: "Welcome to IntlParty!",
+  hello: "Hello {{name}}!",
+});
+
+i18n.addTranslations("es", "common", {
+  welcome: "Bienvenido a IntlParty!",
+  hello: "Hola {{name}}!",
+});
+```
+
+## Using Translations
+
+```typescript
+// Simple translation
+const message = i18n.t("welcome"); // "Welcome to IntlParty!"
+
+// With interpolation
+const greeting = i18n.t("hello", {
+  interpolation: { name: "World" },
+}); // "Hello World!"
+```
+
+## Message Formats
+
+The core library supports two message formats that can be mixed freely.
+
+### Legacy Format
+
+Uses `{{variable}}` syntax for basic interpolation:
+
+```json
+{
+  "greeting": "Hello {{name}}!",
+  "items": "{{count|item|items}}"
+}
+```
+
+### ICU MessageFormat
+
+For complex pluralization, gender selection, and locale-specific formatting:
+
+```json
+{
+  "itemCount": "{count, plural, one {# item} other {# items}}",
+  "greeting": "{gender, select, male {He} female {She} other {They}} liked your post"
+}
+```
+
+ICU MessageFormat requires the optional `intl-messageformat` dependency:
+
+```bash
+npm install intl-messageformat
+```
+
+IntlParty auto-detects which format each message uses, so both formats coexist in the same project.
+
+## Locale Management
+
+```typescript
+// Get current locale
+const locale = i18n.locale;
+
+// Change locale
+i18n.setLocale("es");
+
+// Get all supported locales
+const locales = i18n.locales; // ["en", "es", "fr"]
+```

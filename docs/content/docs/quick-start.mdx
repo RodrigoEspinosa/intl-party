@@ -1,0 +1,143 @@
+---
+title: Quick Start
+description: Get internationalization working in your Next.js app in under 5 minutes.
+---
+
+This guide walks you through setting up IntlParty in a Next.js application from scratch.
+
+## 1. Configuration
+
+Create `intl-party.config.ts` in your project root:
+
+```typescript
+// intl-party.config.ts
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  messages: "./messages",
+};
+```
+
+## 2. Translation Files
+
+Create your translation files in the `messages/` directory:
+
+```json title="messages/en/common.json"
+{
+  "welcome": "Welcome to IntlParty!",
+  "greeting": "Hello {{name}}!",
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  }
+}
+```
+
+```json title="messages/es/common.json"
+{
+  "welcome": "Bienvenido a IntlParty!",
+  "greeting": "Hola {{name}}!",
+  "navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  }
+}
+```
+
+## 3. Middleware
+
+Set up locale detection middleware:
+
+```typescript title="middleware.ts"
+import { createSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+## 4. Layout
+
+Configure your root layout with the i18n provider:
+
+```tsx title="app/layout.tsx"
+import { createSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
+
+const { getLocale, getMessages, Provider } = createSetup(config);
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
+  return (
+    <html lang={locale}>
+      <body>
+        <Provider locale={locale} initialMessages={messages}>
+          {children}
+        </Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+## 5. Use Translations
+
+Now you can use translations in any component:
+
+```tsx title="app/page.tsx"
+import { useTranslations } from "@intl-party/nextjs";
+
+export default function HomePage() {
+  const t = useTranslations("common");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { name: "John" })}</p>
+      <nav>
+        <a href="/">{t("navigation.home")}</a>
+        <a href="/about">{t("navigation.about")}</a>
+      </nav>
+    </div>
+  );
+}
+```
+
+That's it! Your app is now internationalized with full TypeScript support.
+
+## Project Structure
+
+After setup, your project should look like this:
+
+```
+your-app/
+├── intl-party.config.ts     # i18n configuration
+├── middleware.ts             # Automatic locale detection
+├── messages/                 # Translation files
+│   ├── en/
+│   │   └── common.json
+│   ├── es/
+│   │   └── common.json
+│   └── fr/
+│       └── common.json
+└── app/
+    ├── layout.tsx            # Root layout with Provider
+    └── page.tsx              # Pages using translations
+```
+
+## Next Steps
+
+- Learn about [TypeScript integration](/docs/guides/typescript) for full type safety
+- Set up [namespaces](/docs/guides/namespaces) to organize translations
+- Configure [SSR](/docs/guides/ssr) for server-side rendering
+- Explore the [API reference](/docs/packages/nextjs) for all available options

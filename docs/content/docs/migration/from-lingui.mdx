@@ -1,0 +1,133 @@
+---
+title: Migrating from Lingui
+description: Step-by-step guide for migrating from Lingui to IntlParty.
+---
+
+[Lingui](https://lingui.js.org/) is a React i18n library that uses macros and PO files. IntlParty uses JSON-based translations without macros, offering simpler setup and better TypeScript support.
+
+## Configuration
+
+### Before (Lingui)
+
+```typescript title="lingui.config.js"
+/** @type {import('@lingui/conf').LinguiConfig} */
+module.exports = {
+  locales: ["en", "fr", "es"],
+  sourceLocale: "en",
+  catalogs: [
+    {
+      path: "<rootDir>/src/locales/{locale}/messages",
+      include: ["src"],
+    },
+  ],
+  format: "po",
+};
+```
+
+### After (IntlParty)
+
+```typescript title="intl-party.config.ts"
+export default {
+  locales: ["en", "fr", "es"],
+  defaultLocale: "en",
+  messages: "./src/locales",
+};
+```
+
+## Component Usage
+
+### Before (Lingui)
+
+```tsx
+import { Trans, Plural } from "@lingui/macro";
+
+function MyComponent() {
+  const count = 3;
+
+  return (
+    <div>
+      <h1>
+        <Trans>Welcome</Trans>
+      </h1>
+      <p>
+        <Trans>Hello, {name}!</Trans>
+      </p>
+      <p>
+        <Plural value={count} one="# item" other="# items" />
+      </p>
+    </div>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx
+import { useTranslations } from "@intl-party/react";
+
+function MyComponent() {
+  const count = 3;
+  const t = useTranslations("messages");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { interpolation: { name } })}</p>
+      <p>{t("items", { count })}</p>
+    </div>
+  );
+}
+```
+
+## Key Differences
+
+1. **No Macros** -- IntlParty does not require compile-time macros for string extraction
+2. **JSON Format** -- Uses JSON files instead of PO/XLIFF catalogs
+3. **Simpler Pluralization** -- Use the `count` parameter instead of `Plural` components
+4. **Type Safety** -- Auto-generated TypeScript types with full auto-completion
+5. **No Build Step** -- No `lingui extract` or `lingui compile` steps required
+
+## Converting Translation Files
+
+Lingui uses PO files by default. You need to convert them to JSON:
+
+```bash
+# Extract your existing keys first
+npx intl-party extract
+
+# Then manually create JSON files matching your PO catalog structure
+```
+
+### PO to JSON Example
+
+**Before (PO):**
+
+```
+msgid "welcome"
+msgstr "Welcome"
+
+msgid "items"
+msgid_plural "items"
+msgstr[0] "{count} item"
+msgstr[1] "{count} items"
+```
+
+**After (JSON):**
+
+```json
+{
+  "welcome": "Welcome",
+  "items": "{count, plural, one {# item} other {# items}}"
+}
+```
+
+## Migration Checklist
+
+- [ ] Install `@intl-party/core` and `@intl-party/react`
+- [ ] Remove `@lingui/core`, `@lingui/react`, `@lingui/macro`, and related packages
+- [ ] Remove Lingui babel/SWC plugin from your build configuration
+- [ ] Convert PO/XLIFF catalogs to JSON translation files
+- [ ] Replace `<Trans>` macro usage with `useTranslations` hook calls
+- [ ] Replace `<Plural>` with `count` parameter in translation calls
+- [ ] Replace `I18nProvider` from Lingui with IntlParty's `I18nProvider`
+- [ ] Remove `lingui.config.js` and create `intl-party.config.ts`

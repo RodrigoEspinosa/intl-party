@@ -1,0 +1,47 @@
+---
+title: Getting Started
+description: The easiest and most developer-friendly internationalization library for Next.js with TypeScript.
+---
+
+IntlParty is a comprehensive i18n solution built specifically for modern Next.js applications. It provides zero-config setup, perfect TypeScript integration, and an intuitive API.
+
+## Why IntlParty?
+
+- **Zero-Config Setup** -- Get started in 2 minutes, not 2 hours
+- **Perfect TypeScript** -- Full type safety with auto-completion, no casting required
+- **Next.js Native** -- Built specifically for Next.js App Router with SSR/SSG
+- **Clean URLs** -- No ugly `/en/` prefixes by default
+- **Developer First** -- Intuitive API that just works
+- **Automatic** -- Type generation, message loading, and hot reloading
+
+## Packages
+
+IntlParty is organized as a set of packages that work together:
+
+| Package | Description |
+| --- | --- |
+| [`@intl-party/nextjs`](/docs/packages/nextjs) | Next.js integration (main package for Next.js apps) |
+| [`@intl-party/core`](/docs/packages/core) | Core internationalization library (framework-agnostic) |
+| [`@intl-party/react`](/docs/packages/react) | React hooks and components |
+| [`@intl-party/client`](/docs/packages/client) | Generated type-safe translations client |
+| [`@intl-party/cli`](/docs/packages/cli) | Command-line tools for extraction and validation |
+| [`@intl-party/eslint-plugin`](/docs/packages/eslint-plugin) | ESLint rules for i18n best practices |
+
+## Quick Overview
+
+```tsx
+import { useTranslations } from "@intl-party/nextjs";
+
+export default function HomePage() {
+  const t = useTranslations("common");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("description", { name: "John" })}</p>
+    </div>
+  );
+}
+```
+
+Head to the [Installation](/docs/installation) page to get started.

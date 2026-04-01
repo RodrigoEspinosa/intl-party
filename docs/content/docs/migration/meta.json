@@ -1,0 +1,4 @@
+{
+  "title": "Migration Guides",
+  "pages": ["from-next-intl", "from-react-i18next", "from-formatjs", "from-lingui"]
+}

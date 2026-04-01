@@ -1,0 +1,70 @@
+---
+title: Installation
+description: Install IntlParty in your Next.js project.
+---
+
+## Next.js (Recommended)
+
+For Next.js applications, install the `@intl-party/nextjs` package which includes everything you need:
+
+```bash
+npm install @intl-party/nextjs
+# or
+pnpm add @intl-party/nextjs
+# or
+yarn add @intl-party/nextjs
+```
+
+Then initialize your project with a single command:
+
+```bash
+npx intl-party nextjs --init
+```
+
+This creates:
+
+- `intl-party.config.ts` -- Your i18n configuration
+- `middleware.ts` -- Automatic locale detection
+- `messages/` -- Sample translation files
+- Example layout and page components
+
+## React (Without Next.js)
+
+For standalone React applications, install the core and React packages:
+
+```bash
+npm install @intl-party/core @intl-party/react
+```
+
+## Optional Dependencies
+
+### ICU MessageFormat
+
+For advanced pluralization and gender selection using ICU MessageFormat:
+
+```bash
+npm install intl-messageformat
+```
+
+### CLI Tools
+
+For translation extraction, validation, and type generation:
+
+```bash
+npm install --save-dev @intl-party/cli
+```
+
+### ESLint Plugin
+
+For enforcing i18n best practices:
+
+```bash
+npm install --save-dev @intl-party/eslint-plugin
+```
+
+## System Requirements
+
+- Node.js 18.0.0 or later
+- React 18 or later
+- Next.js 13.4 or later (for `@intl-party/nextjs`)
+- TypeScript 5.0 or later (recommended)

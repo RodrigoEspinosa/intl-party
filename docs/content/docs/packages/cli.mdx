@@ -1,0 +1,92 @@
+---
+title: "@intl-party/cli"
+description: Command-line tools for extracting, validating, and managing translations.
+---
+
+The CLI package provides tools for translation extraction, validation, type generation, and project initialization.
+
+## Installation
+
+```bash
+npm install --save-dev @intl-party/cli
+# or install globally
+npm install -g @intl-party/cli
+```
+
+## Commands
+
+### `intl-party nextjs --init`
+
+Initialize a new IntlParty project with Next.js:
+
+```bash
+npx intl-party nextjs --init
+```
+
+Creates the configuration file, middleware, sample translations, and example components.
+
+### `intl-party generate --types`
+
+Generate TypeScript type definitions from your translation files:
+
+```bash
+npx intl-party generate --types
+```
+
+Run in watch mode during development:
+
+```bash
+npx intl-party generate --types --watch
+```
+
+### `intl-party extract`
+
+Extract translatable strings from your codebase:
+
+```bash
+npx intl-party extract
+```
+
+### `intl-party check`
+
+Validate translations for completeness and correctness:
+
+```bash
+# Check for missing translations
+npx intl-party check --missing
+
+# Check for format errors
+npx intl-party check --format-errors
+
+# Full validation
+npx intl-party validate
+
+# Verbose output
+npx intl-party check --verbose
+```
+
+### `intl-party check-config`
+
+Validate your IntlParty configuration file:
+
+```bash
+npx intl-party check-config
+```
+
+## Diagnostics
+
+Use the CLI to diagnose common issues:
+
+```bash
+# Validate configuration
+npx intl-party check-config
+
+# Check for missing translations across locales
+npx intl-party check --missing
+
+# Validate translation file format
+npx intl-party check --format-errors
+
+# Get verbose diagnostic output
+npx intl-party check --verbose
+```

@@ -1,0 +1,15 @@
+{
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "quick-start",
+    "---Packages---",
+    "...packages",
+    "---Guides---",
+    "...guides",
+    "---Migration---",
+    "...migration"
+  ]
+}

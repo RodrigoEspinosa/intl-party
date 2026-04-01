@@ -1,0 +1,83 @@
+---
+title: "@intl-party/eslint-plugin"
+description: ESLint plugin for enforcing i18n best practices and catching common issues.
+---
+
+The ESLint plugin helps enforce internationalization best practices and catches common i18n mistakes in your codebase.
+
+## Installation
+
+```bash
+npm install --save-dev @intl-party/eslint-plugin
+```
+
+## Configuration
+
+### Recommended Preset
+
+Use the recommended preset to enable all rules with sensible defaults:
+
+```javascript title=".eslintrc.js"
+module.exports = {
+  plugins: ["@intl-party"],
+  extends: ["@intl-party/recommended"],
+};
+```
+
+### Manual Configuration
+
+Enable specific rules individually:
+
+```javascript title=".eslintrc.js"
+module.exports = {
+  plugins: ["@intl-party"],
+  rules: {
+    "@intl-party/no-hardcoded-strings": "error",
+    "@intl-party/no-missing-keys": "error",
+    "@intl-party/prefer-translation-hooks": "warn",
+  },
+};
+```
+
+## Rules
+
+### `no-hardcoded-strings`
+
+Detects untranslated user-facing text in your components.
+
+```tsx
+// Bad
+function Greeting() {
+  return <h1>Welcome!</h1>;
+}
+
+// Good
+function Greeting() {
+  const t = useTranslations("common");
+  return <h1>{t("welcome")}</h1>;
+}
+```
+
+#### Ignoring Patterns
+
+Exclude specific patterns from detection:
+
+```javascript
+{
+  "@intl-party/no-hardcoded-strings": ["error", {
+    "ignorePatterns": [
+      "^\\d+$",       // Numbers
+      "^[A-Z_]+$",    // Constants
+      "^https?://",   // URLs
+    ]
+  }]
+}
+```
+
+### `no-missing-keys`
+
+Catches references to translation keys that don't exist in your translation files.
+
+### `prefer-translation-hooks`
+
+Warns when using direct i18n instance access instead of the `useTranslations` hook in React components.

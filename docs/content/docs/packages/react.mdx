@@ -1,0 +1,138 @@
+---
+title: "@intl-party/react"
+description: React hooks and components for IntlParty with full TypeScript support.
+---
+
+The React package provides hooks, components, and a context provider for using IntlParty translations in React applications.
+
+## Installation
+
+```bash
+npm install @intl-party/react @intl-party/core
+```
+
+## Provider Setup
+
+Wrap your application with `I18nProvider`:
+
+```tsx
+import { I18nProvider } from "@intl-party/react";
+import { createI18n } from "@intl-party/core";
+
+const i18n = createI18n({
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  namespaces: ["common"],
+});
+
+function App() {
+  return (
+    <I18nProvider i18n={i18n}>
+      <YourApp />
+    </I18nProvider>
+  );
+}
+```
+
+## Hooks
+
+### `useTranslations(namespace?)`
+
+The primary hook for accessing translations:
+
+```tsx
+import { useTranslations } from "@intl-party/react";
+
+function Welcome() {
+  const t = useTranslations("common");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { interpolation: { name: "World" } })}</p>
+    </div>
+  );
+}
+```
+
+### `useLocale()`
+
+Access and change the current locale:
+
+```tsx
+import { useLocale } from "@intl-party/react";
+
+function LocaleSwitcher() {
+  const { locale, setLocale } = useLocale();
+
+  return (
+    <select value={locale} onChange={(e) => setLocale(e.target.value)}>
+      <option value="en">English</option>
+      <option value="es">Espanol</option>
+      <option value="fr">Francais</option>
+    </select>
+  );
+}
+```
+
+### `useNamespace()`
+
+Access the current namespace context:
+
+```tsx
+import { useNamespace } from "@intl-party/react";
+
+function NamespacedComponent() {
+  const namespace = useNamespace();
+  // ...
+}
+```
+
+## Components
+
+### `Trans`
+
+For rich text translations with embedded components:
+
+```tsx
+import { Trans } from "@intl-party/react";
+
+function RichText() {
+  return (
+    <Trans
+      i18nKey="richText"
+      components={{
+        strong: <strong />,
+        link: <a href="/about" />,
+      }}
+      interpolation={{ name: "World" }}
+    />
+  );
+}
+```
+
+### `LocaleSelector`
+
+A pre-built locale selector component:
+
+```tsx
+import { LocaleSelector } from "@intl-party/react";
+
+function Header() {
+  return <LocaleSelector />;
+}
+```
+
+## Performance
+
+To minimize re-renders when the locale changes, use `React.memo`:
+
+```tsx
+import { useTranslations } from "@intl-party/react";
+import { memo } from "react";
+
+const MyComponent = memo(function MyComponent() {
+  const t = useTranslations("common");
+  return <div>{t("title")}</div>;
+});
+```

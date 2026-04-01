@@ -1,0 +1,125 @@
+---
+title: Migrating from FormatJS (react-intl)
+description: Step-by-step guide for migrating from FormatJS react-intl to IntlParty.
+---
+
+[react-intl](https://formatjs.io/docs/react-intl/) is part of the FormatJS suite. IntlParty provides a simpler component API, streamlined hooks, and better TypeScript integration.
+
+## Configuration
+
+### Before (react-intl)
+
+```tsx title="App.tsx"
+import { IntlProvider } from "react-intl";
+import English from "./locales/en.json";
+import French from "./locales/fr.json";
+
+const messages = { en: English, fr: French };
+
+function App({ locale }) {
+  return (
+    <IntlProvider locale={locale} messages={messages[locale]}>
+      <MyComponent />
+    </IntlProvider>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx title="App.tsx"
+import { I18nProvider } from "@intl-party/react";
+import { createI18n } from "@intl-party/core";
+import English from "./locales/en.json";
+import French from "./locales/fr.json";
+
+const i18n = createI18n({
+  locales: ["en", "fr"],
+  defaultLocale: "en",
+  namespaces: ["messages"],
+});
+
+i18n.addTranslations("en", "messages", English);
+i18n.addTranslations("fr", "messages", French);
+
+function App({ locale }) {
+  return (
+    <I18nProvider i18n={i18n} initialLocale={locale}>
+      <MyComponent />
+    </I18nProvider>
+  );
+}
+```
+
+## Component Usage
+
+### Before (react-intl)
+
+```tsx
+import { useIntl, FormattedMessage } from "react-intl";
+
+function MyComponent() {
+  const intl = useIntl();
+
+  return (
+    <div>
+      <h1>
+        <FormattedMessage id="welcome" defaultMessage="Welcome" />
+      </h1>
+      <p>{intl.formatMessage({ id: "greeting" }, { name: "John" })}</p>
+    </div>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx
+import { useTranslations } from "@intl-party/react";
+
+function MyComponent() {
+  const t = useTranslations("messages");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { interpolation: { name: "John" } })}</p>
+    </div>
+  );
+}
+```
+
+## Key Differences
+
+1. **Simpler Component API** -- No `FormattedMessage` component needed; use the `t` function directly
+2. **Streamlined Hook** -- `useTranslations` returns a function directly instead of an intl object
+3. **Interpolation** -- Use the `interpolation` object for variables
+4. **No `defaultMessage`** -- Messages are defined in translation files, not in components
+5. **Type Safety** -- Full TypeScript support with auto-completion
+
+## ICU MessageFormat Compatibility
+
+If you use ICU MessageFormat in your react-intl messages, IntlParty supports the same format. Install the optional dependency:
+
+```bash
+npm install intl-messageformat
+```
+
+Your existing ICU messages will work without modification:
+
+```json
+{
+  "itemCount": "{count, plural, one {# item} other {# items}}",
+  "greeting": "{gender, select, male {He} female {She} other {They}} liked your post"
+}
+```
+
+## Migration Checklist
+
+- [ ] Install `@intl-party/core` and `@intl-party/react`
+- [ ] Remove `react-intl` and `@formatjs/*` packages
+- [ ] Replace `IntlProvider` with `I18nProvider`
+- [ ] Replace `FormattedMessage` with `t()` calls
+- [ ] Replace `useIntl().formatMessage()` with `useTranslations()`
+- [ ] Install `intl-messageformat` if using ICU MessageFormat
+- [ ] Verify existing ICU messages work correctly

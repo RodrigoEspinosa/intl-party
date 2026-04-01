@@ -1,0 +1,104 @@
+---
+title: Server-Side Rendering
+description: Configure IntlParty for SSR with Next.js App Router.
+---
+
+IntlParty is built for server-side rendering with Next.js App Router. This guide covers how translations work in server components, client components, and streaming scenarios.
+
+## Layout Setup
+
+The root layout loads the locale and messages on the server and passes them to the client via the Provider:
+
+```tsx title="app/layout.tsx"
+import { createSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
+
+const { getLocale, getMessages, Provider } = createSetup(config);
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
+  return (
+    <html lang={locale}>
+      <body>
+        <Provider locale={locale} initialMessages={messages}>
+          {children}
+        </Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Server Components
+
+In server components, use `getServerTranslations` for direct access to translations without client-side JavaScript:
+
+```tsx title="app/page.tsx"
+import { getServerTranslations } from "@intl-party/nextjs";
+
+export default async function Page() {
+  const t = await getServerTranslations("common");
+
+  return <h1>{t("welcome")}</h1>;
+}
+```
+
+## Client Components
+
+Client components use the `useTranslations` hook, which reads from the Provider context:
+
+```tsx title="components/Greeting.tsx"
+"use client";
+
+import { useTranslations } from "@intl-party/nextjs";
+
+export default function Greeting() {
+  const t = useTranslations("common");
+  return <p>{t("greeting", { name: "World" })}</p>;
+}
+```
+
+## Middleware
+
+The middleware handles locale detection from multiple sources:
+
+1. URL path prefix (if configured)
+2. Cookie value
+3. `Accept-Language` header
+4. Default locale fallback
+
+```typescript title="middleware.ts"
+import { createSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+## Ensuring Consistency
+
+To prevent mismatches between server and client translations:
+
+1. Always pass `initialMessages` to the Provider in your layout
+2. Use the same locale value for both `getMessages` and the Provider's `locale` prop
+3. Enable debug mode during development to log translation state:
+
+```typescript title="intl-party.config.ts"
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  debug: process.env.NODE_ENV !== "production",
+};
+```
+
+## Static Generation (SSG)
+
+IntlParty works with static generation. Translations are resolved at build time for statically generated pages, keeping the bundle minimal.
