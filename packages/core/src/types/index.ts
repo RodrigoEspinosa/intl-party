@@ -115,7 +115,7 @@ export interface TranslationOptions {
   interpolation?: Record<string, TranslationValue>;
   count?: number;
   context?: string;
-  formatters?: Record<string, (value: any) => string>;
+  formatters?: Record<string, (value: string) => string>;
   namespace?: Namespace;
 }
 

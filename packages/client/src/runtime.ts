@@ -20,15 +20,15 @@ export function createTranslationFunction(
 ) {
   return function t(
     key: TranslationKey,
-    options?: Record<string, any>
+    options?: Record<string, TranslationValue>
   ): string {
     const keys = key.split(".");
-    let value: any = messages;
+    let value: TranslationValue | Translations = messages;
 
     // Navigate through nested object structure
     for (const k of keys) {
       if (value && typeof value === "object" && k in value) {
-        value = value[k];
+        value = (value as Translations)[k];
       } else {
         console.warn(
           `Translation key "${key}" not found for locale "${locale}"`

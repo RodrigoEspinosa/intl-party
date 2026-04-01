@@ -196,11 +196,14 @@ export class TranslationStore {
     return chain;
   }
 
-  private getNestedValue(obj: any, path: string): TranslationValue | undefined {
+  private getNestedValue(
+    obj: Translations | undefined,
+    path: string,
+  ): TranslationValue | undefined {
     if (!obj || typeof obj !== "object") return undefined;
 
     const keys = path.split(".");
-    let current = obj;
+    let current: TranslationValue | NestedTranslations | Translations = obj;
 
     for (const key of keys) {
       if (
@@ -208,13 +211,18 @@ export class TranslationStore {
         typeof current === "object" &&
         Object.prototype.hasOwnProperty.call(current, key)
       ) {
-        current = current[key];
+        current = (current as Record<string, TranslationValue | NestedTranslations>)[key];
       } else {
         return undefined;
       }
     }
 
-    return current;
+    // At this point current should be a leaf value, not a nested object
+    if (typeof current === "object" && current !== null) {
+      return undefined;
+    }
+
+    return current as TranslationValue;
   }
 
   private formatTranslation(
@@ -294,7 +302,7 @@ export class TranslationStore {
 
   private applyFormatters(
     text: string,
-    formatters: Record<string, (value: any) => string>,
+    formatters: Record<string, (value: string) => string>,
   ): string {
     return text.replace(/\{\{(\w+):(\w+)\}\}/g, (match, value, formatter) => {
       const formatterFn = formatters[formatter];

@@ -55,12 +55,22 @@ class LRUCache<K, V> {
   }
 }
 
+/** Minimal interface for a compiled ICU message (from intl-messageformat). */
+interface CompiledICUMessage {
+  format(values?: Record<string, unknown>): string | Array<string | object>;
+}
+
+/** Constructor interface for the IntlMessageFormat class. */
+interface IntlMessageFormatConstructor {
+  new (message: string, locale: string): CompiledICUMessage;
+}
+
 // Global cache for compiled ICU messages
 // Key format: `${locale}:${message}`
-const icuMessageCache = new LRUCache<string, any>(500);
+const icuMessageCache = new LRUCache<string, CompiledICUMessage>(500);
 
 // Cached reference to IntlMessageFormat constructor
-let IntlMessageFormat: any = null;
+let IntlMessageFormat: IntlMessageFormatConstructor | null = null;
 let icuLoadAttempted = false;
 
 /**
@@ -274,7 +284,7 @@ export function formatICUMessage(
   if (!compiledMessage) {
     try {
       // Compile the message
-      compiledMessage = new IntlMessageFormat(message, locale);
+      compiledMessage = new IntlMessageFormat!(message, locale);
       icuMessageCache.set(cacheKey, compiledMessage);
     } catch (error) {
       // If compilation fails, return original message

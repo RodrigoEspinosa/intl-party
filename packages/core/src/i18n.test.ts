@@ -54,7 +54,7 @@ describe("I18n", () => {
 
     it("should emit locale change event", () => {
       const i18n = createI18n(config);
-      let eventData: any = null;
+      let eventData: { locale: string; previousLocale: string } | null = null;
 
       i18n.on("localeChange", (data) => {
         eventData = data;
