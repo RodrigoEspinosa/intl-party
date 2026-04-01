@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
+import fs from "fs-extra";
 import inquirer from "inquirer";
 import { loadConfig, type CLIConfig } from "../utils/config";
 import { loadTranslations, saveTranslations } from "../utils/translations";
@@ -10,8 +11,27 @@ export interface SyncOptions {
   target?: string[];
   missingOnly?: boolean;
   interactive?: boolean;
+  format?: "text" | "json" | "junit";
+  output?: string;
+  dryRun?: boolean;
   config?: string;
   verbose?: boolean;
+}
+
+export interface SyncAnalysis {
+  missingKeys: Array<{
+    locale: string;
+    namespace: string;
+    key: string;
+  }>;
+  unusedKeys: Array<{
+    locale: string;
+    namespace: string;
+    key: string;
+  }>;
+  totalKeys: number;
+  missingCount: number;
+  unusedCount: number;
 }
 
 export async function syncCommand(options: SyncOptions) {
@@ -52,6 +72,12 @@ export async function syncCommand(options: SyncOptions) {
       displayAnalysis(analysis);
     }
 
+    // If dry-run, just output the analysis and return
+    if (options.dryRun) {
+      await outputResults(analysis, options);
+      return;
+    }
+
     // Handle interactive mode
     if (
       options.interactive &&
@@ -65,12 +91,10 @@ export async function syncCommand(options: SyncOptions) {
     }
 
     // Perform sync
-    const updatedTranslations = await performSync(
+    const updatedTranslations = performSync(
       translations,
       analysis,
       baseLocale,
-      targetLocales,
-      config.namespaces,
       options
     );
 
@@ -79,8 +103,8 @@ export async function syncCommand(options: SyncOptions) {
     await saveTranslations(updatedTranslations, config.translationPaths);
     spinner.succeed("Translations synchronized successfully");
 
-    // Display summary
-    displaySummary(analysis, updatedTranslations);
+    // Output results
+    await outputResults(analysis, options);
   } catch (error) {
     spinner.fail("Sync failed");
     console.error(
@@ -91,23 +115,7 @@ export async function syncCommand(options: SyncOptions) {
   }
 }
 
-interface SyncAnalysis {
-  missingKeys: Array<{
-    locale: string;
-    namespace: string;
-    key: string;
-  }>;
-  unusedKeys: Array<{
-    locale: string;
-    namespace: string;
-    key: string;
-  }>;
-  totalKeys: number;
-  missingCount: number;
-  unusedCount: number;
-}
-
-function analyzeTranslations(
+export function analyzeTranslations(
   translations: AllTranslations,
   baseLocale: string,
   targetLocales: string[],
@@ -116,35 +124,26 @@ function analyzeTranslations(
   const missingKeys: SyncAnalysis["missingKeys"] = [];
   const unusedKeys: SyncAnalysis["unusedKeys"] = [];
 
-  // Get all keys from base locale
-  const baseKeys = new Set<string>();
+  // Get all keys from base locale per namespace
   for (const namespace of namespaces) {
     const baseTranslations = translations[baseLocale]?.[namespace] || {};
+    const baseKeys = new Set<string>();
     collectKeys(baseTranslations, "", baseKeys);
-  }
 
-  // Check for missing keys in target locales
-  for (const locale of targetLocales) {
-    for (const namespace of namespaces) {
+    // Check each target locale
+    for (const locale of targetLocales) {
       const targetTranslations = translations[locale]?.[namespace] || {};
       const targetKeys = new Set<string>();
       collectKeys(targetTranslations, "", targetKeys);
 
+      // Missing: in base but not in target
       for (const key of baseKeys) {
         if (!targetKeys.has(key)) {
           missingKeys.push({ locale, namespace, key });
         }
       }
-    }
-  }
 
-  // Check for unused keys (keys in target locales but not in base)
-  for (const locale of targetLocales) {
-    for (const namespace of namespaces) {
-      const targetTranslations = translations[locale]?.[namespace] || {};
-      const targetKeys = new Set<string>();
-      collectKeys(targetTranslations, "", targetKeys);
-
+      // Extra/unused: in target but not in base
       for (const key of targetKeys) {
         if (!baseKeys.has(key)) {
           unusedKeys.push({ locale, namespace, key });
@@ -153,21 +152,30 @@ function analyzeTranslations(
     }
   }
 
+  // Compute total base keys across all namespaces
+  let totalKeys = 0;
+  for (const namespace of namespaces) {
+    const baseTranslations = translations[baseLocale]?.[namespace] || {};
+    const baseKeys = new Set<string>();
+    collectKeys(baseTranslations, "", baseKeys);
+    totalKeys += baseKeys.size;
+  }
+
   return {
     missingKeys,
     unusedKeys,
-    totalKeys: baseKeys.size,
+    totalKeys,
     missingCount: missingKeys.length,
     unusedCount: unusedKeys.length,
   };
 }
 
-function collectKeys(obj: any, prefix: string, keys: Set<string>): void {
+function collectKeys(obj: Record<string, unknown>, prefix: string, keys: Set<string>): void {
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
 
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      collectKeys(value, fullKey, keys);
+      collectKeys(value as Record<string, unknown>, fullKey, keys);
     } else {
       keys.add(fullKey);
     }
@@ -175,13 +183,13 @@ function collectKeys(obj: any, prefix: string, keys: Set<string>): void {
 }
 
 function displayAnalysis(analysis: SyncAnalysis): void {
-  console.log(chalk.bold("\n📊 Translation Analysis:"));
+  console.log(chalk.bold("\nTranslation Analysis:"));
   console.log(`Total keys in base locale: ${chalk.blue(analysis.totalKeys)}`);
   console.log(`Missing keys: ${chalk.yellow(analysis.missingCount)}`);
   console.log(`Unused keys: ${chalk.red(analysis.unusedCount)}`);
 
   if (analysis.missingKeys.length > 0) {
-    console.log(chalk.yellow("\n⚠️  Missing Keys:"));
+    console.log(chalk.yellow("\nMissing Keys:"));
     const grouped = groupKeysByLocale(analysis.missingKeys);
     for (const [locale, keys] of Object.entries(grouped)) {
       console.log(chalk.gray(`  ${locale}: ${keys.length} keys`));
@@ -194,7 +202,7 @@ function displayAnalysis(analysis: SyncAnalysis): void {
   }
 
   if (analysis.unusedKeys.length > 0) {
-    console.log(chalk.red("\n🗑️  Unused Keys:"));
+    console.log(chalk.red("\nUnused Keys:"));
     const grouped = groupKeysByLocale(analysis.unusedKeys);
     for (const [locale, keys] of Object.entries(grouped)) {
       console.log(chalk.gray(`  ${locale}: ${keys.length} keys`));
@@ -243,26 +251,28 @@ async function confirmSync(analysis: SyncAnalysis): Promise<boolean> {
   return answers.addMissing || answers.removeUnused;
 }
 
-async function performSync(
+function performSync(
   translations: AllTranslations,
   analysis: SyncAnalysis,
   baseLocale: string,
-  targetLocales: string[],
-  namespaces: string[],
   options: SyncOptions
-): Promise<AllTranslations> {
+): AllTranslations {
   const updatedTranslations = JSON.parse(JSON.stringify(translations));
 
-  // Add missing keys
-  if (
-    analysis.missingKeys.length > 0 &&
-    (options.missingOnly || !options.missingOnly)
-  ) {
+  // Add missing keys with placeholder values
+  if (analysis.missingKeys.length > 0) {
     for (const missing of analysis.missingKeys) {
       const baseValue = getNestedValue(
         updatedTranslations[baseLocale]?.[missing.namespace] || {},
         missing.key
       );
+
+      if (!updatedTranslations[missing.locale]) {
+        updatedTranslations[missing.locale] = {};
+      }
+      if (!updatedTranslations[missing.locale][missing.namespace]) {
+        updatedTranslations[missing.locale][missing.namespace] = {};
+      }
 
       setNestedValue(
         updatedTranslations[missing.locale][missing.namespace],
@@ -272,7 +282,7 @@ async function performSync(
     }
   }
 
-  // Remove unused keys
+  // Remove unused keys (only when not missing-only mode)
   if (analysis.unusedKeys.length > 0 && !options.missingOnly) {
     for (const unused of analysis.unusedKeys) {
       removeNestedValue(
@@ -285,37 +295,125 @@ async function performSync(
   return updatedTranslations;
 }
 
-function getNestedValue(obj: any, path: string): any {
-  return path.split(".").reduce((current, key) => current?.[key], obj);
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce((current: unknown, key: string) => {
+    if (current && typeof current === "object") {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj);
 }
 
-function setNestedValue(obj: any, path: string, value: any): void {
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split(".");
   const lastKey = keys.pop()!;
-  const target = keys.reduce((current, key) => {
+  const target = keys.reduce((current: Record<string, unknown>, key: string) => {
     if (!current[key]) current[key] = {};
-    return current[key];
+    return current[key] as Record<string, unknown>;
   }, obj);
   target[lastKey] = value;
 }
 
-function removeNestedValue(obj: any, path: string): void {
+function removeNestedValue(obj: Record<string, unknown>, path: string): void {
   const keys = path.split(".");
   const lastKey = keys.pop()!;
-  const target = keys.reduce((current, key) => current?.[key], obj);
-  if (target) {
-    delete target[lastKey];
+  const target = keys.reduce((current: unknown, key: string) => {
+    if (current && typeof current === "object") {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj as unknown);
+  if (target && typeof target === "object") {
+    delete (target as Record<string, unknown>)[lastKey];
   }
 }
 
-function displaySummary(
-  analysis: SyncAnalysis,
-  translations: AllTranslations
-): void {
-  console.log(chalk.bold.green("\n✅ Sync Complete!"));
+async function outputResults(analysis: SyncAnalysis, options: SyncOptions) {
+  const format = options.format || "text";
+
+  if (format === "json") {
+    const output = JSON.stringify(analysis, null, 2);
+
+    if (options.output) {
+      await fs.writeFile(options.output, output);
+      console.log(chalk.green("\u2713"), `Results written to ${options.output}`);
+    } else {
+      console.log(output);
+    }
+    return;
+  }
+
+  if (format === "junit") {
+    const junitXml = generateJUnitXML(analysis);
+
+    if (options.output) {
+      await fs.writeFile(options.output, junitXml);
+      console.log(chalk.green("\u2713"), `JUnit report written to ${options.output}`);
+    } else {
+      console.log(junitXml);
+    }
+    return;
+  }
+
+  // Text format (default)
+  if (options.dryRun) {
+    displayAnalysis(analysis);
+    return;
+  }
+
+  displaySummary(analysis);
+}
+
+function displaySummary(analysis: SyncAnalysis): void {
+  console.log(chalk.bold.green("\nSync Complete!"));
   console.log(`Added ${chalk.green(analysis.missingCount)} missing keys`);
   console.log(`Removed ${chalk.red(analysis.unusedCount)} unused keys`);
-  console.log(
-    `Total translations: ${Object.keys(translations).length} locales`
-  );
+}
+
+function generateJUnitXML(analysis: SyncAnalysis): string {
+  const totalTests = 1;
+  const failures = analysis.missingCount > 0 || analysis.unusedCount > 0 ? 1 : 0;
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<testsuites name="intl-party-sync" tests="${totalTests}" failures="${failures}" errors="0">\n`;
+  xml += `  <testsuite name="translation-sync" tests="${totalTests}" failures="${failures}" errors="0">\n`;
+
+  if (failures === 0) {
+    xml += `    <testcase name="sync" classname="translations" />\n`;
+  } else {
+    xml += `    <testcase name="sync" classname="translations">\n`;
+    xml += `      <failure message="Translation sync issues found">\n`;
+    xml += `        <![CDATA[\n`;
+
+    if (analysis.missingKeys.length > 0) {
+      xml += `Missing keys (${analysis.missingCount}):\n`;
+      const grouped = groupKeysByLocale(analysis.missingKeys);
+      for (const [locale, keys] of Object.entries(grouped)) {
+        xml += `  ${locale}:\n`;
+        for (const key of keys) {
+          xml += `    - ${key.namespace}.${key.key}\n`;
+        }
+      }
+    }
+
+    if (analysis.unusedKeys.length > 0) {
+      xml += `Unused keys (${analysis.unusedCount}):\n`;
+      const grouped = groupKeysByLocale(analysis.unusedKeys);
+      for (const [locale, keys] of Object.entries(grouped)) {
+        xml += `  ${locale}:\n`;
+        for (const key of keys) {
+          xml += `    - ${key.namespace}.${key.key}\n`;
+        }
+      }
+    }
+
+    xml += `        ]]>\n`;
+    xml += `      </failure>\n`;
+    xml += `    </testcase>\n`;
+  }
+
+  xml += `  </testsuite>\n`;
+  xml += `</testsuites>\n`;
+
+  return xml;
 }

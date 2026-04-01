@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { extractCommand } from "./extract";
+import { extractCommand, extractKeysFromContent } from "./extract";
 import fs from "fs-extra";
 import path from "node:path";
 import { glob } from "glob";
@@ -13,12 +13,14 @@ vi.mock("fs-extra", () => ({
     readFile: vi.fn().mockImplementation(() => Promise.resolve("")),
     readJson: vi.fn().mockImplementation(() => Promise.resolve({})),
     writeJson: vi.fn().mockImplementation(() => Promise.resolve()),
+    writeFile: vi.fn().mockImplementation(() => Promise.resolve()),
   },
   pathExists: vi.fn().mockImplementation(() => Promise.resolve(false)),
   ensureDir: vi.fn().mockImplementation(() => Promise.resolve()),
   readFile: vi.fn().mockImplementation(() => Promise.resolve("")),
   readJson: vi.fn().mockImplementation(() => Promise.resolve({})),
   writeJson: vi.fn().mockImplementation(() => Promise.resolve()),
+  writeFile: vi.fn().mockImplementation(() => Promise.resolve()),
 }));
 
 vi.mock("node:path", () => ({
@@ -65,6 +67,66 @@ const processExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit with code ${code}`);
 });
 
+describe("extractKeysFromContent", () => {
+  it("should extract t() calls with single quotes", () => {
+    const content = `const x = t('hello');`;
+    expect(extractKeysFromContent(content)).toContain("hello");
+  });
+
+  it("should extract t() calls with double quotes", () => {
+    const content = `const x = t("hello");`;
+    expect(extractKeysFromContent(content)).toContain("hello");
+  });
+
+  it("should extract t() calls with backticks", () => {
+    const content = "const x = t(`hello`);";
+    expect(extractKeysFromContent(content)).toContain("hello");
+  });
+
+  it("should extract useTranslations()() pattern", () => {
+    const content = `const msg = useTranslations()('greeting');`;
+    expect(extractKeysFromContent(content)).toContain("greeting");
+  });
+
+  it("should extract namespaced useTranslations('ns')('key') pattern", () => {
+    const content = `const msg = useTranslations('common')('button.submit');`;
+    expect(extractKeysFromContent(content)).toContain("common.button.submit");
+  });
+
+  it("should extract i18nKey attribute", () => {
+    const content = `<Trans i18nKey="page.title" />`;
+    expect(extractKeysFromContent(content)).toContain("page.title");
+  });
+
+  it("should extract JSX expression t() calls", () => {
+    const content = `<p>{ t('description') }</p>`;
+    expect(extractKeysFromContent(content)).toContain("description");
+  });
+
+  it("should extract multiple keys from complex content", () => {
+    const content = `
+      function Component() {
+        return (
+          <div>
+            <h1>{t('welcome')}</h1>
+            <p>{t('description')}</p>
+            <Trans i18nKey="footer.copyright" />
+          </div>
+        );
+      }
+    `;
+    const keys = extractKeysFromContent(content);
+    expect(keys).toContain("welcome");
+    expect(keys).toContain("description");
+    expect(keys).toContain("footer.copyright");
+  });
+
+  it("should return empty array for content with no translation keys", () => {
+    const content = `const x = 5; console.log(x);`;
+    expect(extractKeysFromContent(content)).toEqual([]);
+  });
+});
+
 describe("extractCommand", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -95,7 +157,7 @@ describe("extractCommand", () => {
 
     const mockSourceContent = `
       import React from 'react';
-      
+
       function Component() {
         return (
           <div>
@@ -149,10 +211,6 @@ describe("extractCommand", () => {
         greeting: "",
       }),
       { spaces: 2 },
-    );
-
-    expect(consoleLog).toHaveBeenCalledWith(
-      expect.stringContaining("Translation keys extracted"),
     );
   });
 
@@ -257,5 +315,106 @@ describe("extractCommand", () => {
       "File not found",
     );
     expect(processExit).toHaveBeenCalledWith(1);
+  });
+
+  it("should output JSON format when --format json is specified", async () => {
+    const mockSourceFiles = ["src/App.tsx"];
+    const mockSourceContent = `const x = t('hello');`;
+
+    vi.mocked(glob).mockImplementation(() => Promise.resolve(mockSourceFiles));
+    vi.mocked(fs.readFile).mockImplementation(() =>
+      Promise.resolve(mockSourceContent),
+    );
+    vi.mocked(fs.pathExists).mockImplementation(() => Promise.resolve(false));
+
+    await extractCommand({ dryRun: true, format: "json" });
+
+    // Should have logged a JSON string
+    const jsonCall = consoleLog.mock.calls.find((call) => {
+      try {
+        JSON.parse(call[0]);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    expect(jsonCall).toBeDefined();
+
+    const parsed = JSON.parse(jsonCall![0]);
+    expect(parsed).toHaveProperty("extractedKeys");
+    expect(parsed).toHaveProperty("missingKeysByLocale");
+    expect(parsed).toHaveProperty("totalFiles");
+    expect(parsed).toHaveProperty("totalKeys");
+    expect(parsed.extractedKeys).toContain("hello");
+  });
+
+  it("should output JUnit XML format when --format junit is specified", async () => {
+    const mockSourceFiles = ["src/App.tsx"];
+    const mockSourceContent = `const x = t('hello');`;
+
+    vi.mocked(glob).mockImplementation(() => Promise.resolve(mockSourceFiles));
+    vi.mocked(fs.readFile).mockImplementation(() =>
+      Promise.resolve(mockSourceContent),
+    );
+    vi.mocked(fs.pathExists).mockImplementation(() => Promise.resolve(false));
+
+    await extractCommand({ dryRun: true, format: "junit" });
+
+    const xmlCall = consoleLog.mock.calls.find((call) =>
+      String(call[0]).includes("<?xml"),
+    );
+    expect(xmlCall).toBeDefined();
+    expect(xmlCall![0]).toContain("intl-party-extract");
+    expect(xmlCall![0]).toContain("testsuites");
+  });
+
+  it("should report missing keys per locale in text format", async () => {
+    const mockConfig: CLIConfig = {
+      locales: ["en", "fr"],
+      defaultLocale: "en",
+      namespaces: ["common"],
+      sourcePatterns: ["src/**/*.{ts,tsx}"],
+      outputDir: "./messages",
+      translationPaths: {
+        en: { common: "messages/en/common.json" },
+        fr: { common: "messages/fr/common.json" },
+      },
+    };
+
+    const mockSourceFiles = ["src/App.tsx"];
+    const mockSourceContent = `const x = t('hello'); const y = t('world');`;
+
+    vi.mocked(loadConfig).mockImplementation(() => Promise.resolve(mockConfig));
+    vi.mocked(glob).mockImplementation(() => Promise.resolve(mockSourceFiles));
+    vi.mocked(fs.readFile).mockImplementation(() =>
+      Promise.resolve(mockSourceContent),
+    );
+    vi.mocked(fs.pathExists).mockImplementation(() => Promise.resolve(false));
+
+    await extractCommand({ dryRun: true });
+
+    // Should report missing keys
+    expect(consoleLog).toHaveBeenCalledWith(
+      expect.stringContaining("Missing keys by locale"),
+    );
+  });
+
+  it("should handle empty source files gracefully", async () => {
+    vi.mocked(glob).mockImplementation(() => Promise.resolve([]));
+
+    await extractCommand({ dryRun: true });
+
+    // Should still succeed with 0 keys
+    expect(processExit).not.toHaveBeenCalled();
+  });
+
+  it("should use custom source patterns from options", async () => {
+    const customPatterns = ["lib/**/*.ts"];
+
+    vi.mocked(glob).mockImplementation(() => Promise.resolve([]));
+
+    await extractCommand({ source: customPatterns, dryRun: true });
+
+    expect(glob).toHaveBeenCalledWith(customPatterns);
   });
 });
