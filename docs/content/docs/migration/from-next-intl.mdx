@@ -1,0 +1,111 @@
+---
+title: Migrating from next-intl
+description: Step-by-step guide for migrating from next-intl to IntlParty.
+---
+
+[next-intl](https://next-intl-docs.vercel.app/) is a popular i18n library for Next.js. IntlParty offers a simpler configuration, better TypeScript integration, and clean URLs by default.
+
+## Configuration
+
+Replace your next-intl configuration with a single IntlParty config file.
+
+### Before (next-intl)
+
+```typescript title="i18n.ts"
+import { getRequestConfig } from "next-intl/server";
+
+export default getRequestConfig(async ({ locale }) => ({
+  messages: (await import(`./messages/${locale}.json`)).default,
+}));
+```
+
+```typescript title="middleware.ts"
+import createMiddleware from "next-intl/middleware";
+
+export default createMiddleware({
+  locales: ["en", "fr", "es"],
+  defaultLocale: "en",
+});
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+### After (IntlParty)
+
+```typescript title="intl-party.config.ts"
+export default {
+  locales: ["en", "fr", "es"],
+  defaultLocale: "en",
+  messages: "./messages",
+  localePrefix: "as-needed", // matches next-intl default behavior
+};
+```
+
+```typescript title="middleware.ts"
+import { createSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+## Component Usage
+
+### Before (next-intl)
+
+```tsx
+"use client";
+
+import { useTranslations } from "next-intl";
+
+export default function LocaleSwitcher() {
+  const t = useTranslations("LocaleSwitcher");
+
+  return (
+    <div>
+      <p>{t("switchLocale")}</p>
+      <p>{t("welcomeMessage", { username: "John" })}</p>
+    </div>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx
+"use client";
+
+import { useTranslations } from "@intl-party/nextjs";
+
+export default function LocaleSwitcher() {
+  const t = useTranslations("LocaleSwitcher");
+
+  return (
+    <div>
+      <p>{t("switchLocale")}</p>
+      <p>{t("welcomeMessage", { interpolation: { username: "John" } })}</p>
+    </div>
+  );
+}
+```
+
+## Key Differences
+
+1. **Type Safety** -- IntlParty provides better TypeScript integration without explicit type assertions
+2. **Interpolation** -- Use the `interpolation` object instead of direct parameter passing
+3. **Setup** -- Single `createSetup` call replaces multiple configuration files
+4. **Clean URLs** -- Default is clean URLs without locale prefix (configurable)
+
+## Migration Checklist
+
+- [ ] Install `@intl-party/nextjs` and remove `next-intl`
+- [ ] Create `intl-party.config.ts` from your existing next-intl config
+- [ ] Replace `middleware.ts` with IntlParty middleware
+- [ ] Update `layout.tsx` to use IntlParty Provider
+- [ ] Update all imports from `next-intl` to `@intl-party/nextjs`
+- [ ] Update interpolation syntax in component calls
+- [ ] Run `npx intl-party check --missing` to verify translations

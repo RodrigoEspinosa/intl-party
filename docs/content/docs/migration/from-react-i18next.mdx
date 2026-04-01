@@ -1,0 +1,139 @@
+---
+title: Migrating from react-i18next
+description: Step-by-step guide for migrating from react-i18next to IntlParty.
+---
+
+[react-i18next](https://react.i18next.com/) is a React integration for i18next. IntlParty offers a cleaner API, better TypeScript support, and built-in loading handling.
+
+## Configuration
+
+### Before (react-i18next)
+
+```typescript title="i18n.js"
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import Backend from "i18next-http-backend";
+import LanguageDetector from "i18next-browser-languagedetector";
+
+i18n
+  .use(Backend)
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: "en",
+    debug: true,
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+export default i18n;
+```
+
+### After (IntlParty)
+
+```typescript title="i18n.ts"
+import { createI18n } from "@intl-party/core";
+import enTranslations from "./locales/en.json";
+import frTranslations from "./locales/fr.json";
+
+const i18n = createI18n({
+  locales: ["en", "fr"],
+  defaultLocale: "en",
+  namespaces: ["translation", "common"],
+});
+
+i18n.addTranslations("en", "translation", enTranslations);
+i18n.addTranslations("fr", "translation", frTranslations);
+
+export default i18n;
+```
+
+## Component Usage
+
+### Before (react-i18next)
+
+```tsx
+import { useTranslation } from "react-i18next";
+
+function MyComponent() {
+  const { t } = useTranslation();
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { name: "John" })}</p>
+      <p>{t("items", { count: 5 })}</p>
+    </div>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx
+import { useTranslations } from "@intl-party/react";
+
+function MyComponent() {
+  const t = useTranslations("translation");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { interpolation: { name: "John" } })}</p>
+      <p>{t("items", { count: 5 })}</p>
+    </div>
+  );
+}
+```
+
+## Trans Component
+
+### Before (react-i18next)
+
+```tsx
+import { Trans } from "react-i18next";
+
+function RichText() {
+  return (
+    <Trans i18nKey="richText" t={t}>
+      Welcome to <strong>{{ name }}</strong>.
+    </Trans>
+  );
+}
+```
+
+### After (IntlParty)
+
+```tsx
+import { Trans } from "@intl-party/react";
+
+function RichText() {
+  return (
+    <Trans
+      i18nKey="richText"
+      components={{ strong: <strong /> }}
+      interpolation={{ name: "World" }}
+    />
+  );
+}
+```
+
+## Key Differences
+
+1. **Cleaner API** -- No destructuring needed; `useTranslations` returns the `t` function directly
+2. **Interpolation** -- Use the `interpolation` object for variable replacement
+3. **Namespaces** -- Specify the namespace when calling the hook
+4. **Type Safety** -- Better TypeScript integration without manual type assertions
+5. **Loading** -- Replace `Suspense` with IntlParty's built-in loading handling
+
+## Migration Checklist
+
+- [ ] Install `@intl-party/core` and `@intl-party/react`
+- [ ] Remove `i18next`, `react-i18next`, and related plugins
+- [ ] Replace i18n initialization with `createI18n`
+- [ ] Replace `I18nextProvider` with `I18nProvider`
+- [ ] Update all `useTranslation` calls to `useTranslations`
+- [ ] Update interpolation syntax in translation calls
+- [ ] Replace `Trans` component usage with IntlParty `Trans`
+- [ ] Convert translation files to IntlParty JSON format if needed

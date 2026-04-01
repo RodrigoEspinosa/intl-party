@@ -1,0 +1,119 @@
+---
+title: Namespaces
+description: Organize your translations into logical groups with namespaces.
+---
+
+Namespaces let you split translations into separate files organized by feature, page, or domain. This keeps translation files manageable and allows loading only what a page needs.
+
+## File Structure
+
+Each namespace corresponds to a JSON file inside a locale directory:
+
+```
+messages/
+├── en/
+│   ├── common.json       # Shared translations
+│   ├── navigation.json   # Navigation labels
+│   ├── auth.json         # Authentication pages
+│   └── dashboard.json    # Dashboard page
+├── es/
+│   ├── common.json
+│   ├── navigation.json
+│   ├── auth.json
+│   └── dashboard.json
+```
+
+## Using Namespaces
+
+Specify the namespace when calling `useTranslations`:
+
+```tsx
+import { useTranslations } from "@intl-party/nextjs";
+
+function NavigationBar() {
+  const t = useTranslations("navigation");
+
+  return (
+    <nav>
+      <a href="/">{t("home")}</a>
+      <a href="/about">{t("about")}</a>
+      <a href="/contact">{t("contact")}</a>
+    </nav>
+  );
+}
+```
+
+```tsx
+function LoginPage() {
+  const t = useTranslations("auth");
+
+  return (
+    <form>
+      <label>{t("email")}</label>
+      <label>{t("password")}</label>
+      <button>{t("signIn")}</button>
+    </form>
+  );
+}
+```
+
+## Multiple Namespaces in One Component
+
+Call `useTranslations` multiple times for different namespaces:
+
+```tsx
+function Header() {
+  const tCommon = useTranslations("common");
+  const tNav = useTranslations("navigation");
+
+  return (
+    <header>
+      <h1>{tCommon("appName")}</h1>
+      <nav>
+        <a href="/">{tNav("home")}</a>
+        <a href="/about">{tNav("about")}</a>
+      </nav>
+    </header>
+  );
+}
+```
+
+## Nested Keys
+
+Within a namespace, use dot notation for nested keys:
+
+```json title="messages/en/common.json"
+{
+  "welcome": "Welcome!",
+  "errors": {
+    "notFound": "Page not found",
+    "serverError": "Something went wrong"
+  }
+}
+```
+
+```tsx
+const t = useTranslations("common");
+t("errors.notFound"); // "Page not found"
+```
+
+## Configuration
+
+Register namespaces in your configuration when using `@intl-party/core` directly:
+
+```typescript
+const i18n = createI18n({
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  namespaces: ["common", "navigation", "auth", "dashboard"],
+});
+```
+
+With `@intl-party/nextjs`, namespaces are detected automatically from your `messages/` directory structure.
+
+## Best Practices
+
+- **Keep namespaces focused** -- One namespace per feature area or page
+- **Use `common` for shared strings** -- Buttons, labels, and errors used across the app
+- **Avoid deeply nested keys** -- One or two levels of nesting is usually enough
+- **Match namespace names to features** -- Makes it easy to find and maintain translations

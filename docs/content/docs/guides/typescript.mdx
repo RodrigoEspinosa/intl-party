@@ -1,0 +1,109 @@
+---
+title: TypeScript Integration
+description: Get full type safety and auto-completion for your translations.
+---
+
+IntlParty provides first-class TypeScript support with auto-generated types for translation keys, locales, and namespaces.
+
+## Automatic Type Generation
+
+Generate TypeScript types from your translation files:
+
+```bash
+npx intl-party generate --types
+```
+
+This produces types that make every translation key auto-completable and validated at compile time.
+
+### Watch Mode
+
+Keep types in sync during development:
+
+```bash
+npx intl-party generate --types --watch
+```
+
+### Build-Time Generation
+
+With `@intl-party/nextjs`, enable automatic type generation during builds:
+
+```javascript title="next.config.js"
+const { createNextConfigWithIntl } = require("@intl-party/nextjs");
+
+module.exports = createNextConfigWithIntl(
+  {
+    i18nConfig: {
+      locales: ["en", "es", "fr"],
+      defaultLocale: "en",
+      messages: "./messages",
+    },
+    autoGenerate: true,
+  },
+  { reactStrictMode: true }
+);
+```
+
+## Type-Safe Translation Keys
+
+After generating types, all translation keys are validated:
+
+```tsx
+const t = useTranslations("common");
+
+t("welcome");          // Valid
+t("navigation.home");  // Valid
+t("invalid.key");      // TypeScript error
+```
+
+Auto-completion works in any editor with TypeScript support. Start typing a key and your editor will suggest valid completions.
+
+## Type-Safe Locales
+
+The generated `Locale` type restricts locale values to only those defined in your configuration:
+
+```typescript
+import { Locale } from "@intl-party/client";
+
+const locale: Locale = "en";  // Valid
+const bad: Locale = "xx";     // TypeScript error
+```
+
+## Type-Safe Namespaces
+
+Namespace parameters are also typed:
+
+```tsx
+const t = useTranslations("common");      // Valid
+const t2 = useTranslations("navigation"); // Valid
+const t3 = useTranslations("nonexistent"); // TypeScript error
+```
+
+## tsconfig.json Setup
+
+Ensure your `tsconfig.json` includes the generated type files:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true
+  },
+  "include": [
+    "src/**/*",
+    "node_modules/.intl-party/types/**/*"
+  ]
+}
+```
+
+## Troubleshooting
+
+### Types Not Updating
+
+1. Run `npx intl-party generate --types` to regenerate
+2. Restart your TypeScript server (in VS Code: `Ctrl+Shift+P` then "TypeScript: Restart TS Server")
+3. Verify `tsconfig.json` includes the generated files
+
+### Missing Auto-Completion
+
+1. Ensure TypeScript is version 5.0 or later
+2. Check that your editor uses the workspace TypeScript version
+3. Verify that translation files are valid JSON

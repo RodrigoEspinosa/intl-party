@@ -1,0 +1,140 @@
+---
+title: "@intl-party/nextjs"
+description: The easiest Next.js internationalization solution with perfect TypeScript support.
+---
+
+This is the main package for Next.js applications. It wraps the core and React packages with Next.js-specific integrations including middleware, server components support, and automatic configuration.
+
+## Installation
+
+```bash
+npm install @intl-party/nextjs
+```
+
+## `createSetup(config)`
+
+The primary API that creates all the i18n utilities you need:
+
+```typescript
+import { createSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const {
+  middleware,        // Next.js middleware for locale detection
+  middlewareConfig,  // Middleware matcher configuration
+  getLocale,         // Server-side locale detection
+  getMessages,       // Server-side message loading
+  Provider,          // React context provider
+} = createSetup(config);
+```
+
+## Configuration
+
+Create `intl-party.config.ts` at your project root:
+
+```typescript
+export default {
+  locales: ["en", "es", "fr"],
+  defaultLocale: "en",
+  messages: "./messages",
+
+  // Optional
+  localePrefix: "never",        // "never" | "as-needed" | "always"
+  cookieName: "INTL_LOCALE",    // Cookie name for locale storage
+  debug: process.env.NODE_ENV !== "production",
+};
+```
+
+### `localePrefix` Options
+
+| Value | Behavior |
+| --- | --- |
+| `"never"` (default) | Clean URLs without locale prefix, uses cookies |
+| `"as-needed"` | Prefix only for non-default locales |
+| `"always"` | All locales have a URL prefix |
+
+## Middleware
+
+```typescript title="middleware.ts"
+import { createSetup } from "@intl-party/nextjs";
+import config from "./intl-party.config";
+
+const { middleware, middlewareConfig } = createSetup(config);
+
+export { middleware };
+export const config = middlewareConfig;
+```
+
+## Layout Provider
+
+```tsx title="app/layout.tsx"
+import { createSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
+
+const { getLocale, getMessages, Provider } = createSetup(config);
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
+  return (
+    <html lang={locale}>
+      <body>
+        <Provider locale={locale} initialMessages={messages}>
+          {children}
+        </Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Next.js Config Integration
+
+Integrate with your Next.js configuration for auto-generation and hot reloading:
+
+```javascript title="next.config.js"
+const { createNextConfigWithIntl } = require("@intl-party/nextjs");
+
+module.exports = createNextConfigWithIntl(
+  {
+    i18nConfig: {
+      locales: ["en", "es", "fr"],
+      defaultLocale: "en",
+      messages: "./messages",
+    },
+    autoGenerate: true,
+    watchMode: true,
+  },
+  {
+    // Your existing Next.js config
+    reactStrictMode: true,
+  }
+);
+```
+
+## `useTranslations(namespace?)`
+
+Use translations in any component:
+
+```tsx
+import { useTranslations } from "@intl-party/nextjs";
+
+export default function Page() {
+  const t = useTranslations("common");
+
+  return (
+    <div>
+      <h1>{t("welcome")}</h1>
+      <p>{t("greeting", { name: "John" })}</p>
+      <p>{t("navigation.home")}</p>
+    </div>
+  );
+}
+```
+
+Translation keys are fully type-safe with auto-completion when type generation is enabled.
