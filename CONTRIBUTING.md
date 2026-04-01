@@ -144,13 +144,23 @@ test(cli): add validation command tests
    - Update README files if needed
    - Add JSDoc comments for new APIs
 
-3. **Create Pull Request**
+3. **Add a Changeset**
+
+   If your change affects any published package, add a changeset:
+
+   ```bash
+   pnpm changeset
+   ```
+
+   This will prompt you to select affected packages, the semver bump type, and a summary. Commit the generated changeset file with your PR.
+
+4. **Create Pull Request**
    - Use a descriptive title
    - Reference related issues
    - Provide detailed description of changes
    - Include screenshots for UI changes
 
-4. **Review Process**
+5. **Review Process**
    - Automated checks must pass
    - At least one maintainer review required
    - Address feedback promptly
