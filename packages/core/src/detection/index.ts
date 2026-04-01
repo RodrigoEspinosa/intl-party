@@ -4,21 +4,25 @@ import type {
   LocaleDetectionConfig,
   DetectionStrategy,
   GeographicConfig,
+  ErrorHandler,
 } from "../types";
 
 export class LocaleDetector {
   private config: LocaleDetectionConfig;
   private supportedLocales: Locale[];
   private defaultLocale: Locale;
+  private onError: ErrorHandler;
 
   constructor(
     supportedLocales: Locale[],
     defaultLocale: Locale,
     config: LocaleDetectionConfig,
+    onError?: ErrorHandler,
   ) {
     this.supportedLocales = supportedLocales;
     this.defaultLocale = defaultLocale;
     this.config = config;
+    this.onError = onError ?? (() => {});
   }
 
   detect(context?: DetectionContext): Locale {
@@ -63,7 +67,13 @@ export class LocaleDetector {
     try {
       const stored = localStorage.getItem(this.config.storageKey || "locale");
       return stored;
-    } catch {
+    } catch (error) {
+      this.onError({
+        code: "DETECTION_FAILED",
+        message: "Failed to read locale from localStorage",
+        source: "LocaleDetector.detectFromLocalStorage",
+        cause: error,
+      });
       return null;
     }
   }
@@ -74,7 +84,13 @@ export class LocaleDetector {
     try {
       const stored = sessionStorage.getItem(this.config.storageKey || "locale");
       return stored;
-    } catch {
+    } catch (error) {
+      this.onError({
+        code: "DETECTION_FAILED",
+        message: "Failed to read locale from sessionStorage",
+        source: "LocaleDetector.detectFromSessionStorage",
+        cause: error,
+      });
       return null;
     }
   }
@@ -165,7 +181,13 @@ export class LocaleDetector {
       const urlObj = typeof url === "string" ? new URL(url) : url;
       const subdomain = urlObj.hostname.split(".")[0];
       return subdomain && this.isSupported(subdomain) ? subdomain : null;
-    } catch {
+    } catch (error) {
+      this.onError({
+        code: "DETECTION_FAILED",
+        message: "Failed to match accept-language header",
+        source: "LocaleDetector.detectFromAcceptLanguage",
+        cause: error,
+      });
       return null;
     }
   }
@@ -199,8 +221,13 @@ export class LocaleDetector {
       if (this.config.strategies.includes("localStorage")) {
         try {
           localStorage.setItem(this.config.storageKey || "locale", locale);
-        } catch {
-          // Ignore storage errors
+        } catch (error) {
+          this.onError({
+            code: "STORAGE_ERROR",
+            message: "Failed to persist locale to localStorage",
+            source: "LocaleDetector.setLocale",
+            cause: error,
+          });
         }
       }
 

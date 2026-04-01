@@ -28,6 +28,9 @@ export type {
   FormatOptions,
   DeepKeyOf,
   MessageFormatConfig,
+  I18nError,
+  ErrorHandler,
+  I18nEventMap,
 } from "./types";
 
 // Utilities

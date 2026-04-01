@@ -19,6 +19,43 @@ export type LocaleTranslations = Record<Namespace, Translations>;
 
 export type AllTranslations = Record<Locale, LocaleTranslations>;
 
+/**
+ * Error context passed to the onError callback.
+ */
+export interface I18nError {
+  code:
+    | "INVALID_CONFIG"
+    | "DETECTION_FAILED"
+    | "LISTENER_ERROR"
+    | "FORMAT_ERROR"
+    | "STORAGE_ERROR";
+  message: string;
+  source: string;
+  cause?: unknown;
+}
+
+/**
+ * Error handler callback type.
+ * Called when a recoverable error occurs instead of silently swallowing it.
+ */
+export type ErrorHandler = (error: I18nError) => void;
+
+/**
+ * Typed event map for I18n events.
+ */
+export interface I18nEventMap {
+  localeChange: { locale: Locale; previousLocale: Locale };
+  namespaceChange: { namespace: Namespace; previousNamespace: Namespace };
+  translationsAdded: {
+    locale: Locale;
+    namespace: Namespace;
+    translations: Translations;
+  };
+  translationsRemoved: { locale: Locale; namespace?: Namespace };
+  translationsPreloading: { locales: Locale[]; namespaces: Namespace[] };
+  translationsPreloaded: { locales: Locale[]; namespaces: Namespace[] };
+}
+
 export interface I18nConfig {
   locales: Locale[];
   defaultLocale: Locale;
@@ -27,6 +64,11 @@ export interface I18nConfig {
   detection?: LocaleDetectionConfig;
   validation?: ValidationConfig;
   cache?: CacheConfig;
+  /**
+   * Called when a recoverable error occurs (e.g., detection failure, listener error).
+   * Defaults to console.warn in development, no-op in production.
+   */
+  onError?: ErrorHandler;
 }
 
 export interface LocaleDetectionConfig {
@@ -77,7 +119,7 @@ export interface TranslationOptions {
   namespace?: Namespace;
 }
 
-export type EventListener = (data: any) => void;
+export type EventListener<T = unknown> = (data: T) => void;
 
 export interface I18nInstance {
   t: TranslationFunction;
@@ -99,12 +141,18 @@ export interface I18nInstance {
   removeTranslations: (locale: Locale, namespace?: Namespace) => void;
   validateTranslations: () => ValidationResult;
   createScopedTranslator: (namespace: Namespace) => TranslationFunction;
-  on: (event: string, listener: EventListener) => void;
-  off: (event: string, listener: EventListener) => void;
+  on: <E extends keyof I18nEventMap>(
+    event: E,
+    listener: EventListener<I18nEventMap[E]>,
+  ) => void;
+  off: <E extends keyof I18nEventMap>(
+    event: E,
+    listener: EventListener<I18nEventMap[E]>,
+  ) => void;
   getAvailableLocales: () => Locale[];
   getAvailableNamespaces: () => Namespace[];
   getFallbackChain: (locale?: Locale) => Locale[];
-  detectLocale: (context?: any) => Locale;
+  detectLocale: (context?: Record<string, unknown>) => Locale;
   formatDate: (date: Date, options?: Intl.DateTimeFormatOptions) => string;
   formatNumber: (number: number, options?: Intl.NumberFormatOptions) => string;
   formatCurrency: (

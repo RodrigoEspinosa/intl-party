@@ -11,6 +11,9 @@ import type {
   TranslationFunction,
   TypedTranslationFunction,
   ValidationResult,
+  ErrorHandler,
+  I18nError,
+  I18nEventMap,
 } from "./types";
 import { TranslationStore } from "./utils/translation";
 import { LocaleDetector, type DetectionContext } from "./detection";
@@ -58,16 +61,34 @@ export class I18n implements I18nInstance {
   /** Currently active namespace */
   private currentNamespace: Namespace;
 
+  /** Error handler for recoverable errors */
+  private onError: ErrorHandler;
+
   /** Event listener registry for I18n events */
   private eventListeners: Map<string, Set<(data: unknown) => void>> = new Map();
+
+  /** Keys that must never appear in translation objects (prototype pollution) */
+  private static readonly UNSAFE_KEYS = new Set([
+    "__proto__",
+    "constructor",
+    "prototype",
+  ]);
 
   /**
    * Creates a new I18n instance with the provided configuration.
    *
    * @param {I18nConfig} config - Configuration object for the I18n instance
+   * @throws {Error} If the configuration is invalid
    */
   constructor(config: I18nConfig) {
+    I18n.validateConfig(config);
+
     this.config = config;
+    this.onError =
+      config.onError ??
+      (process.env.NODE_ENV === "development"
+        ? (err) => console.warn(`[intl-party] ${err.code}: ${err.message}`)
+        : () => {});
     this.currentLocale = config.defaultLocale;
     this.currentNamespace = config.namespaces[0] || "common";
 
@@ -77,6 +98,7 @@ export class I18n implements I18nInstance {
       config.locales,
       config.defaultLocale,
       config.detection || { strategies: ["acceptLanguage"] },
+      this.onError,
     );
 
     this.validator = new TranslationValidator(config.validation);
@@ -86,6 +108,68 @@ export class I18n implements I18nInstance {
       const detected = this.detector.detect();
       if (detected !== config.defaultLocale) {
         this.setLocale(detected);
+      }
+    }
+  }
+
+  /**
+   * Validates I18n configuration and throws on invalid input.
+   * Called automatically by the constructor.
+   */
+  private static validateConfig(config: I18nConfig): void {
+    if (!config.locales || config.locales.length === 0) {
+      throw new Error(
+        "Invalid config: `locales` must be a non-empty array",
+      );
+    }
+
+    for (const locale of config.locales) {
+      if (typeof locale !== "string" || locale.trim() === "") {
+        throw new Error(
+          "Invalid config: `locales` must not contain empty strings",
+        );
+      }
+    }
+
+    if (!config.defaultLocale || config.defaultLocale.trim() === "") {
+      throw new Error(
+        "Invalid config: `defaultLocale` must be a non-empty string",
+      );
+    }
+
+    if (!config.locales.includes(config.defaultLocale)) {
+      throw new Error(
+        `Invalid config: \`defaultLocale\` "${config.defaultLocale}" is not in \`locales\``,
+      );
+    }
+
+    if (!config.namespaces || config.namespaces.length === 0) {
+      throw new Error(
+        "Invalid config: `namespaces` must be a non-empty array",
+      );
+    }
+
+    for (const ns of config.namespaces) {
+      if (typeof ns !== "string" || ns.trim() === "") {
+        throw new Error(
+          "Invalid config: `namespaces` must not contain empty strings",
+        );
+      }
+    }
+
+    // Validate fallback chain references only supported locales
+    if (config.fallbackChain) {
+      for (const [from, to] of Object.entries(config.fallbackChain)) {
+        if (!config.locales.includes(from)) {
+          throw new Error(
+            `Invalid config: fallbackChain key "${from}" is not in \`locales\``,
+          );
+        }
+        if (!config.locales.includes(to)) {
+          throw new Error(
+            `Invalid config: fallbackChain value "${to}" (for key "${from}") is not in \`locales\``,
+          );
+        }
       }
     }
   }
@@ -153,6 +237,10 @@ export class I18n implements I18nInstance {
    * ```
    */
   setLocale(locale: Locale): void {
+    if (typeof locale !== "string" || locale.trim() === "") {
+      throw new Error("Locale must be a non-empty string");
+    }
+
     if (!this.config.locales.includes(locale)) {
       throw new Error(`Locale "${locale}" is not supported`);
     }
@@ -180,6 +268,10 @@ export class I18n implements I18nInstance {
    * ```
    */
   setNamespace(namespace: Namespace): void {
+    if (typeof namespace !== "string" || namespace.trim() === "") {
+      throw new Error("Namespace must be a non-empty string");
+    }
+
     if (!this.config.namespaces.includes(namespace)) {
       throw new Error(`Namespace "${namespace}" is not supported`);
     }
@@ -279,8 +371,37 @@ export class I18n implements I18nInstance {
     namespace: Namespace,
     translations: Translations,
   ): void {
-    this.store.addTranslations(locale, namespace, translations);
-    this.emit("translationsAdded", { locale, namespace, translations });
+    const sanitized = I18n.sanitizeTranslations(translations);
+    this.store.addTranslations(locale, namespace, sanitized);
+    this.emit("translationsAdded", {
+      locale,
+      namespace,
+      translations: sanitized,
+    });
+  }
+
+  /**
+   * Recursively strips unsafe keys (__proto__, constructor, prototype) from
+   * translation objects to prevent prototype pollution.
+   */
+  private static sanitizeTranslations(obj: Translations): Translations {
+    const result: Translations = {};
+    for (const key of Object.keys(obj)) {
+      if (I18n.UNSAFE_KEYS.has(key)) continue;
+      const value = obj[key];
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        result[key] = I18n.sanitizeTranslations(
+          value as Translations,
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
   }
 
   /**
@@ -450,11 +571,15 @@ export class I18n implements I18nInstance {
    * });
    * ```
    */
-  on(event: string, listener: (data: unknown) => void): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set());
+  on<E extends keyof I18nEventMap>(
+    event: E,
+    listener: (data: I18nEventMap[E]) => void,
+  ): void {
+    const key = event as string;
+    if (!this.eventListeners.has(key)) {
+      this.eventListeners.set(key, new Set());
     }
-    this.eventListeners.get(event)!.add(listener);
+    this.eventListeners.get(key)!.add(listener as (data: unknown) => void);
   }
 
   /**
@@ -475,8 +600,13 @@ export class I18n implements I18nInstance {
    * i18n.off("localeChange", onLocaleChange);
    * ```
    */
-  off(event: string, listener: (data: unknown) => void): void {
-    this.eventListeners.get(event)?.delete(listener);
+  off<E extends keyof I18nEventMap>(
+    event: E,
+    listener: (data: I18nEventMap[E]) => void,
+  ): void {
+    this.eventListeners
+      .get(event as string)
+      ?.delete(listener as (data: unknown) => void);
   }
 
   /**
@@ -486,12 +616,20 @@ export class I18n implements I18nInstance {
    * @param {string} event - Event name to emit
    * @param {any} data - Data to pass to listeners
    */
-  private emit(event: string, data: any): void {
-    this.eventListeners.get(event)?.forEach((listener) => {
+  private emit<E extends keyof I18nEventMap>(
+    event: E,
+    data: I18nEventMap[E],
+  ): void {
+    this.eventListeners.get(event as string)?.forEach((listener) => {
       try {
         listener(data);
       } catch (error) {
-        console.error(`Error in event listener for "${event}":`, error);
+        this.onError({
+          code: "LISTENER_ERROR",
+          message: `Error in event listener for "${event as string}"`,
+          source: `I18n.emit(${event as string})`,
+          cause: error,
+        });
       }
     });
   }

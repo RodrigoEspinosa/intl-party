@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createI18n } from "./i18n";
-import type { I18nConfig } from "./types";
+import type { I18nConfig, I18nError } from "./types";
 
 describe("I18n", () => {
   let config: I18nConfig;
@@ -266,15 +266,15 @@ describe("I18n", () => {
         called = true;
       };
 
-      i18n.on("test", listener);
-      i18n.emit("test", {});
+      i18n.on("localeChange", listener);
+      i18n.setLocale("es");
 
       expect(called).toBe(true);
 
       // Test removing listener
       called = false;
-      i18n.off("test", listener);
-      i18n.emit("test", {});
+      i18n.off("localeChange", listener);
+      i18n.setLocale("fr");
 
       expect(called).toBe(false);
     });
@@ -285,6 +285,181 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.dispose()).not.toThrow();
+    });
+  });
+
+  describe("config validation", () => {
+    it("should throw on empty locales array", () => {
+      expect(() =>
+        createI18n({ ...config, locales: [] }),
+      ).toThrow("`locales` must be a non-empty array");
+    });
+
+    it("should throw on locales containing empty strings", () => {
+      expect(() =>
+        createI18n({ ...config, locales: ["en", ""] }),
+      ).toThrow("`locales` must not contain empty strings");
+    });
+
+    it("should throw on locales containing whitespace-only strings", () => {
+      expect(() =>
+        createI18n({ ...config, locales: ["en", "  "] }),
+      ).toThrow("`locales` must not contain empty strings");
+    });
+
+    it("should throw when defaultLocale is empty", () => {
+      expect(() =>
+        createI18n({ ...config, defaultLocale: "" }),
+      ).toThrow("`defaultLocale` must be a non-empty string");
+    });
+
+    it("should throw when defaultLocale is not in locales", () => {
+      expect(() =>
+        createI18n({ ...config, defaultLocale: "de" }),
+      ).toThrow('`defaultLocale` "de" is not in `locales`');
+    });
+
+    it("should throw on empty namespaces array", () => {
+      expect(() =>
+        createI18n({ ...config, namespaces: [] }),
+      ).toThrow("`namespaces` must be a non-empty array");
+    });
+
+    it("should throw on namespaces containing empty strings", () => {
+      expect(() =>
+        createI18n({ ...config, namespaces: ["common", ""] }),
+      ).toThrow("`namespaces` must not contain empty strings");
+    });
+
+    it("should throw when fallbackChain key is not in locales", () => {
+      expect(() =>
+        createI18n({ ...config, fallbackChain: { de: "en" } }),
+      ).toThrow('fallbackChain key "de" is not in `locales`');
+    });
+
+    it("should throw when fallbackChain value is not in locales", () => {
+      expect(() =>
+        createI18n({ ...config, fallbackChain: { es: "de" } }),
+      ).toThrow('fallbackChain value "de" (for key "es") is not in `locales`');
+    });
+
+    it("should accept valid config without error", () => {
+      expect(() => createI18n(config)).not.toThrow();
+    });
+  });
+
+  describe("input validation", () => {
+    it("should throw on empty string locale in setLocale", () => {
+      const i18n = createI18n(config);
+      expect(() => i18n.setLocale("")).toThrow(
+        "Locale must be a non-empty string",
+      );
+    });
+
+    it("should throw on whitespace-only locale in setLocale", () => {
+      const i18n = createI18n(config);
+      expect(() => i18n.setLocale("  ")).toThrow(
+        "Locale must be a non-empty string",
+      );
+    });
+
+    it("should throw on empty string namespace in setNamespace", () => {
+      const i18n = createI18n(config);
+      expect(() => i18n.setNamespace("")).toThrow(
+        "Namespace must be a non-empty string",
+      );
+    });
+
+    it("should throw on whitespace-only namespace in setNamespace", () => {
+      const i18n = createI18n(config);
+      expect(() => i18n.setNamespace("   ")).toThrow(
+        "Namespace must be a non-empty string",
+      );
+    });
+  });
+
+  describe("prototype pollution protection", () => {
+    it("should strip __proto__ keys from translations", () => {
+      const i18n = createI18n(config);
+      const malicious = Object.create(null);
+      malicious.safe = "Hello";
+      malicious["__proto__"] = { polluted: "injected" };
+
+      i18n.addTranslations("en", "common", malicious);
+      expect(i18n.t("safe")).toBe("Hello");
+      expect(i18n.hasTranslation("__proto__")).toBe(false);
+    });
+
+    it("should strip constructor keys from nested translations", () => {
+      const i18n = createI18n(config);
+      const nested = Object.create(null);
+      nested.safe = "value";
+      nested["constructor"] = "bad";
+
+      i18n.addTranslations("en", "common", { nested });
+      expect(i18n.t("nested.safe")).toBe("value");
+      expect(i18n.hasTranslation("nested.constructor")).toBe(false);
+    });
+  });
+
+  describe("onError callback", () => {
+    it("should call onError when event listener throws", () => {
+      const errors: I18nError[] = [];
+      const i18n = createI18n({
+        ...config,
+        onError: (err) => errors.push(err),
+      });
+
+      i18n.on("localeChange", () => {
+        throw new Error("listener boom");
+      });
+
+      // Should not throw — error is routed to onError
+      expect(() => i18n.setLocale("es")).not.toThrow();
+      expect(errors).toHaveLength(1);
+      expect(errors[0].code).toBe("LISTENER_ERROR");
+      expect(errors[0].cause).toBeInstanceOf(Error);
+    });
+
+    it("should still emit events after a listener error", () => {
+      const errors: I18nError[] = [];
+      const results: string[] = [];
+      const i18n = createI18n({
+        ...config,
+        onError: (err) => errors.push(err),
+      });
+
+      // First listener throws
+      i18n.on("localeChange", () => {
+        throw new Error("boom");
+      });
+      // Second listener should still run
+      i18n.on("localeChange", ({ locale }) => {
+        results.push(locale);
+      });
+
+      i18n.setLocale("es");
+      expect(results).toEqual(["es"]);
+      expect(errors).toHaveLength(1);
+    });
+
+    it("should use custom onError and not crash", () => {
+      let capturedError: I18nError | null = null;
+      const i18n = createI18n({
+        ...config,
+        onError: (err) => {
+          capturedError = err;
+        },
+      });
+
+      i18n.on("localeChange", () => {
+        throw new Error("boom");
+      });
+
+      // Should not throw — error is routed to onError
+      expect(() => i18n.setLocale("es")).not.toThrow();
+      expect(capturedError).not.toBeNull();
+      expect(capturedError!.code).toBe("LISTENER_ERROR");
     });
   });
 });
