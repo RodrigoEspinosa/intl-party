@@ -116,7 +116,9 @@ export class TranslationStore {
       ...translations,
     };
 
-    this.clearCache();
+    // Invalidate cache entries for the affected locale+namespace and
+    // any locale that falls back to it (their resolved translations may change).
+    this.invalidateForLocaleNamespace(locale, namespace);
   }
 
   getTranslation(
@@ -356,14 +358,57 @@ export class TranslationStore {
       if (this.translations[locale]) {
         delete this.translations[locale][namespace];
       }
+      this.invalidateForLocaleNamespace(locale, namespace);
     } else {
       delete this.translations[locale];
+      // Removing all namespaces for a locale — invalidate everything
+      // that might reference it (direct or via fallback chain)
+      const affected = new Set<Locale>([locale]);
+      for (const [from, to] of Object.entries(this.fallbackChain)) {
+        if (to === locale) {
+          affected.add(from);
+        }
+      }
+      for (const key of this.cache.keys()) {
+        for (const loc of affected) {
+          if (key.startsWith(`${loc}:`)) {
+            this.cache.delete(key);
+            break;
+          }
+        }
+      }
     }
-
-    this.clearCache();
   }
 
-  private clearCache(): void {
+  /**
+   * Invalidates cache entries for a locale+namespace and any locale
+   * whose fallback chain includes the affected locale.
+   */
+  private invalidateForLocaleNamespace(
+    locale: Locale,
+    namespace: Namespace,
+  ): void {
+    // Collect all locales whose cache could be affected:
+    // the locale itself + any locale that falls back through it
+    const affected = new Set<Locale>([locale]);
+    for (const [from, to] of Object.entries(this.fallbackChain)) {
+      if (to === locale) {
+        affected.add(from);
+      }
+    }
+
+    for (const key of this.cache.keys()) {
+      for (const loc of affected) {
+        if (key.startsWith(`${loc}:${namespace}:`)) {
+          this.cache.delete(key);
+          break;
+        }
+      }
+    }
+  }
+
+  /** Clears the entire translation and ICU cache. */
+  clearCache(): void {
     this.cache.clear();
     clearICUCache();
   }

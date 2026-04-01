@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useMemo,
+  useRef,
   useState,
   useEffect,
   type ReactNode,
@@ -77,6 +78,18 @@ export function I18nProvider({
 
     return instance;
   }, [config, externalI18n, initialLocale, initialNamespace]);
+
+  // Track whether we own the instance (created from config, not passed in).
+  // If we own it, we're responsible for disposing it on unmount.
+  const ownsInstance = useRef(!externalI18n);
+
+  useEffect(() => {
+    return () => {
+      if (ownsInstance.current && "dispose" in i18nInstance) {
+        (i18nInstance as { dispose: () => void }).dispose();
+      }
+    };
+  }, [i18nInstance]);
 
   const [locale, setLocaleState] = useState<Locale>(i18nInstance.getLocale());
   const [namespace, setNamespaceState] = useState<Namespace>(
