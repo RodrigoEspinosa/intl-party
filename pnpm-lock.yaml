@@ -430,6 +430,18 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@22.18.11)(jsdom@27.0.0(postcss@8.5.6))(terser@5.46.1)
 
+  packages/vscode-extension:
+    devDependencies:
+      '@types/vscode':
+        specifier: ^1.85.0
+        version: 1.110.0
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
 packages:
 
   '@adobe/css-tools@4.4.4':
@@ -1612,6 +1624,9 @@ packages:
 
   '@types/through@0.0.33':
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
+
+  '@types/vscode@1.110.0':
+    resolution: {integrity: sha512-AGuxUEpU4F4mfuQjxPPaQVyuOMhs+VT/xRok1jiHVBubHK7lBRvCuOMZG0LKUwxncrPorJ5qq/uil3IdZBd5lA==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -5887,6 +5902,8 @@ snapshots:
   '@types/through@0.0.33':
     dependencies:
       '@types/node': 20.19.22
+
+  '@types/vscode@1.110.0': {}
 
   '@types/yargs-parser@21.0.3': {}
 
