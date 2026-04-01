@@ -462,4 +462,100 @@ describe("I18n", () => {
       expect(capturedError!.code).toBe("LISTENER_ERROR");
     });
   });
+
+  describe("no-op deduplication", () => {
+    it("should not emit localeChange when setting same locale", () => {
+      const i18n = createI18n(config);
+      let eventCount = 0;
+
+      i18n.on("localeChange", () => {
+        eventCount++;
+      });
+
+      i18n.setLocale("es");
+      expect(eventCount).toBe(1);
+
+      // Same locale again — should be a no-op
+      i18n.setLocale("es");
+      expect(eventCount).toBe(1);
+    });
+
+    it("should not emit namespaceChange when setting same namespace", () => {
+      const i18n = createI18n(config);
+      let eventCount = 0;
+
+      i18n.on("namespaceChange", () => {
+        eventCount++;
+      });
+
+      i18n.setNamespace("auth");
+      expect(eventCount).toBe(1);
+
+      // Same namespace again — should be a no-op
+      i18n.setNamespace("auth");
+      expect(eventCount).toBe(1);
+    });
+  });
+
+  describe("locale version counter", () => {
+    it("should start at 0", () => {
+      const i18n = createI18n(config);
+      expect(i18n.localeVersion).toBe(0);
+    });
+
+    it("should increment on setLocale", () => {
+      const i18n = createI18n(config);
+
+      i18n.setLocale("es");
+      expect(i18n.localeVersion).toBe(1);
+
+      i18n.setLocale("fr");
+      expect(i18n.localeVersion).toBe(2);
+    });
+
+    it("should not increment on no-op setLocale", () => {
+      const i18n = createI18n(config);
+
+      i18n.setLocale("es");
+      expect(i18n.localeVersion).toBe(1);
+
+      i18n.setLocale("es"); // same locale
+      expect(i18n.localeVersion).toBe(1);
+    });
+
+    it("should skip stale preload completion events", async () => {
+      const i18n = createI18n(config);
+      let preloadedCount = 0;
+
+      i18n.on("translationsPreloaded", () => {
+        preloadedCount++;
+      });
+
+      // Start preloading for "es"
+      const preloadPromise = i18n.preloadTranslations("es", "common");
+
+      // Immediately switch locale — this bumps the version
+      i18n.setLocale("fr");
+
+      // Wait for the preload to finish
+      await preloadPromise;
+
+      // The preloaded event should NOT have fired because locale changed
+      expect(preloadedCount).toBe(0);
+      expect(i18n.getLocale()).toBe("fr");
+    });
+
+    it("should emit preloaded when locale has not changed", async () => {
+      const i18n = createI18n(config);
+      let preloadedCount = 0;
+
+      i18n.on("translationsPreloaded", () => {
+        preloadedCount++;
+      });
+
+      await i18n.preloadTranslations("en", "common");
+
+      expect(preloadedCount).toBe(1);
+    });
+  });
 });

@@ -300,4 +300,17 @@ describe("I18nProvider", () => {
       "[common:does.not.exist]",
     );
   });
+
+  it("should not crash when locale changes after unmount", () => {
+    const { unmount } = render(
+      <I18nProvider i18n={i18n}>
+        <TestComponent />
+      </I18nProvider>,
+    );
+
+    unmount();
+
+    // Changing locale after unmount should not throw (listeners cleaned up)
+    expect(() => i18n.setLocale("es")).not.toThrow();
+  });
 });

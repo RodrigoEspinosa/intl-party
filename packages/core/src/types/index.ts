@@ -124,6 +124,7 @@ export type EventListener<T = unknown> = (data: T) => void;
 export interface I18nInstance {
   t: TranslationFunction;
   locale: Locale;
+  localeVersion: number;
   setLocale: (locale: Locale) => void;
   getLocale: () => Locale;
   getNamespace: () => Namespace;

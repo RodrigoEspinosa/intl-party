@@ -61,6 +61,13 @@ export class I18n implements I18nInstance {
   /** Currently active namespace */
   private currentNamespace: Namespace;
 
+  /**
+   * Monotonically increasing counter, bumped on every setLocale() call.
+   * Async consumers (preloadTranslations, React hooks) can snapshot this
+   * before starting work and compare afterwards to detect stale results.
+   */
+  private _localeVersion = 0;
+
   /** Error handler for recoverable errors */
   private onError: ErrorHandler;
 
@@ -193,6 +200,15 @@ export class I18n implements I18nInstance {
   }
 
   /**
+   * Monotonically increasing version number, bumped on every setLocale() call.
+   * Useful for detecting stale async operations (e.g., preload results that
+   * arrive after a newer locale has been set).
+   */
+  get localeVersion(): number {
+    return this._localeVersion;
+  }
+
+  /**
    * Main translation function to retrieve translated strings.
    *
    * @param {TranslationKey} key - The translation key to look up
@@ -245,8 +261,14 @@ export class I18n implements I18nInstance {
       throw new Error(`Locale "${locale}" is not supported`);
     }
 
+    // Skip no-op changes to avoid unnecessary events and re-renders
+    if (locale === this.currentLocale) {
+      return;
+    }
+
     const previousLocale = this.currentLocale;
     this.currentLocale = locale;
+    this._localeVersion++;
 
     // Persist locale preference
     this.detector.setLocale(locale, true);
@@ -274,6 +296,11 @@ export class I18n implements I18nInstance {
 
     if (!this.config.namespaces.includes(namespace)) {
       throw new Error(`Namespace "${namespace}" is not supported`);
+    }
+
+    // Skip no-op changes to avoid unnecessary events and re-renders
+    if (namespace === this.currentNamespace) {
+      return;
     }
 
     const previousNamespace = this.currentNamespace;
@@ -723,12 +750,20 @@ export class I18n implements I18nInstance {
         : [namespace]
       : this.config.namespaces;
 
-    // This would typically load from external sources
-    // For now, it's a placeholder for the preloading mechanism
+    // Snapshot the version before starting async work
+    const versionAtStart = this._localeVersion;
+
     this.emit("translationsPreloading", { locales, namespaces });
 
-    // Simulate async loading
+    // This would typically load from external sources
+    // For now, it's a placeholder for the preloading mechanism
     await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // If the locale changed while we were loading, skip the completion event
+    // to avoid stale state updates in consumers (React providers, etc.)
+    if (this._localeVersion !== versionAtStart) {
+      return;
+    }
 
     this.emit("translationsPreloaded", { locales, namespaces });
   }

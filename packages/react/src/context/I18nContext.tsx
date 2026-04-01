@@ -116,13 +116,18 @@ export function I18nProvider({
     }
   };
 
-  // Listen to i18n instance events
+  // Listen to i18n instance events.
+  // Uses an unmounted flag to prevent state updates after the provider
+  // unmounts, and snapshots localeVersion to discard stale preload events.
   useEffect(() => {
+    let unmounted = false;
+
     const handleLocaleChangeEvent = ({
       locale: newLocale,
     }: {
       locale: Locale;
     }) => {
+      if (unmounted) return;
       setLocaleState(newLocale);
       onLocaleChange?.(newLocale);
     };
@@ -132,12 +137,20 @@ export function I18nProvider({
     }: {
       namespace: Namespace;
     }) => {
+      if (unmounted) return;
       setNamespaceState(newNamespace);
       onNamespaceChange?.(newNamespace);
     };
 
-    const handleTranslationsPreloading = () => setIsLoading(true);
-    const handleTranslationsPreloaded = () => setIsLoading(false);
+    const handleTranslationsPreloading = () => {
+      if (unmounted) return;
+      setIsLoading(true);
+    };
+
+    const handleTranslationsPreloaded = () => {
+      if (unmounted) return;
+      setIsLoading(false);
+    };
 
     i18nInstance.on("localeChange", handleLocaleChangeEvent);
     i18nInstance.on("namespaceChange", handleNamespaceChangeEvent);
@@ -145,6 +158,7 @@ export function I18nProvider({
     i18nInstance.on("translationsPreloaded", handleTranslationsPreloaded);
 
     return () => {
+      unmounted = true;
       i18nInstance.off("localeChange", handleLocaleChangeEvent);
       i18nInstance.off("namespaceChange", handleNamespaceChangeEvent);
       i18nInstance.off("translationsPreloading", handleTranslationsPreloading);
