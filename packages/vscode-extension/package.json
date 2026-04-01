@@ -1,0 +1,60 @@
+{
+  "name": "intl-party-vscode",
+  "displayName": "intl-party",
+  "description": "VS Code extension for intl-party - translation key autocomplete, hover preview, diagnostics, and go-to-definition",
+  "version": "0.1.0",
+  "publisher": "intl-party",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.json"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "intl-party",
+      "properties": {
+        "intl-party.translationFiles": {
+          "type": "string",
+          "default": "**/locales/**/*.json",
+          "description": "Glob pattern for translation JSON files"
+        },
+        "intl-party.defaultLocale": {
+          "type": "string",
+          "default": "en",
+          "description": "Default locale used for hover previews and diagnostics"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "intl-party.refreshIndex",
+        "title": "intl-party: Refresh Translation Index"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsup src/extension.ts --format cjs --external vscode --minify",
+    "dev": "tsup src/extension.ts --format cjs --external vscode --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RodrigoEspinosa/intl-party.git",
+    "directory": "packages/vscode-extension"
+  },
+  "license": "MIT"
+}
