@@ -2,7 +2,11 @@ import React from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { createI18n } from "@intl-party/core";
-import { I18nProvider, useI18nContext } from "./I18nContext";
+import {
+  I18nProvider,
+  useI18nContext,
+  useOptionalI18nContext,
+} from "./I18nContext";
 
 function TestComponent() {
   const { locale, setLocale, t, isLoading } = useI18nContext();
@@ -89,6 +93,38 @@ describe("I18nProvider", () => {
     }).toThrow("useI18nContext must be used within an I18nProvider");
 
     consoleSpy.mockRestore();
+  });
+
+  it("should return null from useOptionalI18nContext outside provider", () => {
+    const TestOptional = () => {
+      const context = useOptionalI18nContext();
+      return (
+        <div data-testid="optional">
+          {context ? context.locale : "no-context"}
+        </div>
+      );
+    };
+
+    render(<TestOptional />);
+    expect(screen.getByTestId("optional")).toHaveTextContent("no-context");
+  });
+
+  it("should return context from useOptionalI18nContext inside provider", () => {
+    const TestOptional = () => {
+      const context = useOptionalI18nContext();
+      return (
+        <div data-testid="optional">
+          {context ? context.locale : "no-context"}
+        </div>
+      );
+    };
+
+    render(
+      <I18nProvider i18n={i18n}>
+        <TestOptional />
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId("optional")).toHaveTextContent("en");
   });
 
   it("should handle loading states", () => {

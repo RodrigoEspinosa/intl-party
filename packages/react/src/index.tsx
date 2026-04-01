@@ -4,6 +4,7 @@
 export {
   I18nProvider,
   useI18nContext,
+  useOptionalI18nContext,
   type I18nContextValue,
   type I18nProviderProps,
 } from "./context/I18nContext";

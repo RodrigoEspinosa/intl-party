@@ -199,34 +199,34 @@ export function I18nProvider({
   );
 }
 
-// Hook to use I18n context
+/**
+ * Hook to access the I18n context. Must be used within an I18nProvider.
+ *
+ * Throws on both client and server if no provider is found — this prevents
+ * silent hydration mismatches that occurred with the previous SSR fallback.
+ * If you need to conditionally render i18n content, use `useOptionalI18nContext`
+ * which returns `null` instead of throwing.
+ */
 export function useI18nContext(): I18nContextValue {
   const context = useContext(I18nContext);
 
   if (!context) {
-    // Check if we're in SSR environment
-    if (typeof window === "undefined") {
-      // During SSR, create a minimal fallback context to prevent errors
-      const fallbackI18n = createI18n({
-        locales: ["en"],
-        defaultLocale: "en",
-        namespaces: ["common"],
-      });
-
-      return {
-        i18n: fallbackI18n,
-        locale: "en",
-        namespace: "common",
-        t: fallbackI18n.t,
-        setLocale: () => {},
-        setNamespace: () => {},
-        isLoading: false,
-      };
-    }
-
-    throw new Error("useI18nContext must be used within an I18nProvider");
+    throw new Error(
+      "useI18nContext must be used within an I18nProvider. " +
+        "Wrap your component tree with <I18nProvider> on both " +
+        "server and client to avoid hydration mismatches.",
+    );
   }
 
   return context;
+}
+
+/**
+ * Optional variant of useI18nContext that returns `null` when no provider
+ * is present, instead of throwing. Useful for components that may render
+ * both inside and outside an I18nProvider (e.g., shared layout components).
+ */
+export function useOptionalI18nContext(): I18nContextValue | null {
+  return useContext(I18nContext);
 }
 
