@@ -40,6 +40,7 @@ export {
   deepMerge,
   flattenTranslations,
   unflattenTranslations,
+  splitEscapedDots,
 } from "./utils/translation";
 
 // ICU MessageFormat utilities
