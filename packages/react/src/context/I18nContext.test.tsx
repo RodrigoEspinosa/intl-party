@@ -154,15 +154,150 @@ describe("I18nProvider", () => {
     consoleSpy.mockRestore();
   });
 
-  it.skip("should render fallback component on error", () => {
-    // Skipping this test as error boundary testing requires complex setup
-    // The functionality works in practice but is difficult to test properly
-    expect(true).toBe(true);
+  it("should render fallback component on error", () => {
+    // Trigger an error by changing to an unsupported locale
+    const TestErrorComponent = () => {
+      const { setLocale } = useI18nContext();
+
+      return (
+        <div>
+          <button
+            data-testid="trigger-error"
+            onClick={() => setLocale("unsupported")}
+          >
+            Trigger Error
+          </button>
+        </div>
+      );
+    };
+
+    render(
+      <I18nProvider
+        i18n={i18n}
+        fallbackComponent={<div data-testid="fallback">Something went wrong</div>}
+      >
+        <TestErrorComponent />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("trigger-error"));
+
+    expect(screen.getByTestId("fallback")).toHaveTextContent(
+      "Something went wrong",
+    );
   });
 
-  it.skip("should handle onError callback", () => {
-    // Skipping this test as error callback testing requires complex error boundary setup
-    // The functionality works in practice but is difficult to test properly
-    expect(true).toBe(true);
+  it("should call onError callback when locale change fails", () => {
+    const onError = vi.fn();
+
+    const TestErrorComponent = () => {
+      const { setLocale } = useI18nContext();
+
+      return (
+        <button
+          data-testid="trigger-error"
+          onClick={() => setLocale("unsupported")}
+        >
+          Trigger Error
+        </button>
+      );
+    };
+
+    render(
+      <I18nProvider i18n={i18n} onError={onError}>
+        <TestErrorComponent />
+      </I18nProvider>,
+    );
+
+    // Suppress the error re-throw (no fallbackComponent means it will throw)
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(() => {
+      fireEvent.click(screen.getByTestId("trigger-error"));
+    }).toThrow();
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+
+    consoleSpy.mockRestore();
+  });
+
+  it("should handle namespace change errors with fallback", () => {
+    const TestNsErrorComponent = () => {
+      const { setNamespace } = useI18nContext();
+
+      return (
+        <button
+          data-testid="trigger-ns-error"
+          onClick={() => setNamespace("nonexistent")}
+        >
+          Bad Namespace
+        </button>
+      );
+    };
+
+    render(
+      <I18nProvider
+        i18n={i18n}
+        fallbackComponent={<div data-testid="fallback">NS Error</div>}
+      >
+        <TestNsErrorComponent />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("trigger-ns-error"));
+
+    expect(screen.getByTestId("fallback")).toHaveTextContent("NS Error");
+  });
+
+  it("should handle rapid locale switching", () => {
+    i18n.addTranslations("es", "common", {
+      welcome: "¡Bienvenido!",
+    });
+
+    const TestRapidSwitch = () => {
+      const { locale, setLocale, t } = useI18nContext();
+
+      return (
+        <div>
+          <div data-testid="locale">{locale}</div>
+          <div data-testid="translation">{t("welcome")}</div>
+          <button data-testid="to-es" onClick={() => setLocale("es")}>ES</button>
+          <button data-testid="to-en" onClick={() => setLocale("en")}>EN</button>
+        </div>
+      );
+    };
+
+    render(
+      <I18nProvider i18n={i18n}>
+        <TestRapidSwitch />
+      </I18nProvider>,
+    );
+
+    // Rapid switching — should settle on the last one
+    fireEvent.click(screen.getByTestId("to-es"));
+    fireEvent.click(screen.getByTestId("to-en"));
+    fireEvent.click(screen.getByTestId("to-es"));
+
+    expect(screen.getByTestId("locale")).toHaveTextContent("es");
+    expect(screen.getByTestId("translation")).toHaveTextContent("¡Bienvenido!");
+  });
+
+  it("should render missing translation keys gracefully", () => {
+    const TestMissing = () => {
+      const { t } = useI18nContext();
+      return <div data-testid="missing">{t("does.not.exist")}</div>;
+    };
+
+    render(
+      <I18nProvider i18n={i18n}>
+        <TestMissing />
+      </I18nProvider>,
+    );
+
+    // Should render the fallback format, not crash
+    expect(screen.getByTestId("missing")).toHaveTextContent(
+      "[common:does.not.exist]",
+    );
   });
 });
