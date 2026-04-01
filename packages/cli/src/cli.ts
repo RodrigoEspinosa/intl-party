@@ -49,6 +49,7 @@ program
   .option("--dry-run", "show what would be extracted without writing files")
   .option("--update", "update existing translation files with new keys")
   .option("--remove-unused", "remove unused translation keys")
+  .option("--format <format>", "output format (text|json|junit)", "text")
   .action(extractCommand);
 
 // Sync command
@@ -59,6 +60,9 @@ program
   .option("-t, --target <locales...>", "target locales to sync to")
   .option("--missing-only", "only add missing keys, don't remove extras")
   .option("--interactive", "interactive mode for conflict resolution")
+  .option("--format <format>", "output format (text|json|junit)", "text")
+  .option("--output <file>", "output file path")
+  .option("--dry-run", "show what would be synced without writing files")
   .action(syncCommand);
 
 // Init command

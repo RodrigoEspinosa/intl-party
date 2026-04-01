@@ -11,8 +11,16 @@ export interface ExtractOptions {
   dryRun?: boolean;
   update?: boolean;
   removeUnused?: boolean;
+  format?: "text" | "json" | "junit";
   config?: string;
   verbose?: boolean;
+}
+
+export interface ExtractResult {
+  extractedKeys: string[];
+  missingKeysByLocale: Record<string, string[]>;
+  totalFiles: number;
+  totalKeys: number;
 }
 
 export async function extractCommand(options: ExtractOptions) {
@@ -49,20 +57,29 @@ export async function extractCommand(options: ExtractOptions) {
 
     spinner.succeed(`Extracted ${extractedKeys.size} unique translation keys`);
 
+    // Compute missing keys per locale
+    const missingKeysByLocale = await computeMissingKeys(
+      Array.from(extractedKeys),
+      outputDir,
+      config
+    );
+
+    const result: ExtractResult = {
+      extractedKeys: Array.from(extractedKeys).sort(),
+      missingKeysByLocale,
+      totalFiles: files.length,
+      totalKeys: extractedKeys.size,
+    };
+
     if (options.dryRun) {
-      console.log("\nExtracted keys:");
-      Array.from(extractedKeys)
-        .sort()
-        .forEach((key) => {
-          console.log(`  ${chalk.cyan(key)}`);
-        });
+      await outputResults(result, options);
       return;
     }
 
     // Write extracted keys to output files for all configured locales
     await writeExtractedKeys(Array.from(extractedKeys), outputDir, config, options);
 
-    console.log(chalk.green(`✓ Translation keys extracted to ${outputDir}`));
+    await outputResults(result, options);
   } catch (error) {
     spinner.fail("Extraction failed");
     console.error(
@@ -73,7 +90,7 @@ export async function extractCommand(options: ExtractOptions) {
   }
 }
 
-function extractKeysFromContent(content: string): string[] {
+export function extractKeysFromContent(content: string): string[] {
   const keys: string[] = [];
 
   // Common patterns for translation key usage
@@ -98,6 +115,137 @@ function extractKeysFromContent(content: string): string[] {
   }
 
   return keys;
+}
+
+async function computeMissingKeys(
+  keys: string[],
+  outputDir: string,
+  config: CLIConfig
+): Promise<Record<string, string[]>> {
+  const missingKeysByLocale: Record<string, string[]> = {};
+  const locales = config.locales || ["en"];
+
+  // Group keys by namespace
+  const namespaces: Record<string, string[]> = { common: [] };
+  for (const key of keys) {
+    const parts = key.split(".");
+    if (parts.length > 1) {
+      const namespace = parts[0];
+      const keyWithoutNamespace = parts.slice(1).join(".");
+      if (!namespaces[namespace]) {
+        namespaces[namespace] = [];
+      }
+      namespaces[namespace].push(keyWithoutNamespace);
+    } else {
+      namespaces.common.push(key);
+    }
+  }
+
+  for (const locale of locales) {
+    const missing: string[] = [];
+
+    for (const [namespace, namespaceKeys] of Object.entries(namespaces)) {
+      if (namespaceKeys.length === 0) continue;
+
+      const filePath = path.join(outputDir, locale, `${namespace}.json`);
+      let existingTranslations: Record<string, string> = {};
+
+      if (await fs.pathExists(filePath)) {
+        try {
+          existingTranslations = await fs.readJson(filePath);
+        } catch {
+          // Ignore read errors
+        }
+      }
+
+      for (const key of namespaceKeys) {
+        if (!existingTranslations[key]) {
+          missing.push(namespace === "common" ? key : `${namespace}.${key}`);
+        }
+      }
+    }
+
+    if (missing.length > 0) {
+      missingKeysByLocale[locale] = missing;
+    }
+  }
+
+  return missingKeysByLocale;
+}
+
+async function outputResults(result: ExtractResult, options: ExtractOptions) {
+  const format = options.format || "text";
+
+  if (format === "json") {
+    const output = JSON.stringify(result, null, 2);
+    console.log(output);
+    return;
+  }
+
+  if (format === "junit") {
+    const junitXml = generateJUnitXML(result);
+    console.log(junitXml);
+    return;
+  }
+
+  // Text format (default)
+  if (options.dryRun) {
+    console.log("\nExtracted keys:");
+    result.extractedKeys.forEach((key) => {
+      console.log(`  ${chalk.cyan(key)}`);
+    });
+  }
+
+  const localesWithMissing = Object.keys(result.missingKeysByLocale);
+  if (localesWithMissing.length > 0) {
+    console.log(chalk.yellow("\nMissing keys by locale:"));
+    for (const locale of localesWithMissing) {
+      const missingKeys = result.missingKeysByLocale[locale];
+      console.log(chalk.bold(`  ${locale}: ${missingKeys.length} missing key(s)`));
+      for (const key of missingKeys) {
+        console.log(`    ${chalk.gray("-")} ${key}`);
+      }
+    }
+  } else if (!options.dryRun) {
+    console.log(chalk.green(`\u2713 Translation keys extracted to ${options.output || "./messages"}`));
+  }
+}
+
+function generateJUnitXML(result: ExtractResult): string {
+  const localesWithMissing = Object.keys(result.missingKeysByLocale);
+  const totalMissing = localesWithMissing.reduce(
+    (sum, locale) => sum + result.missingKeysByLocale[locale].length,
+    0
+  );
+  const failures = totalMissing > 0 ? 1 : 0;
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<testsuites name="intl-party-extract" tests="1" failures="${failures}" errors="0">\n`;
+  xml += `  <testsuite name="key-extraction" tests="1" failures="${failures}" errors="0">\n`;
+
+  if (totalMissing === 0) {
+    xml += `    <testcase name="extraction" classname="translations" />\n`;
+  } else {
+    xml += `    <testcase name="extraction" classname="translations">\n`;
+    xml += `      <failure message="${totalMissing} missing translation keys">\n`;
+    xml += `        <![CDATA[\n`;
+
+    for (const locale of localesWithMissing) {
+      xml += `${locale}:\n`;
+      for (const key of result.missingKeysByLocale[locale]) {
+        xml += `  - ${key}\n`;
+      }
+    }
+
+    xml += `        ]]>\n`;
+    xml += `      </failure>\n`;
+    xml += `    </testcase>\n`;
+  }
+
+  xml += `  </testsuite>\n`;
+  xml += `</testsuites>\n`;
+
+  return xml;
 }
 
 async function writeExtractedKeys(
