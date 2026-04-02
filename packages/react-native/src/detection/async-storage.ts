@@ -31,6 +31,7 @@ export function createAsyncStorageDetector(options: AsyncStorageDetectorOptions)
 
   function getAsyncStorage() {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       return require("@react-native-async-storage/async-storage").default;
     } catch {
       throw new Error(

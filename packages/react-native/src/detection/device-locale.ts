@@ -45,6 +45,7 @@ export function createDeviceLocaleDetector(options: DeviceLocaleDetectorOptions)
 function getDeviceLocales(): string[] {
   // Try expo-localization
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const expoLocalization = require("expo-localization");
     if (expoLocalization.getLocales) {
       const locales = expoLocalization.getLocales();
@@ -59,6 +60,7 @@ function getDeviceLocales(): string[] {
 
   // Try react-native-localize
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const rnLocalize = require("react-native-localize");
     if (rnLocalize.getLocales) {
       const locales = rnLocalize.getLocales();
