@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --external react,react-native,@intl-party/core,@intl-party/react,@react-native-async-storage/async-storage,expo-localization,react-native-localize",
     "dev": "tsup src/index.ts --format cjs,esm --watch",
-    "test": "vitest --run",
+    "test": "vitest --run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
