@@ -1,5 +1,6 @@
 {
   "name": "intl-party-vscode",
+  "private": true,
   "displayName": "intl-party",
   "description": "VS Code extension for intl-party - translation key autocomplete, hover preview, diagnostics, and go-to-definition",
   "version": "0.1.0",
