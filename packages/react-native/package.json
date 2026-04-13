@@ -68,6 +68,9 @@
     "url": "https://github.com/RodrigoEspinosa/intl-party.git",
     "directory": "packages/react-native"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
