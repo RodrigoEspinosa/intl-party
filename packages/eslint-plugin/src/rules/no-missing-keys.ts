@@ -18,7 +18,6 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
     type: "problem",
     docs: {
       description: "Ensure all translation keys exist in translation files",
-      recommended: "recommended",
     },
     schema: [
       {

@@ -16,7 +16,6 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     docs: {
       description:
         "Prefer using translation hooks over direct i18n instance usage in React components",
-      recommended: "recommended",
     },
     fixable: "code",
     schema: [

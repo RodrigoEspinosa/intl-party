@@ -34,13 +34,18 @@ vi.mock("next/server", () => {
     },
   };
 
+  class MockNextRequest {
+    url: string;
+    cookies = mockCookies;
+    headers = mockHeaders;
+    nextUrl = { ...mockNextUrl };
+    constructor(url: string) {
+      this.url = url;
+    }
+  }
+
   return {
-    NextRequest: vi.fn().mockImplementation((url) => ({
-      url,
-      cookies: mockCookies,
-      headers: mockHeaders,
-      nextUrl: { ...mockNextUrl },
-    })),
+    NextRequest: MockNextRequest,
     NextResponse: {
       next: vi.fn().mockImplementation(() => ({ ...mockNextResponse })),
       redirect: vi.fn().mockImplementation(() => ({
