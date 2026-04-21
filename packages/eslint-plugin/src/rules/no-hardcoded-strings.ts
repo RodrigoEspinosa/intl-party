@@ -19,7 +19,6 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
     docs: {
       description:
         "Disallow hardcoded strings in JSX elements and specific attributes",
-      recommended: "recommended",
     },
     fixable: "code",
     schema: [

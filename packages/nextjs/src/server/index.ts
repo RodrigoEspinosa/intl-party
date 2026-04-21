@@ -16,8 +16,8 @@ export interface NextI18nConfig extends I18nConfig {
 export async function getLocale(config: NextI18nConfig): Promise<Locale> {
   const { locales, defaultLocale, cookieName = "INTL_LOCALE" } = config;
 
-  // Get headers for server-side detection
-  const headersList = headers();
+  // Get headers for server-side detection (async in Next.js 15+)
+  const headersList = await headers();
   const acceptLanguage = headersList.get("accept-language");
   const customLocaleHeader = headersList.get("x-locale");
 
@@ -88,7 +88,7 @@ export async function setLocale(locale: string): Promise<void> {
   try {
     const { cookies } = await import("next/headers");
 
-    cookies().set("INTL_LOCALE", locale, {
+    (await cookies()).set("INTL_LOCALE", locale, {
       httpOnly: false,
       maxAge: 60 * 60 * 24 * 365, // 1 year
       path: "/",

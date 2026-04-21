@@ -1,13 +1,16 @@
 import { RuleTester } from "@typescript-eslint/rule-tester";
+import * as tsParser from "@typescript-eslint/parser";
 import { noHardcodedStrings } from "./no-hardcoded-strings";
 
 const ruleTester = new RuleTester({
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
+  languageOptions: {
+    parser: tsParser,
     ecmaVersion: 2020,
     sourceType: "module",
-    ecmaFeatures: {
-      jsx: true,
+    parserOptions: {
+      ecmaFeatures: {
+        jsx: true,
+      },
     },
   },
 });
