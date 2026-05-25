@@ -15,18 +15,18 @@
   "dependencies": {
     "@intl-party/client": "workspace:*",
     "@intl-party/core": "workspace:*",
-    "@intl-party/react": "workspace:*",
     "@intl-party/nextjs": "workspace:*",
-    "next": "^14.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@intl-party/react": "workspace:*",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
-    "eslint": "^8.55.0",
-    "eslint-config-next": "^14.0.0",
-    "typescript": "^5.3.0"
+    "@types/node": "^20.19.41",
+    "@types/react": "^18.3.29",
+    "@types/react-dom": "^18.3.7",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "typescript": "^5.9.3"
   }
 }
