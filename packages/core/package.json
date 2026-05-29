@@ -38,20 +38,20 @@
     "url": "https://github.com/RodrigoEspinosa/intl-party/issues"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.2"
+    "@formatjs/intl-localematcher": "^0.8.9"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "eslint": "^8.55.0",
-    "intl-messageformat": "^10.5.0",
-    "jsdom": "^23.0.1",
+    "@types/node": "^20.19.41",
+    "eslint": "^8.57.1",
+    "intl-messageformat": "^10.7.18",
+    "jsdom": "^23.2.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "typescript": ">=4.9.0",
-    "intl-messageformat": ">=10.0.0"
+    "intl-messageformat": ">=10.0.0",
+    "typescript": ">=4.9.0"
   },
   "peerDependenciesMeta": {
     "intl-messageformat": {

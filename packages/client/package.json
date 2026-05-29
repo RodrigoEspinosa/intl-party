@@ -49,20 +49,20 @@
     "@intl-party/react": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.45",
-    "eslint": "^8.55.0",
-    "jsdom": "^23.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@types/node": "^20.19.41",
+    "@types/react": "^18.3.29",
+    "eslint": "^8.57.1",
+    "jsdom": "^23.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.3.0",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
+    "intl-messageformat": ">=10.0.0",
     "react": ">=16.8.0",
-    "react-dom": ">=16.8.0",
-    "intl-messageformat": ">=10.0.0"
+    "react-dom": ">=16.8.0"
   },
   "peerDependenciesMeta": {
     "intl-messageformat": {
