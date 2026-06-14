@@ -3,12 +3,16 @@
  * Everything is auto-detected from your messages directory
  */
 
-import * as React from "react";
 import { NextRequest } from "next/server";
 import { createI18nMiddleware, createLocaleMatcher } from "./middleware/index";
 import { loadMessagesForLocale } from "./messages";
-import { promises as fs } from "node:fs";
 import * as path from "node:path";
+
+// Loaded lazily so this module can be bundled without a static node:fs
+// dependency leaking into client/edge bundles.
+async function getFs() {
+  return (await import("node:fs")).promises;
+}
 
 export interface ZeroConfigResult {
   // Middleware
@@ -19,13 +23,17 @@ export interface ZeroConfigResult {
   getLocale: (request?: NextRequest) => Promise<string>;
   getMessages: (locale: string) => Promise<any>;
 
-  // Client provider
-  Provider: React.ComponentType<{
-    children: React.ReactNode;
-    locale?: string;
-    defaultLocale?: string;
-    initialMessages?: Record<string, Record<string, any>>;
-  }>;
+  // Detected configuration, for wiring the client Provider yourself.
+  // The Provider is intentionally NOT returned here: it is a client
+  // component and must come from "@intl-party/nextjs/client" to keep the
+  // "use client" boundary intact. Compose it with getMessages, e.g.:
+  //   const { getMessages, detectedConfig } = await createZeroConfigSetup();
+  //   <Provider locale={locale} initialMessages={await getMessages(locale)}>
+  detectedConfig: {
+    locales: string[];
+    defaultLocale: string;
+    namespaces: string[];
+  };
 }
 
 /**
@@ -35,6 +43,7 @@ async function detectLocales(): Promise<string[]> {
   const messagesPath = path.join(process.cwd(), "messages");
 
   try {
+    const fs = await getFs();
     const entries = await fs.readdir(messagesPath);
 
     // Check each entry
@@ -74,6 +83,7 @@ async function detectNamespaces(locales: string[]): Promise<string[]> {
   const firstLocale = locales[0] || "en";
 
   try {
+    const fs = await getFs();
     const localePath = path.join(messagesPath, firstLocale);
     const files = await fs.readdir(localePath);
     const namespaces = files
@@ -142,36 +152,11 @@ export async function createZeroConfigSetup(): Promise<ZeroConfigResult> {
     });
   };
 
-  // Client provider component
-  const Provider = ({
-    children,
-    locale,
-    defaultLocale: propDefaultLocale,
-    initialMessages,
-  }: {
-    children: React.ReactNode;
-    locale?: string;
-    defaultLocale?: string;
-    initialMessages?: Record<string, Record<string, any>>;
-  }) => {
-    // This is a simple wrapper that will be enhanced by the client component
-    return React.createElement(
-      "div",
-      {
-        "data-i18n-locale": locale || propDefaultLocale || defaultLocale,
-        "data-i18n-provider": "zero-config",
-        "data-i18n-locales": locales.join(","),
-        "data-i18n-namespaces": namespaces.join(","),
-      },
-      children
-    );
-  };
-
   return {
     middleware,
     middlewareConfig: { matcher },
     getLocale,
     getMessages,
-    Provider,
+    detectedConfig: { locales, defaultLocale, namespaces },
   };
 }

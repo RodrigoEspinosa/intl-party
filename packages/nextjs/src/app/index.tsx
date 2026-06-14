@@ -38,33 +38,39 @@ export function AppI18nProvider({
   children,
   ...props
 }: AppI18nProviderProps) {
-  // Create i18n instance with preloaded translations
-  const i18n = createI18n({
-    ...config,
-    // Override detection to use the provided locale
-    detection: {
-      strategies: enableClientSideRouting ? ["cookie", "localStorage"] : [],
-    },
-  });
+  // Build the instance once per (locale, config, translations) change.
+  // Creating it in the render body would make a fresh instance on every
+  // parent re-render, churning context identity and dropping any
+  // runtime-added translations.
+  const i18n = React.useMemo(() => {
+    const instance = createI18n({
+      ...config,
+      // Override detection to use the provided locale
+      detection: {
+        strategies: enableClientSideRouting ? ["cookie", "localStorage"] : [],
+      },
+    });
 
-  // Set the locale
-  i18n.setLocale(locale);
+    instance.setLocale(locale);
 
-  // Add translations for current locale if provided
-  if (translations) {
-    for (const [namespace, nsTranslations] of Object.entries(translations)) {
-      i18n.addTranslations(locale, namespace, nsTranslations);
-    }
-  }
-
-  // Add multi-locale translations for instant switching
-  if (initialData) {
-    for (const [targetLocale, localeData] of Object.entries(initialData)) {
-      for (const [namespace, nsTranslations] of Object.entries(localeData)) {
-        i18n.addTranslations(targetLocale, namespace, nsTranslations);
+    // Add translations for current locale if provided
+    if (translations) {
+      for (const [namespace, nsTranslations] of Object.entries(translations)) {
+        instance.addTranslations(locale, namespace, nsTranslations);
       }
     }
-  }
+
+    // Add multi-locale translations for instant switching
+    if (initialData) {
+      for (const [targetLocale, localeData] of Object.entries(initialData)) {
+        for (const [namespace, nsTranslations] of Object.entries(localeData)) {
+          instance.addTranslations(targetLocale, namespace, nsTranslations);
+        }
+      }
+    }
+
+    return instance;
+  }, [locale, config, translations, initialData, enableClientSideRouting]);
 
   return (
     <I18nProvider {...props} i18n={i18n} initialLocale={locale}>

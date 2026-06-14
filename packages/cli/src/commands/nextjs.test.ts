@@ -139,7 +139,7 @@ describe("nextjsCommand", () => {
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "src/middleware.ts",
-        expect.stringContaining('import config from "../intl-party.config"'),
+        expect.stringContaining('import intlConfig from "../intl-party.config"'),
       );
 
       expect(path.join).toHaveBeenCalledWith("src", "app");

@@ -277,13 +277,26 @@ function detectLocale(
   return defaultLocale;
 }
 
+/**
+ * Removes a leading basePath from a pathname, but only when it is actually
+ * present. `request.nextUrl.pathname` is already basePath-free (Next strips
+ * it), whereas `new URL(request.url).pathname` still has it; the guard makes
+ * this safe to call on either, so callers never strip twice or prepend twice.
+ */
+function stripBasePath(pathname: string, basePath: string): string {
+  if (basePath && pathname.startsWith(basePath)) {
+    return pathname.slice(basePath.length) || "/";
+  }
+  return pathname;
+}
+
 function getLocaleFromPath(
   pathname: string,
   locales: Locale[],
   basePath: string,
   pathSegment: number,
 ): Locale | null {
-  const pathWithoutBase = basePath ? pathname.slice(basePath.length) : pathname;
+  const pathWithoutBase = stripBasePath(pathname, basePath);
   const segments = pathWithoutBase.split("/").filter(Boolean);
 
   if (segments.length > pathSegment) {
@@ -304,9 +317,11 @@ function handleAlwaysPrefix(
   basePath: string,
 ): NextResponse {
   if (!pathLocale) {
-    // Redirect to add locale prefix
+    // Redirect to add locale prefix. request.url still includes basePath, so
+    // strip it before prepending to avoid /base/<locale>/base/...
     const url = new URL(request.url);
-    url.pathname = `${basePath}/${targetLocale}${url.pathname}`;
+    const pathWithoutBase = stripBasePath(url.pathname, basePath);
+    url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
       return NextResponse.redirect(url);
@@ -329,9 +344,7 @@ function handleAsNeededPrefix(
   if (targetLocale === defaultLocale && pathLocale) {
     // Remove unnecessary default locale prefix
     const url = new URL(request.url);
-    const pathWithoutBase = basePath
-      ? url.pathname.slice(basePath.length)
-      : url.pathname;
+    const pathWithoutBase = stripBasePath(url.pathname, basePath);
     const pathWithoutLocale =
       pathWithoutBase.slice(`/${pathLocale}`.length) || "/";
     url.pathname = `${basePath}${pathWithoutLocale}`;
@@ -340,9 +353,10 @@ function handleAsNeededPrefix(
       return NextResponse.redirect(url);
     }
   } else if (targetLocale !== defaultLocale && !pathLocale) {
-    // Add non-default locale prefix
+    // Add non-default locale prefix (strip basePath before prepending)
     const url = new URL(request.url);
-    url.pathname = `${basePath}/${targetLocale}${url.pathname}`;
+    const pathWithoutBase = stripBasePath(url.pathname, basePath);
+    url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
       return NextResponse.redirect(url);
@@ -379,7 +393,7 @@ function shouldSkipPath(
   includePaths: string[],
   basePath: string,
 ): boolean {
-  const pathWithoutBase = basePath ? pathname.slice(basePath.length) : pathname;
+  const pathWithoutBase = stripBasePath(pathname, basePath);
 
   // If includePaths is specified, only process those paths
   if (includePaths.length > 0) {

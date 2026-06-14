@@ -67,7 +67,17 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       return translationUtils.isValidTranslationKey(key);
     }
 
-    async function checkTranslationCall(node: TSESTree.CallExpression) {
+    // ESLint rules must report synchronously during traversal, so all
+    // translation loading is synchronous (with a module-level cache).
+    function translationsAvailable(): boolean {
+      try {
+        return translationUtils.hasTranslations();
+      } catch {
+        return false;
+      }
+    }
+
+    function checkTranslationCall(node: TSESTree.CallExpression) {
       // Check t() function calls
       if (
         node.callee.type === "Identifier" &&
@@ -87,11 +97,16 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
           return;
         }
 
-        // Check if key exists in translation files
+        // If we can't load translations, skip the check
+        // This prevents the rule from breaking when translations aren't available
+        if (!translationsAvailable()) {
+          return;
+        }
+
         try {
           const namespace = translationUtils.extractNamespace(key);
           const baseKey = translationUtils.getBaseKey(key);
-          const hasKey = await translationUtils.hasTranslationKey(
+          const hasKey = translationUtils.hasTranslationKey(
             defaultLocale,
             namespace ? baseKey : key,
             namespace || undefined
@@ -104,9 +119,8 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
               data: { key },
             });
           }
-        } catch (error) {
-          // If we can't load translations, skip the check
-          // This prevents the rule from breaking when translations aren't available
+        } catch {
+          // Skip if we can't load translations
         }
       }
     }
@@ -122,52 +136,21 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       ) {
         const namespace = node.arguments[0].value;
 
-        // Validate namespace exists
-        translationUtils
-          .getNamespaces(defaultLocale)
-          .then((namespaces) => {
-            if (!namespaces.includes(namespace)) {
-              context.report({
-                node: node.arguments[0],
-                messageId: "missingTranslationKey",
-                data: { key: namespace },
-              });
-            }
-          })
-          .catch(() => {
-            // Skip if we can't load translations
-          });
-      }
-    }
+        if (!translationsAvailable()) {
+          return;
+        }
 
-    function checkTemplateLiteral(node: TSESTree.TemplateLiteral) {
-      // Check template literals that might contain translation keys
-      // This is a basic implementation - could be enhanced to detect dynamic keys
-      for (const quasi of node.quasis) {
-        const text = quasi.value.raw;
-
-        // Look for patterns that might be translation keys
-        const keyMatches = text.match(/[a-zA-Z][a-zA-Z0-9._-]*/g);
-
-        if (keyMatches) {
-          for (const potentialKey of keyMatches) {
-            if (isValidTranslationKey(potentialKey)) {
-              translationUtils
-                .hasTranslationKey(defaultLocale, potentialKey)
-                .then((hasKey) => {
-                  if (!hasKey) {
-                    context.report({
-                      node: quasi,
-                      messageId: "missingTranslationKey",
-                      data: { key: potentialKey },
-                    });
-                  }
-                })
-                .catch(() => {
-                  // Skip if we can't load translations
-                });
-            }
+        try {
+          const namespaces = translationUtils.getNamespaces(defaultLocale);
+          if (!namespaces.includes(namespace)) {
+            context.report({
+              node: node.arguments[0],
+              messageId: "missingTranslationKey",
+              data: { key: namespace },
+            });
           }
+        } catch {
+          // Skip if we can't load translations
         }
       }
     }
@@ -176,9 +159,6 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       CallExpression(node) {
         checkTranslationCall(node);
         checkUseTranslationsCall(node);
-      },
-      TemplateLiteral(node) {
-        checkTemplateLiteral(node);
       },
     };
   },

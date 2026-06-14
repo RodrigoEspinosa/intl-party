@@ -98,9 +98,9 @@ export default {
   // Create middleware
   const middlewarePath = hasSrcDir ? "src/middleware.ts" : "middleware.ts";
   const middlewareContent = `import { createSetup } from "@intl-party/nextjs";
-import config from "${hasSrcDir ? "../" : "./"}intl-party.config";
+import intlConfig from "${hasSrcDir ? "../" : "./"}intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(config);
+const { middleware, middlewareConfig } = createSetup(intlConfig);
 
 export { middleware };
 export const config = middlewareConfig;`;

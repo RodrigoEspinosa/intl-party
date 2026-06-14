@@ -77,7 +77,7 @@ export async function extractCommand(options: ExtractOptions) {
     }
 
     // Write extracted keys to output files for all configured locales
-    await writeExtractedKeys(Array.from(extractedKeys), outputDir, config, options);
+    await writeExtractedKeys(Array.from(extractedKeys), outputDir, config);
 
     await outputResults(result, options);
   } catch (error) {
@@ -251,8 +251,7 @@ function generateJUnitXML(result: ExtractResult): string {
 async function writeExtractedKeys(
   keys: string[],
   outputDir: string,
-  config: CLIConfig,
-  options: ExtractOptions
+  config: CLIConfig
 ) {
   await fs.ensureDir(outputDir);
 
@@ -286,7 +285,9 @@ async function writeExtractedKeys(
 
       let translations: Record<string, string> = {};
 
-      if ((options.update || locale !== config.defaultLocale) && (await fs.pathExists(filePath))) {
+      // Always merge into the existing file: rewriting from scratch would
+      // wipe real translation values and keys the extractor didn't match.
+      if (await fs.pathExists(filePath)) {
         try {
           translations = await fs.readJson(filePath);
         } catch {

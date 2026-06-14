@@ -1,8 +1,10 @@
-import fs from "node:fs/promises";
+import fs from "node:fs";
 import path from "node:path";
 import type { AllTranslations } from "@intl-party/core";
 
-// Cache for loaded translations to avoid reloading on every file
+// Cache for loaded translations to avoid reloading on every file.
+// All loading is synchronous: ESLint rules must report during traversal,
+// so async loading would silently drop every report.
 const translationCache = new Map<
   string,
   {
@@ -36,7 +38,7 @@ export class TranslationUtils {
   /**
    * Load translations from configuration or provided files
    */
-  async loadTranslations(): Promise<AllTranslations> {
+  loadTranslations(): AllTranslations {
     const cacheKey = this.getCacheKey();
     const now = Date.now();
 
@@ -50,10 +52,10 @@ export class TranslationUtils {
 
     try {
       // Try to load from config first
-      translations = await this.loadFromConfig();
+      translations = this.loadFromConfig();
     } catch {
       // Fallback to provided translation files
-      translations = await this.loadFromFiles();
+      translations = this.loadFromFiles();
     }
 
     // Update cache
@@ -70,11 +72,8 @@ export class TranslationUtils {
   /**
    * Get all available translation keys for a specific locale and namespace
    */
-  async getTranslationKeys(
-    locale: string,
-    namespace?: string
-  ): Promise<Set<string>> {
-    const translations = await this.loadTranslations();
+  getTranslationKeys(locale: string, namespace?: string): Set<string> {
+    const translations = this.loadTranslations();
     const keys = new Set<string>();
 
     if (namespace) {
@@ -94,29 +93,33 @@ export class TranslationUtils {
   /**
    * Check if a translation key exists
    */
-  async hasTranslationKey(
-    locale: string,
-    key: string,
-    namespace?: string
-  ): Promise<boolean> {
-    const keys = await this.getTranslationKeys(locale, namespace);
+  hasTranslationKey(locale: string, key: string, namespace?: string): boolean {
+    const keys = this.getTranslationKeys(locale, namespace);
     return keys.has(key);
   }
 
   /**
    * Get all available locales
    */
-  async getLocales(): Promise<string[]> {
-    const translations = await this.loadTranslations();
+  getLocales(): string[] {
+    const translations = this.loadTranslations();
     return Object.keys(translations);
   }
 
   /**
    * Get all available namespaces for a locale
    */
-  async getNamespaces(locale: string): Promise<string[]> {
-    const translations = await this.loadTranslations();
+  getNamespaces(locale: string): string[] {
+    const translations = this.loadTranslations();
     return Object.keys(translations[locale] || {});
+  }
+
+  /**
+   * Check whether any translations could be loaded at all.
+   * Rules use this to skip checks when no translation source is available.
+   */
+  hasTranslations(): boolean {
+    return Object.keys(this.loadTranslations()).length > 0;
   }
 
   /**
@@ -151,7 +154,7 @@ export class TranslationUtils {
     return `${this.options.configPath || "default"}-${this.options.defaultLocale}`;
   }
 
-  private async loadFromConfig(): Promise<AllTranslations> {
+  private loadFromConfig(): AllTranslations {
     // This would integrate with the CLI config loader
     // For now, we'll implement a simplified version
 
@@ -163,13 +166,12 @@ export class TranslationUtils {
     ].filter(Boolean);
 
     for (const configFile of configFiles) {
-      if (configFile && (await this.pathExists(configFile))) {
+      if (configFile && this.pathExists(configFile)) {
         try {
           let config;
 
           if (configFile.endsWith(".json")) {
-            const content = await fs.readFile(configFile, "utf-8");
-            config = JSON.parse(content);
+            config = this.readJson(configFile);
           } else {
             // For JS/TS files, we'd need to use dynamic import
             // This is a simplified version - in production, you'd want proper module loading
@@ -182,8 +184,8 @@ export class TranslationUtils {
             }
           }
 
-          return await this.loadFromConfigObject(config);
-        } catch (error) {
+          return this.loadFromConfigObject(config);
+        } catch {
           // Continue to next config file
           continue;
         }
@@ -193,14 +195,10 @@ export class TranslationUtils {
     throw new Error("No valid configuration found");
   }
 
-  private async loadFromConfigObject(
+  private loadFromConfigObject(
     config: Record<string, unknown>
-  ): Promise<AllTranslations> {
-    const {
-      locales = ["en"],
-      defaultLocale = "en",
-      messages = "./messages",
-    } = config as {
+  ): AllTranslations {
+    const { locales = ["en"], messages = "./messages" } = config as {
       locales?: string[];
       defaultLocale?: string;
       messages?: string;
@@ -214,11 +212,11 @@ export class TranslationUtils {
       const messagesPath =
         typeof messages === "string" ? messages : "./messages";
 
-      if (await this.pathExists(messagesPath)) {
+      if (this.pathExists(messagesPath)) {
         const localePath = path.join(messagesPath, locale);
 
-        if (await this.pathExists(localePath)) {
-          const files = await fs.readdir(localePath);
+        if (this.pathExists(localePath)) {
+          const files = fs.readdirSync(localePath);
 
           for (const file of files) {
             if (file.endsWith(".json")) {
@@ -226,7 +224,7 @@ export class TranslationUtils {
               const filePath = path.join(localePath, file);
 
               try {
-                const content = await this.readJson(filePath);
+                const content = this.readJson(filePath);
                 translations[locale][namespace] = content as any;
               } catch {
                 translations[locale][namespace] = {};
@@ -240,19 +238,19 @@ export class TranslationUtils {
     return translations;
   }
 
-  private async loadFromFiles(): Promise<AllTranslations> {
-    const { translationFiles = [], defaultLocale = "en" } = this.options;
+  private loadFromFiles(): AllTranslations {
+    const { translationFiles = [] } = this.options;
 
     if (translationFiles.length === 0) {
       // Try to auto-detect
-      return await this.autoDetectTranslations();
+      return this.autoDetectTranslations();
     }
 
     const translations: AllTranslations = {};
 
     for (const filePath of translationFiles) {
       try {
-        const content = await this.readJson(filePath);
+        const content = this.readJson(filePath);
 
         // Try to infer locale and namespace from file path
         const { locale, namespace } = this.parseFilePath(filePath);
@@ -271,7 +269,7 @@ export class TranslationUtils {
     return translations;
   }
 
-  private async autoDetectTranslations(): Promise<AllTranslations> {
+  private autoDetectTranslations(): AllTranslations {
     const translations: AllTranslations = {};
 
     // Common translation directory patterns
@@ -285,20 +283,20 @@ export class TranslationUtils {
     ];
 
     for (const basePath of commonPaths) {
-      if (await this.pathExists(basePath)) {
+      if (this.pathExists(basePath)) {
         try {
-          const entries = await fs.readdir(basePath);
+          const entries = fs.readdirSync(basePath);
 
           for (const entry of entries) {
             const entryPath = path.join(basePath, entry);
-            const stat = await fs.stat(entryPath);
+            const stat = fs.statSync(entryPath);
 
             if (stat.isDirectory()) {
               // This is a locale directory
               const locale = entry;
               translations[locale] = {};
 
-              const files = await fs.readdir(entryPath);
+              const files = fs.readdirSync(entryPath);
 
               for (const file of files) {
                 if (file.endsWith(".json")) {
@@ -306,7 +304,7 @@ export class TranslationUtils {
                   const filePath = path.join(entryPath, file);
 
                   try {
-                    const content = await this.readJson(filePath);
+                    const content = this.readJson(filePath);
                     translations[locale][namespace] = content as any;
                   } catch {
                     translations[locale][namespace] = {};
@@ -394,9 +392,9 @@ export class TranslationUtils {
   /**
    * Check if a path exists (replacement for fs-extra's pathExists)
    */
-  private async pathExists(filePath: string): Promise<boolean> {
+  private pathExists(filePath: string): boolean {
     try {
-      await fs.access(filePath);
+      fs.accessSync(filePath);
       return true;
     } catch {
       return false;
@@ -406,8 +404,8 @@ export class TranslationUtils {
   /**
    * Read and parse JSON file (replacement for fs-extra's readJson)
    */
-  private async readJson(filePath: string): Promise<Record<string, unknown>> {
-    const content = await fs.readFile(filePath, "utf-8");
+  private readJson(filePath: string): Record<string, unknown> {
+    const content = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(content);
   }
 }

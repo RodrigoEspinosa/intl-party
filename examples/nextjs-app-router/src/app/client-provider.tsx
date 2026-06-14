@@ -1,7 +1,7 @@
 "use client";
 
 // Zero-config client provider - everything auto-detected
-import { Provider } from "@intl-party/nextjs";
+import { Provider } from "@intl-party/nextjs/client";
 
 export function ClientProvider({
   locale,

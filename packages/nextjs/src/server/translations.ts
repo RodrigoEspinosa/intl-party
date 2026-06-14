@@ -35,8 +35,9 @@ export function createServerTranslations(
   };
 }
 
-// Convenient server translation hook-like function
-export async function getServerTranslations(
+// Convenient server translation hook-like function.
+// Synchronous (nothing here awaits); existing `await` call sites still work.
+export function getServerTranslations(
   locale: Locale,
   namespace?: string,
   config?: ServerTranslationConfig,

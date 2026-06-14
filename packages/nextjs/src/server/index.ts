@@ -16,8 +16,10 @@ export interface NextI18nConfig extends I18nConfig {
 export async function getLocale(config: NextI18nConfig): Promise<Locale> {
   const { locales, defaultLocale, cookieName = "INTL_LOCALE" } = config;
 
-  // Get headers for server-side detection
-  const headersList = headers();
+  // Get headers for server-side detection.
+  // headers() returns a Promise in Next 15; awaiting the plain object on
+  // Next 13/14 is a no-op, so this works across the supported peer range.
+  const headersList = await headers();
   const acceptLanguage = headersList.get("accept-language");
   const customLocaleHeader = headersList.get("x-locale");
 
@@ -88,7 +90,9 @@ export async function setLocale(locale: string): Promise<void> {
   try {
     const { cookies } = await import("next/headers");
 
-    cookies().set("INTL_LOCALE", locale, {
+    // cookies() returns a Promise in Next 15 (no-op await on 13/14)
+    const cookieStore = await cookies();
+    cookieStore.set("INTL_LOCALE", locale, {
       httpOnly: false,
       maxAge: 60 * 60 * 24 * 365, // 1 year
       path: "/",
@@ -108,6 +112,7 @@ export {
   getServerTranslations,
   type ServerTranslationConfig,
 } from "./translations";
+import { getServerTranslations } from "./translations";
 
 // Server utilities
 export { detectAvailableNamespaces } from "./utils";
@@ -118,8 +123,5 @@ export function useServerTranslations(
   namespace?: string,
   messages?: Record<string, any>
 ): (key: string, options?: any) => string {
-  // Import here to avoid circular dependency
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { getServerTranslations } = require("./translations");
   return getServerTranslations(locale, namespace, undefined, messages);
 }

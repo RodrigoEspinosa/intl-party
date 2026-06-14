@@ -82,6 +82,26 @@ describe("I18nProvider", () => {
     fireEvent.click(screen.getByTestId("change-locale"));
 
     expect(onLocaleChange).toHaveBeenCalledWith("es");
+    // Exactly once: state updates flow through the localeChange event only,
+    // so the callback must not also be invoked directly by setLocale
+    expect(onLocaleChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call onLocaleChange once for changes made directly on the instance", () => {
+    const onLocaleChange = vi.fn();
+
+    render(
+      <I18nProvider i18n={i18n} onLocaleChange={onLocaleChange}>
+        <TestComponent />
+      </I18nProvider>,
+    );
+
+    React.act(() => {
+      i18n.setLocale("es");
+    });
+
+    expect(screen.getByTestId("locale")).toHaveTextContent("es");
+    expect(onLocaleChange).toHaveBeenCalledTimes(1);
   });
 
   it("should throw error when used outside provider", () => {

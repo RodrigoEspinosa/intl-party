@@ -9,7 +9,6 @@ import type {
   Translations,
   TranslationOptions,
   TranslationFunction,
-  TypedTranslationFunction,
   ValidationResult,
   ErrorHandler,
   I18nError,
@@ -717,10 +716,10 @@ export class I18n implements I18nInstance {
    * ```
    */
   createTyped<T extends Record<string, any>>(): TypedI18nInstance<T> {
-    return {
-      ...this,
-      t: this.t as TypedTranslationFunction<T>,
-    };
+    // Spreading `this` would copy only own enumerable properties, losing
+    // prototype methods (setLocale, on, ...) and the locale/namespace
+    // getters. The typed instance is the same object with a narrower `t`.
+    return this as unknown as TypedI18nInstance<T>;
   }
 
   /**
