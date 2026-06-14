@@ -5,6 +5,22 @@
 
 import type { NextConfig } from "next";
 
+/**
+ * Returns the installed Next.js major version, or null if it can't be read.
+ * Used to choose between the Next 15+ top-level `serverExternalPackages` and
+ * the older `experimental.serverComponentsExternalPackages`.
+ */
+function getNextMajorVersion(): number | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { version } = require("next/package.json") as { version: string };
+    const major = parseInt(version.split(".")[0], 10);
+    return Number.isNaN(major) ? null : major;
+  } catch {
+    return null;
+  }
+}
+
 export interface NextIntegrationOptions {
   i18nConfig: {
     locales: string[];
@@ -64,18 +80,36 @@ export function withIntlParty(
       return userRewrites;
     },
 
-    // Add experimental features for better i18n support
+    // Externalize the intl-party packages from the server bundle. The config
+    // key moved out of `experimental` in Next 15, so pick the right one for
+    // the installed version to avoid deprecation errors.
+    ...externalPackagesConfig(nextConfig),
+  };
+}
+
+function externalPackagesConfig(nextConfig: NextConfig): Partial<NextConfig> {
+  const packages = ["@intl-party/core", "@intl-party/react", "@intl-party/nextjs"];
+  const major = getNextMajorVersion();
+
+  if (major === null || major >= 15) {
+    return {
+      serverExternalPackages: [
+        ...((nextConfig as { serverExternalPackages?: string[] })
+          .serverExternalPackages ?? []),
+        ...packages,
+      ],
+    } as Partial<NextConfig>;
+  }
+
+  return {
     experimental: {
       ...nextConfig.experimental,
-      // Enable server components externalization for better performance
       serverComponentsExternalPackages: [
         ...(nextConfig.experimental?.serverComponentsExternalPackages ?? []),
-        "@intl-party/core",
-        "@intl-party/react",
-        "@intl-party/nextjs",
+        ...packages,
       ],
     },
-  };
+  } as Partial<NextConfig>;
 }
 
 /**

@@ -350,3 +350,41 @@ describe("LocaleDetector", () => {
     });
   });
 });
+
+describe("LocaleDetector - acceptLanguage fallthrough", () => {
+  it("returns null (not the default) when no language matches, so later strategies run", () => {
+    const det = new LocaleDetector(
+      ["en", "fr"],
+      "en",
+      { strategies: ["acceptLanguage", "geographic"], geographic: { countryToLocale: { JP: "fr" } } },
+    );
+
+    const result = det.detect({
+      request: new Request("http://x.com", {
+        headers: { "accept-language": "de-DE,de;q=0.9" },
+      }),
+      geographic: { country: "JP" },
+    });
+
+    // acceptLanguage has no match → geographic strategy resolves to "fr"
+    expect(result).toBe("fr");
+  });
+});
+
+describe("LocaleDetector - cookie name matching", () => {
+  it("does not match a different cookie whose name ends with the target name", () => {
+    const det = new LocaleDetector(["en", "de"], "en", {
+      strategies: ["cookie"],
+      cookieName: "locale",
+    });
+
+    const result = det.detect({
+      request: new Request("http://x.com", {
+        headers: { cookie: "mylocale=de; other=1" },
+      }),
+    });
+
+    // "mylocale=de" must NOT satisfy a lookup for "locale"
+    expect(result).toBe("en");
+  });
+});

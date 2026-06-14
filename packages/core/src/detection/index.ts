@@ -97,21 +97,31 @@ export class LocaleDetector {
 
   private detectFromCookie(request?: Request): Locale | null {
     if (typeof window !== "undefined" && document.cookie) {
-      const cookieName = this.config.cookieName || "locale";
-      const match = document.cookie.match(new RegExp(`${cookieName}=([^;]+)`));
-      return match ? decodeURIComponent(match[1]) : null;
+      return this.readCookie(document.cookie);
     }
 
     if (request?.headers) {
       const cookies = request.headers.get("cookie");
       if (cookies) {
-        const cookieName = this.config.cookieName || "locale";
-        const match = cookies.match(new RegExp(`${cookieName}=([^;]+)`));
-        return match ? decodeURIComponent(match[1]) : null;
+        return this.readCookie(cookies);
       }
     }
 
     return null;
+  }
+
+  /**
+   * Reads the configured cookie from a cookie header string. The cookie name
+   * is regex-escaped and anchored to a cookie boundary so a lookup for
+   * "locale" cannot match an unrelated "mylocale=..." entry.
+   */
+  private readCookie(cookieHeader: string): Locale | null {
+    const cookieName = this.config.cookieName || "locale";
+    const escaped = cookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|;\\s*)${escaped}=([^;]+)`),
+    );
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
   private detectFromAcceptLanguage(request?: Request): Locale | null {
@@ -127,8 +137,12 @@ export class LocaleDetector {
 
     try {
       const parsed = this.parseAcceptLanguage(acceptLanguage);
-      const matched = match(parsed, this.supportedLocales, this.defaultLocale);
-      return matched;
+      // `match` returns its fallback argument when nothing matches. Pass a
+      // sentinel so a no-match returns null and later strategies still run,
+      // rather than silently short-circuiting to the default locale.
+      const NO_MATCH = "\0no-match\0";
+      const matched = match(parsed, this.supportedLocales, NO_MATCH);
+      return matched === NO_MATCH ? null : matched;
     } catch {
       return null;
     }
@@ -184,8 +198,8 @@ export class LocaleDetector {
     } catch (error) {
       this.onError({
         code: "DETECTION_FAILED",
-        message: "Failed to match accept-language header",
-        source: "LocaleDetector.detectFromAcceptLanguage",
+        message: "Failed to detect locale from subdomain",
+        source: "LocaleDetector.detectFromSubdomain",
         cause: error,
       });
       return null;

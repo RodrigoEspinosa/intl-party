@@ -58,16 +58,27 @@ export function ReactNativeI18nProvider({
     if (!detectLocale) return;
 
     let cancelled = false;
-    detectLocale().then((locale) => {
-      if (!cancelled) {
-        setDetectedLocale(locale);
-      }
-    });
+    // Wrap in Promise.resolve so a synchronous detector (e.g.
+    // createDeviceLocaleDetector) works too, and always settle the loading
+    // state — an unhandled rejection here would otherwise leave the app stuck
+    // on the loading screen forever.
+    Promise.resolve()
+      .then(() => detectLocale())
+      .then((locale) => {
+        if (!cancelled) setDetectedLocale(locale);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDetectedLocale(
+            fallbackLocale ?? (config as I18nConfig)?.defaultLocale ?? "en",
+          );
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [detectLocale]);
+  }, [detectLocale, fallbackLocale, config]);
 
   if (detectedLocale === null) {
     return <>{loadingComponent ?? null}</>;

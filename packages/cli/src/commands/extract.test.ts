@@ -125,6 +125,18 @@ describe("extractKeysFromContent", () => {
     const content = `const x = 5; console.log(x);`;
     expect(extractKeysFromContent(content)).toEqual([]);
   });
+
+  it("should not match other functions that merely end in t(", () => {
+    const content = `
+      const n = parseInt('10');
+      const d = format('YYYY-MM-DD');
+      const parts = str.split('.');
+      const greeting = t('common.hello');
+    `;
+    const keys = extractKeysFromContent(content);
+
+    expect(keys).toEqual(["common.hello"]);
+  });
 });
 
 describe("extractCommand", () => {

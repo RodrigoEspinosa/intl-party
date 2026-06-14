@@ -3,11 +3,12 @@ import { noMissingKeys } from "./rules/no-missing-keys";
 import { preferTranslationHooks } from "./rules/prefer-translation-hooks";
 import { recommended } from "./configs/recommended";
 import { strict } from "./configs/strict";
+import { version } from "../package.json";
 
 const plugin = {
   meta: {
     name: "@intl-party/eslint-plugin",
-    version: "0.1.0",
+    version,
   },
   rules: {
     "no-hardcoded-strings": noHardcodedStrings,

@@ -73,6 +73,18 @@ export class I18n implements I18nInstance {
   /** Event listener registry for I18n events */
   private eventListeners: Map<string, Set<(data: unknown) => void>> = new Map();
 
+  /**
+   * Cache of Intl.* formatter instances keyed by type + options. Constructing
+   * an Intl formatter is far more expensive than calling .format(), so this
+   * avoids rebuilding one on every formatDate/formatNumber/... call. Cleared
+   * whenever the locale changes (entries are locale-specific).
+   */
+  private formatterCache: Map<string, Intl.DateTimeFormat | Intl.NumberFormat | Intl.RelativeTimeFormat> =
+    new Map();
+
+  /** Set by dispose(); the instance keeps working but releases cached data. */
+  private disposed = false;
+
   /** Keys that must never appear in translation objects (prototype pollution) */
   private static readonly UNSAFE_KEYS = new Set([
     "__proto__",
@@ -98,7 +110,10 @@ export class I18n implements I18nInstance {
     this.currentLocale = config.defaultLocale;
     this.currentNamespace = config.namespaces[0] || "common";
 
-    this.store = new TranslationStore(config.fallbackChain);
+    this.store = new TranslationStore({
+      fallbackChain: config.fallbackChain,
+      maxCacheSize: config.cache?.maxSize,
+    });
 
     this.detector = new LocaleDetector(
       config.locales,
@@ -269,6 +284,9 @@ export class I18n implements I18nInstance {
     this.currentLocale = locale;
     this._localeVersion++;
 
+    // Cached formatters are locale-specific
+    this.formatterCache.clear();
+
     // Persist locale preference
     this.detector.setLocale(locale, true);
 
@@ -365,12 +383,13 @@ export class I18n implements I18nInstance {
   ): TranslationValue | undefined {
     const ns = namespace || this.currentNamespace;
     try {
-      const translation = this.store.getTranslation(
-        key,
-        this.currentLocale,
-        ns,
-      );
-      return translation === `[${ns}:${key}]` ? undefined : translation;
+      // Use an explicit existence check rather than comparing against the
+      // "[ns:key]" sentinel, which would misreport a real translation whose
+      // value happens to equal that string.
+      if (!this.store.hasTranslation(key, this.currentLocale, ns)) {
+        return undefined;
+      }
+      return this.store.getTranslation(key, this.currentLocale, ns);
     } catch {
       return undefined;
     }
@@ -789,7 +808,15 @@ export class I18n implements I18nInstance {
    * ```
    */
   formatDate(date: Date, options?: Intl.DateTimeFormatOptions): string {
-    return new Intl.DateTimeFormat(this.currentLocale, options).format(date);
+    const key = `date:${JSON.stringify(options ?? {})}`;
+    let formatter = this.formatterCache.get(key) as
+      | Intl.DateTimeFormat
+      | undefined;
+    if (!formatter) {
+      formatter = new Intl.DateTimeFormat(this.currentLocale, options);
+      this.formatterCache.set(key, formatter);
+    }
+    return formatter.format(date);
   }
 
   /**
@@ -812,7 +839,15 @@ export class I18n implements I18nInstance {
    * ```
    */
   formatNumber(number: number, options?: Intl.NumberFormatOptions): string {
-    return new Intl.NumberFormat(this.currentLocale, options).format(number);
+    const key = `number:${JSON.stringify(options ?? {})}`;
+    let formatter = this.formatterCache.get(key) as
+      | Intl.NumberFormat
+      | undefined;
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(this.currentLocale, options);
+      this.formatterCache.set(key, formatter);
+    }
+    return formatter.format(number);
   }
 
   /**
@@ -841,11 +876,19 @@ export class I18n implements I18nInstance {
     currency: string,
     options?: Intl.NumberFormatOptions,
   ): string {
-    return new Intl.NumberFormat(this.currentLocale, {
-      style: "currency",
-      currency,
-      ...options,
-    }).format(amount);
+    const key = `currency:${currency}:${JSON.stringify(options ?? {})}`;
+    let formatter = this.formatterCache.get(key) as
+      | Intl.NumberFormat
+      | undefined;
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(this.currentLocale, {
+        style: "currency",
+        currency,
+        ...options,
+      });
+      this.formatterCache.set(key, formatter);
+    }
+    return formatter.format(amount);
   }
 
   /**
@@ -874,10 +917,15 @@ export class I18n implements I18nInstance {
     unit: Intl.RelativeTimeFormatUnit,
     options?: Intl.RelativeTimeFormatOptions,
   ): string {
-    return new Intl.RelativeTimeFormat(this.currentLocale, options).format(
-      value,
-      unit,
-    );
+    const key = `relativetime:${JSON.stringify(options ?? {})}`;
+    let formatter = this.formatterCache.get(key) as
+      | Intl.RelativeTimeFormat
+      | undefined;
+    if (!formatter) {
+      formatter = new Intl.RelativeTimeFormat(this.currentLocale, options);
+      this.formatterCache.set(key, formatter);
+    }
+    return formatter.format(value, unit);
   }
 
   /**
@@ -891,10 +939,14 @@ export class I18n implements I18nInstance {
    * ```
    */
   dispose(): void {
+    // Idempotent; previously this nulled internal fields, turning any later
+    // call into an opaque TypeError. Now it just releases cached data and
+    // listeners while leaving the instance usable.
+    if (this.disposed) return;
+    this.disposed = true;
     this.eventListeners.clear();
-    this.store = null as any;
-    this.detector = null as any;
-    this.validator = null as any;
+    this.formatterCache.clear();
+    this.store?.clearCache();
   }
 }
 

@@ -260,6 +260,21 @@ export function isLegacyFormat(text: string): boolean {
 }
 
 /**
+ * Detects "complex" ICU syntax: plural/select/selectordinal or typed
+ * arguments (`{n, number}`, `{d, date}`, ...). Unlike isICUFormat, this does
+ * NOT match a bare `{name}` placeholder, so it can be used to tell a real ICU
+ * message apart from a malformed legacy string like `{{name}`.
+ */
+export function isICUComplexFormat(text: string): boolean {
+  if (typeof text !== "string") {
+    return false;
+  }
+  return (
+    ICU_PLURAL_SELECT_PATTERN.test(text) || ICU_TYPED_ARG_PATTERN.test(text)
+  );
+}
+
+/**
  * Detects the message format type.
  *
  * @param text - The message text to check

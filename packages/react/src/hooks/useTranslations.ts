@@ -9,15 +9,22 @@ import type {
 
 // Basic useTranslations hook
 export function useTranslations(namespace?: Namespace): TranslationFunction {
-  const { i18n, namespace: currentNamespace } = useI18nContext();
+  const { i18n, namespace: currentNamespace, locale } = useI18nContext();
 
   const targetNamespace = namespace || currentNamespace;
 
+  // `locale` is in the deps so the returned function's identity changes on a
+  // locale switch — otherwise React.memo children holding `t` keep rendering
+  // the old language. A caller-supplied `options.namespace` wins over the
+  // hook's namespace rather than being silently overridden.
   return useCallback(
     (key: TranslationKey, options?: TranslationOptions) => {
-      return i18n.t(key, { ...options, namespace: targetNamespace });
+      return i18n.t(key, {
+        ...options,
+        namespace: options?.namespace ?? targetNamespace,
+      });
     },
-    [i18n, targetNamespace],
+    [i18n, targetNamespace, locale],
   );
 }
 

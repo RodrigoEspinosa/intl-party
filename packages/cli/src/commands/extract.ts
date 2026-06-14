@@ -93,13 +93,14 @@ export async function extractCommand(options: ExtractOptions) {
 export function extractKeysFromContent(content: string): string[] {
   const keys: string[] = [];
 
-  // Common patterns for translation key usage
+  // Common patterns for translation key usage. The `t(` pattern uses a
+  // negative lookbehind so it only matches a standalone `t(...)` call and not
+  // the tail of unrelated functions like parseInt(, format(, or split(.
   const patterns = [
-    /t\(['"`]([^'"`]+)['"`]\)/g, // t('key')
+    /(?<![\w.])t\(['"`]([^'"`]+)['"`]\)/g, // t('key')
     /useTranslations\(\)\(['"`]([^'"`]+)['"`]\)/g, // useTranslations()('key')
     /useTranslations\(['"`]([^'"`]+)['"`]\)\(['"`]([^'"`]+)['"`]\)/g, // useTranslations('ns')('key')
     /i18nKey=['"`]([^'"`]+)['"`]/g, // i18nKey="key"
-    /\{\s*t\(['"`]([^'"`]+)['"`]\)\s*\}/g, // { t('key') }
   ];
 
   for (const pattern of patterns) {

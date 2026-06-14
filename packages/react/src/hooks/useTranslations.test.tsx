@@ -97,6 +97,28 @@ describe("useTranslations", () => {
 
     expect(result.current("welcome")).toBe("¡Bienvenido!");
   });
+
+  it("should give the t function a new identity after a locale change", () => {
+    i18n.addTranslations("es", "common", { welcome: "¡Bienvenido!" });
+    const wrapper = createWrapper(i18n);
+    const { result } = renderHook(() => useTranslations(), { wrapper });
+
+    const before = result.current;
+    act(() => {
+      i18n.setLocale("es");
+    });
+
+    // Identity must change so React.memo children re-render in the new locale
+    expect(result.current).not.toBe(before);
+  });
+
+  it("should let a caller-supplied namespace option win over the hook namespace", () => {
+    const wrapper = createWrapper(i18n);
+    // Hook bound to "common", but the call asks for "auth"
+    const { result } = renderHook(() => useTranslations("common"), { wrapper });
+
+    expect(result.current("login", { namespace: "auth" })).toBe("Login");
+  });
 });
 
 describe("useHasTranslation", () => {
