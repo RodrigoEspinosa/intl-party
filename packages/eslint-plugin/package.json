@@ -31,8 +31,7 @@
     "url": "https://github.com/RodrigoEspinosa/intl-party/issues"
   },
   "dependencies": {
-    "@typescript-eslint/utils": "^6.15.0",
-    "fs-extra": "^11.3.4"
+    "@typescript-eslint/utils": "^6.15.0"
   },
   "devDependencies": {
     "@types/eslint": "^8.56.0",

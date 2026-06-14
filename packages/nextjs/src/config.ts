@@ -119,9 +119,7 @@ export async function createZeroConfigSetup(): Promise<ZeroConfigResult> {
   });
 
   // Create matcher
-  const matcher = createLocaleMatcher({
-    locales,
-  });
+  const matcher = createLocaleMatcher();
 
   // Server utility to get locale
   const getLocale = async (request?: NextRequest): Promise<string> => {

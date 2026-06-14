@@ -38,8 +38,12 @@ export async function checkCommand(options: CheckOptions) {
       key?: string;
     }> = [];
 
+    // When no specific check flag is passed, run every check; when one or
+    // more are passed, run only those (the flags were previously inert).
+    const runAll = !options.missing && !options.formatErrors;
+
     // Check for missing translations
-    if (options.missing !== false) {
+    if (options.missing || runAll) {
       spinner.start("Checking for missing translations...");
 
       const validationResult = validateTranslations(
@@ -71,7 +75,7 @@ export async function checkCommand(options: CheckOptions) {
     }
 
     // Check for format errors
-    if (options.formatErrors !== false) {
+    if (options.formatErrors || runAll) {
       spinner.start("Checking for format errors...");
 
       const validationResult = validateTranslations(

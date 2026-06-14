@@ -26,5 +26,5 @@ export const middleware = createI18nMiddleware(defaultConfig);
 
 // Create matcher
 export const config = {
-  matcher: createLocaleMatcher({ locales: defaultConfig.locales }),
+  matcher: createLocaleMatcher(),
 };

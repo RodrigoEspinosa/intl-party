@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createI18n, createTypedI18n } from "./i18n";
 import type { I18nConfig, I18nError } from "./types";
 
@@ -606,5 +606,52 @@ describe("createTyped / createTypedI18n", () => {
     expect(typed.t("welcome")).toBe("Welcome");
     typed.setLocale("es");
     expect(i18n.getLocale()).toBe("es");
+  });
+});
+
+describe("formatter caching and dispose", () => {
+  const fmtConfig: I18nConfig = {
+    locales: ["en", "es"],
+    defaultLocale: "en",
+    namespaces: ["common"],
+    detection: { strategies: [] },
+    validation: { logMissing: false },
+  };
+
+  it("reuses the same Intl.NumberFormat instance across calls", () => {
+    const i18n = createI18n(fmtConfig);
+    const spy = vi.spyOn(Intl, "NumberFormat");
+    const before = spy.mock.calls.length;
+
+    i18n.formatNumber(1000);
+    i18n.formatNumber(2000);
+    i18n.formatNumber(3000);
+
+    // One construction for the three same-options calls
+    expect(spy.mock.calls.length - before).toBe(1);
+    spy.mockRestore();
+  });
+
+  it("rebuilds formatters after a locale change", () => {
+    const i18n = createI18n(fmtConfig);
+    i18n.formatNumber(1000);
+    const spy = vi.spyOn(Intl, "NumberFormat");
+
+    i18n.setLocale("es");
+    i18n.formatNumber(1000);
+
+    expect(spy.mock.calls.length).toBe(1);
+    spy.mockRestore();
+  });
+
+  it("dispose() is idempotent and does not break later calls", () => {
+    const i18n = createI18n(fmtConfig);
+    i18n.addTranslations("en", "common", { hi: "Hi" });
+
+    i18n.dispose();
+    i18n.dispose(); // second call must not throw
+
+    expect(() => i18n.t("hi")).not.toThrow();
+    expect(i18n.getLocale()).toBe("en");
   });
 });

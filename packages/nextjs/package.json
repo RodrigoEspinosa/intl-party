@@ -23,8 +23,10 @@
     },
     "./webpack-plugin": {
       "types": "./dist/webpack-plugin.d.ts",
+      "import": "./dist/webpack-plugin.js",
       "require": "./dist/webpack-plugin.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"

@@ -285,9 +285,30 @@ function generateJavaScriptMessages(data: MessageData): string {
 
 export const defaultMessages = ${JSON.stringify(data.messages, null, 2)};
 
-// Export individual locale messages for convenience
-${data.locales.map((locale) => `export const ${locale}Messages = defaultMessages.${locale};`).join("\n")}
+// Export individual locale messages for convenience.
+// Identifiers are sanitized and values use bracket access so region locales
+// (e.g. "en-US") don't produce invalid JS like \`en-USMessages\`.
+${data.locales
+  .map(
+    (locale) =>
+      `export const ${toLocaleIdentifier(locale)}Messages = defaultMessages[${JSON.stringify(locale)}];`,
+  )
+  .join("\n")}
 `;
+}
+
+/**
+ * Turns a locale tag into a valid JS identifier fragment
+ * ("en-US" -> "enUS", "pt-BR" -> "ptBR").
+ */
+function toLocaleIdentifier(locale: string): string {
+  const cleaned = locale.replace(/[^a-zA-Z0-9]/g, " ");
+  const parts = cleaned.split(" ").filter(Boolean);
+  return parts
+    .map((part, i) =>
+      i === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1),
+    )
+    .join("");
 }
 
 function generateClientIndex(): string {

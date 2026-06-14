@@ -8,7 +8,10 @@ import type {
 import {
   isICUFormat,
   formatICUMessage,
+  splitEscapedDots,
 } from "@intl-party/core";
+
+const hasOwn = Object.prototype.hasOwnProperty;
 
 /**
  * Creates a type-safe translation function for a specific locale.
@@ -22,12 +25,14 @@ export function createTranslationFunction(
     key: TranslationKey,
     options?: Record<string, TranslationValue>
   ): string {
-    const keys = key.split(".");
+    // Respect escaped dots (\\.) and use hasOwnProperty so a key like
+    // "constructor" resolves from the data, not from Object.prototype.
+    const keys = splitEscapedDots(key);
     let value: TranslationValue | Translations = messages;
 
     // Navigate through nested object structure
     for (const k of keys) {
-      if (value && typeof value === "object" && k in value) {
+      if (value && typeof value === "object" && hasOwn.call(value, k)) {
         value = (value as Translations)[k];
       } else {
         console.warn(
@@ -71,13 +76,20 @@ export function getLocaleMessages(
 }
 
 /**
- * Creates a client instance with utilities
+ * Creates a client instance bound to a locale and its messages.
+ *
+ * Returns a ready-to-use translation function plus the messages it resolves
+ * against, instead of the unbound factory the previous implementation exposed.
  */
-export function createClient() {
+export function createClient(
+  locale: Locale,
+  messages: Translations = {},
+) {
   return {
-    t: createTranslationFunction,
+    locale,
+    t: createTranslationFunction(locale, messages),
+    messages,
     getLocaleMessages,
-    messages: {},
   };
 }
 

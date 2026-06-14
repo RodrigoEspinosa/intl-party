@@ -32,7 +32,10 @@ export function Trans({
     const options: TranslationOptions = {
       interpolation: values,
       count,
-      fallback,
+      // Fall back to string children when no explicit fallback is given,
+      // matching the next-intl/react-i18next convention.
+      fallback:
+        fallback ?? (typeof children === "string" ? children : undefined),
     };
 
     const translation = t(i18nKey, options);
@@ -44,7 +47,7 @@ export function Trans({
 
     // Parse and render with components
     return parseTranslationWithComponents(translation, components);
-  }, [t, i18nKey, values, components, count, fallback]);
+  }, [t, i18nKey, values, components, count, fallback, children]);
 
   if (typeof rendered === "string") {
     return <Fragment>{rendered}</Fragment>;

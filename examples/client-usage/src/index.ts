@@ -92,15 +92,15 @@ console.log(`  Features: ${tFr("common.features.title")}`);
 
 console.log("\n🏗️  Client instance (like PrismaClient):");
 
-const client = createClient();
+const client = createClient("en", {});
 
 console.log("Client methods available:");
 console.log(`  - t: ${typeof client.t}`);
 console.log(`  - getLocaleMessages: ${typeof client.getLocaleMessages}`);
 
-// Use client methods
+// Use client methods (t is bound to the client's locale + messages)
 console.log("\nUsing client methods:");
-console.log(`  English title: ${client.t("en", {})("common.title")}`);
+console.log(`  English title: ${client.t("common.title")}`);
 
 // ===========================================
 // 4. Direct message access (like Prisma's data access)

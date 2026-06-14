@@ -428,15 +428,21 @@ function parseAcceptLanguage(acceptLanguage: string): string[] {
     .map((item) => item.locale);
 }
 
-// Utility function to create matcher for Next.js middleware
+// Utility function to create matcher for Next.js middleware.
+// Note: Next.js requires `config.matcher` to be a statically-analyzable
+// literal, so inline the returned array in your middleware file rather than
+// computing it at runtime. The matcher intentionally matches all
+// non-excluded paths (locale detection then runs on each), so it does not
+// depend on the locale list.
 export function createLocaleMatcher(
-  config: Pick<I18nMiddlewareConfig, "locales" | "basePath">,
+  config: Pick<I18nMiddlewareConfig, "basePath"> = {},
 ) {
-  const { locales, basePath = "" } = config;
+  const { basePath = "" } = config;
 
   return [
     // Match all paths except those that should be excluded
-    `${basePath}/((?!api|_next|_vercel|favicon.ico).*)`,
+    // (the "." in favicon.ico is escaped so it matches a literal dot)
+    `${basePath}/((?!api|_next|_vercel|favicon\\.ico).*)`,
     // Also match root path
     basePath || "/",
   ];

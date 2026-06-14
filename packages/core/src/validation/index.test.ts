@@ -419,3 +419,26 @@ describe("TranslationValidator", () => {
     });
   });
 });
+
+describe("TranslationValidator - ICU format messages", () => {
+  it("should not flag valid ICU plural messages as invalid format", () => {
+    const validator = new TranslationValidator({ validateFormats: true });
+    const result = validator.validate(
+      {
+        en: {
+          common: {
+            items: "{count, plural, one {# item} other {# items}}",
+            who: "{gender, select, male {He} female {She} other {They}}",
+          },
+        },
+      },
+      ["en"],
+      ["common"],
+    );
+
+    const formatErrors = result.errors.filter(
+      (e) => e.type === "invalid_format",
+    );
+    expect(formatErrors).toEqual([]);
+  });
+});

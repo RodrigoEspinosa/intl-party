@@ -27,7 +27,7 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "turbo run build --filter=!example-* && changeset publish"
+    "release": "turbo run build --filter=!example-* --filter=!@intl-party/example-* && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

@@ -187,12 +187,6 @@ describe("checkCommand", () => {
     };
 
     // Mock validation results
-    const emptyValidationResult: ValidationResult = {
-      valid: true,
-      errors: [],
-      warnings: [],
-    };
-
     const formatErrorResult: ValidationResult = {
       valid: false,
       errors: [
@@ -211,19 +205,17 @@ describe("checkCommand", () => {
     vi.mocked(loadConfig).mockResolvedValue(mockConfig);
     vi.mocked(loadTranslations).mockResolvedValue(mockTranslations);
 
-    // First call for missing translations returns no errors
-    // Second call for format errors returns an error
-    vi.mocked(validateTranslations)
-      .mockReturnValueOnce(emptyValidationResult)
-      .mockReturnValueOnce(formatErrorResult);
+    // With --format-errors only the format check runs, so the single
+    // validateTranslations call must return the format error.
+    vi.mocked(validateTranslations).mockReturnValueOnce(formatErrorResult);
 
     // Call the command and expect process.exit to be called
     await expect(checkCommand({ formatErrors: true })).rejects.toThrow(
       "Process exit with code 1",
     );
 
-    // Verify the command executed correctly
-    expect(validateTranslations).toHaveBeenCalledTimes(2);
+    // Only the format-error check runs when --format-errors is passed
+    expect(validateTranslations).toHaveBeenCalledTimes(1);
     expect(validateTranslations).toHaveBeenLastCalledWith(
       mockTranslations,
       mockConfig.locales,

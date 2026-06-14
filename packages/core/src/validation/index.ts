@@ -9,6 +9,7 @@ import type {
   ValidationConfig,
 } from "../types";
 import { flattenTranslations } from "../utils/translation";
+import { isICUComplexFormat } from "../utils/icu-formatter";
 
 export class TranslationValidator {
   private config: ValidationConfig;
@@ -210,30 +211,38 @@ export class TranslationValidator {
     errors: ValidationError[],
     warnings: ValidationWarning[],
   ): void {
-    // Check for unmatched interpolation brackets
-    const openBrackets = (value.match(/\{\{/g) || []).length;
-    const closeBrackets = (value.match(/\}\}/g) || []).length;
+    // The {{ }} bracket checks only apply to the legacy interpolation format.
+    // ICU plural/select/typed messages (e.g. "{count, plural, one {# item}
+    // other {# items}}") legitimately contain single and doubled braces, so
+    // skip them to avoid flagging every valid ICU message as invalid. A bare
+    // "{name}" is NOT treated as ICU here, so malformed legacy strings like
+    // "{{name}" are still caught.
+    if (!isICUComplexFormat(value)) {
+      // Check for unmatched interpolation brackets
+      const openBrackets = (value.match(/\{\{/g) || []).length;
+      const closeBrackets = (value.match(/\}\}/g) || []).length;
 
-    if (openBrackets !== closeBrackets) {
-      errors.push({
-        type: "invalid_format",
-        locale,
-        namespace,
-        key,
-        message: `Unmatched interpolation brackets in "${key}": ${value}`,
-      });
-    }
+      if (openBrackets !== closeBrackets) {
+        errors.push({
+          type: "invalid_format",
+          locale,
+          namespace,
+          key,
+          message: `Unmatched interpolation brackets in "${key}": ${value}`,
+        });
+      }
 
-    // Check for invalid interpolation syntax
-    const invalidInterpolation = /\{\{[^}]*\{|\}[^}]*\}\}/g;
-    if (invalidInterpolation.test(value)) {
-      errors.push({
-        type: "invalid_format",
-        locale,
-        namespace,
-        key,
-        message: `Invalid interpolation syntax in "${key}": ${value}`,
-      });
+      // Check for invalid interpolation syntax
+      const invalidInterpolation = /\{\{[^}]*\{|\}[^}]*\}\}/g;
+      if (invalidInterpolation.test(value)) {
+        errors.push({
+          type: "invalid_format",
+          locale,
+          namespace,
+          key,
+          message: `Invalid interpolation syntax in "${key}": ${value}`,
+        });
+      }
     }
 
     // Warn about very long translations

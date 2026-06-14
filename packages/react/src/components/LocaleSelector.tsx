@@ -38,6 +38,14 @@ export function LocaleSelector({
     onLocaleChange?.(locale);
   };
 
+  // Cache Intl.DisplayNames per display locale: constructing one is far more
+  // expensive than calling .of(), and the previous code built a fresh
+  // instance for every option on every render.
+  const displayNamesCache = useMemo(
+    () => new Map<string, Intl.DisplayNames>(),
+    [],
+  );
+
   const formatLocaleDisplay = (locale: Locale): string => {
     if (formatLocale) {
       return formatLocale(locale);
@@ -46,9 +54,11 @@ export function LocaleSelector({
     if (showNativeNames) {
       try {
         const intlLocale = new Intl.Locale(locale);
-        const displayNames = new Intl.DisplayNames([locale], {
-          type: "language",
-        });
+        let displayNames = displayNamesCache.get(locale);
+        if (!displayNames) {
+          displayNames = new Intl.DisplayNames([locale], { type: "language" });
+          displayNamesCache.set(locale, displayNames);
+        }
         return displayNames.of(intlLocale.language) || locale;
       } catch {
         return locale;
