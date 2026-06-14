@@ -8,8 +8,16 @@ vi.mock("next/server", () => ({
   NextRequest: vi.fn(),
   NextResponse: {
     next: vi.fn(() => ({ type: "next", cookies: { set: vi.fn() } })),
-    redirect: vi.fn((url: URL) => ({ type: "redirect", url })),
-    rewrite: vi.fn((url: URL) => ({ type: "rewrite", url })),
+    redirect: vi.fn((url: URL) => ({
+      type: "redirect",
+      url,
+      cookies: { set: vi.fn() },
+    })),
+    rewrite: vi.fn((url: URL) => ({
+      type: "rewrite",
+      url,
+      cookies: { set: vi.fn() },
+    })),
   },
 }));
 

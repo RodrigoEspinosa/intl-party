@@ -1,5 +1,7 @@
 "use client";
 
+import { version } from "../package.json";
+
 // Context exports
 export {
   I18nProvider,
@@ -50,5 +52,5 @@ export type {
   TranslationFunction,
 } from "@intl-party/core";
 
-// Version
-export const VERSION = "0.1.0";
+// Version (sourced from package.json at build time to avoid drift)
+export const VERSION = version;

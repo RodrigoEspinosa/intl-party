@@ -1,4 +1,11 @@
 import type { Locale } from "@intl-party/core";
+import { optionalRequire } from "../internal/optional-require";
+
+interface AsyncStorageModule {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+}
 
 export interface AsyncStorageDetectorOptions {
   /** Storage key for persisting locale preference. Defaults to "@intl-party/locale" */
@@ -29,16 +36,22 @@ export function createAsyncStorageDetector(options: AsyncStorageDetectorOptions)
     fallbackLocale,
   } = options;
 
-  function getAsyncStorage() {
-    try {
+  function getAsyncStorage(): AsyncStorageModule {
+    // Literal require lets Metro bundle the native module; optionalRequire
+    // adds a Node ESM fallback so the error below only fires when the package
+    // is genuinely missing (not merely because of the ESM require shim).
+    const mod = optionalRequire<{ default: AsyncStorageModule }>(
+      "@react-native-async-storage/async-storage",
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("@react-native-async-storage/async-storage").default;
-    } catch {
-      throw new Error(
-        "@react-native-async-storage/async-storage is required for locale persistence. " +
-        "Install it with: npx expo install @react-native-async-storage/async-storage"
-      );
+      () => require("@react-native-async-storage/async-storage"),
+    );
+    if (mod?.default) {
+      return mod.default;
     }
+    throw new Error(
+      "@react-native-async-storage/async-storage is required for locale persistence. " +
+        "Install it with: npx expo install @react-native-async-storage/async-storage"
+    );
   }
 
   return {

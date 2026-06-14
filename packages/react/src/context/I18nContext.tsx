@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -53,43 +54,42 @@ export function I18nProvider({
   onNamespaceChange,
   onError,
 }: I18nProviderProps) {
-  // Create or use provided i18n instance
-  const i18nInstance = useMemo(() => {
-    if (externalI18n) {
-      return externalI18n;
-    }
-
+  // Create the owned instance exactly once via a lazy initializer. Using a
+  // useMemo keyed on `config` would rebuild the instance on every render when
+  // callers pass an inline `config={{...}}` object — churning context
+  // identity, dropping runtime-added translations, and re-subscribing
+  // listeners. Config identity changes after mount are intentionally ignored.
+  const [ownInstance] = useState(() => {
+    if (externalI18n) return null;
     if (!config) {
       throw new Error(
         "Either config or i18n instance must be provided to I18nProvider",
       );
     }
-
     const instance = createI18n(config);
-
-    // Set initial locale and namespace if provided
     if (initialLocale && config.locales.includes(initialLocale)) {
       instance.setLocale(initialLocale);
     }
-
     if (initialNamespace && config.namespaces.includes(initialNamespace)) {
       instance.setNamespace(initialNamespace);
     }
-
     return instance;
-  }, [config, externalI18n, initialLocale, initialNamespace]);
+  });
 
-  // Track whether we own the instance (created from config, not passed in).
-  // If we own it, we're responsible for disposing it on unmount.
-  const ownsInstance = useRef(!externalI18n);
+  const i18nInstance = externalI18n ?? ownInstance!;
+
+  // We only own (and therefore dispose) the instance we created from config.
+  const ownInstanceRef = useRef(ownInstance);
+  ownInstanceRef.current = ownInstance;
 
   useEffect(() => {
     return () => {
-      if (ownsInstance.current && "dispose" in i18nInstance) {
-        (i18nInstance as { dispose: () => void }).dispose();
+      const owned = ownInstanceRef.current;
+      if (owned && "dispose" in owned) {
+        (owned as { dispose: () => void }).dispose();
       }
     };
-  }, [i18nInstance]);
+  }, []);
 
   const [locale, setLocaleState] = useState<Locale>(i18nInstance.getLocale());
   const [namespace, setNamespaceState] = useState<Namespace>(
@@ -102,28 +102,37 @@ export function I18nProvider({
   // happen exclusively in the localeChange event listener below — calling
   // them here too would fire the callback twice per change (and miss
   // changes made directly on the i18n instance).
-  const handleLocaleChange = (newLocale: Locale) => {
-    try {
-      i18nInstance.setLocale(newLocale);
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Failed to change locale");
-      setError(error);
-      onError?.(error);
-    }
-  };
+  // useCallback so the context value's setLocale/setNamespace have stable
+  // identity across renders (and pick up a changed onError without going
+  // stale, which the previous non-memoized closures did).
+  const handleLocaleChange = useCallback(
+    (newLocale: Locale) => {
+      try {
+        i18nInstance.setLocale(newLocale);
+      } catch (err) {
+        const error =
+          err instanceof Error ? err : new Error("Failed to change locale");
+        setError(error);
+        onError?.(error);
+      }
+    },
+    [i18nInstance, onError],
+  );
 
   // Handle namespace changes (same single-source-of-truth pattern)
-  const handleNamespaceChange = (newNamespace: Namespace) => {
-    try {
-      i18nInstance.setNamespace(newNamespace);
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Failed to change namespace");
-      setError(error);
-      onError?.(error);
-    }
-  };
+  const handleNamespaceChange = useCallback(
+    (newNamespace: Namespace) => {
+      try {
+        i18nInstance.setNamespace(newNamespace);
+      } catch (err) {
+        const error =
+          err instanceof Error ? err : new Error("Failed to change namespace");
+        setError(error);
+        onError?.(error);
+      }
+    },
+    [i18nInstance, onError],
+  );
 
   // Listen to i18n instance events.
   // Uses an unmounted flag to prevent state updates after the provider
@@ -186,7 +195,14 @@ export function I18nProvider({
       setNamespace: handleNamespaceChange,
       isLoading,
     }),
-    [i18nInstance, locale, namespace, isLoading],
+    [
+      i18nInstance,
+      locale,
+      namespace,
+      isLoading,
+      handleLocaleChange,
+      handleNamespaceChange,
+    ],
   );
 
   // Handle errors
@@ -198,13 +214,15 @@ export function I18nProvider({
     throw error;
   }
 
-  // Handle loading state
-  if (isLoading && loadingComponent) {
-    return <>{loadingComponent}</>;
-  }
-
+  // Render the loading UI alongside children (not instead of them) so a
+  // preload doesn't unmount the subtree and destroy its state (form inputs,
+  // scroll position, etc.). `isLoading` is also exposed via context for
+  // consumers that want to render their own loading affordance.
   return (
-    <I18nContext.Provider value={contextValue}>{children}</I18nContext.Provider>
+    <I18nContext.Provider value={contextValue}>
+      {isLoading && loadingComponent ? loadingComponent : null}
+      {children}
+    </I18nContext.Provider>
   );
 }
 

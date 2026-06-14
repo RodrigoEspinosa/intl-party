@@ -1,3 +1,5 @@
+import { version } from "../package.json";
+
 // Main exports
 export { I18n, createI18n, createTypedI18n } from "./i18n";
 
@@ -66,6 +68,6 @@ export {
   validateTranslations,
 } from "./validation";
 
-// Version
-export const VERSION = "0.1.0";
+// Version (sourced from package.json at build time to avoid drift)
+export const VERSION = version;
 

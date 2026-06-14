@@ -1,4 +1,5 @@
 import type { Locale } from "@intl-party/core";
+import { optionalRequire } from "../internal/optional-require";
 
 export interface DeviceLocaleDetectorOptions {
   /** Supported locales to match against */
@@ -43,31 +44,28 @@ export function createDeviceLocaleDetector(options: DeviceLocaleDetectorOptions)
 }
 
 function getDeviceLocales(): string[] {
-  // Try expo-localization
-  try {
+  // The literal require(...) in each thunk lets Metro bundle these optional
+  // native modules; optionalRequire adds a Node ESM fallback so detection
+  // doesn't silently return [] under Expo web / Node ESM tooling.
+
+  const expoLocalization = optionalRequire<{
+    getLocales?: () => Array<{ languageTag: string }>;
+    locale?: string;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const expoLocalization = require("expo-localization");
-    if (expoLocalization.getLocales) {
-      const locales = expoLocalization.getLocales();
-      return locales.map((l: { languageTag: string }) => l.languageTag);
-    }
-    if (expoLocalization.locale) {
-      return [expoLocalization.locale];
-    }
-  } catch {
-    // expo-localization not available
+  }>("expo-localization", () => require("expo-localization"));
+  if (expoLocalization?.getLocales) {
+    return expoLocalization.getLocales().map((l) => l.languageTag);
+  }
+  if (expoLocalization?.locale) {
+    return [expoLocalization.locale];
   }
 
-  // Try react-native-localize
-  try {
+  const rnLocalize = optionalRequire<{
+    getLocales?: () => Array<{ languageTag: string }>;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const rnLocalize = require("react-native-localize");
-    if (rnLocalize.getLocales) {
-      const locales = rnLocalize.getLocales();
-      return locales.map((l: { languageTag: string }) => l.languageTag);
-    }
-  } catch {
-    // react-native-localize not available
+  }>("react-native-localize", () => require("react-native-localize"));
+  if (rnLocalize?.getLocales) {
+    return rnLocalize.getLocales().map((l) => l.languageTag);
   }
 
   return [];

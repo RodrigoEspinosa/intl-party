@@ -194,6 +194,38 @@ describe("I18nProvider", () => {
     expect(screen.getByTestId("locale")).toHaveTextContent("en");
   });
 
+  it("should not recreate the owned instance when an inline config prop changes identity", () => {
+    const config = {
+      locales: ["en", "es"],
+      defaultLocale: "en",
+      namespaces: ["common"],
+    };
+
+    let captured: unknown;
+    const Capture = () => {
+      const { i18n } = useI18nContext();
+      captured = i18n;
+      return null;
+    };
+
+    const { rerender } = render(
+      // New config object identity each render (the natural inline usage)
+      <I18nProvider config={{ ...config }}>
+        <Capture />
+      </I18nProvider>,
+    );
+
+    const first = captured;
+    rerender(
+      <I18nProvider config={{ ...config }}>
+        <Capture />
+      </I18nProvider>,
+    );
+
+    // Same underlying instance despite a new config object
+    expect(captured).toBe(first);
+  });
+
   it("should throw error when neither config nor i18n instance provided", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
