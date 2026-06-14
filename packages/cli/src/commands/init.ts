@@ -136,7 +136,7 @@ export async function initCommand(options: InitOptions) {
 
     // Create example template files based on template option
     if (options.template) {
-      await createTemplateFiles(options.template, answers);
+      await createTemplateFiles(options.template, answers, options.force);
     }
 
     spinner.succeed("IntlParty configuration initialized successfully!");
@@ -173,23 +173,46 @@ export async function initCommand(options: InitOptions) {
   }
 }
 
-async function createTemplateFiles(template: string, config: any) {
+async function createTemplateFiles(
+  template: string,
+  config: any,
+  force = false
+) {
   switch (template) {
     case "nextjs":
-      await createNextJSTemplate(config);
+      await createNextJSTemplate(config, force);
       break;
     case "react":
-      await createReactTemplate(config);
+      await createReactTemplate(config, force);
       break;
     case "vanilla":
-      await createVanillaTemplate(config);
+      await createVanillaTemplate(config, force);
       break;
     default:
       console.log(chalk.yellow(`Unknown template: ${template}`));
   }
 }
 
-async function createNextJSTemplate(config: any) {
+/**
+ * Writes a template file, refusing to overwrite an existing file
+ * unless --force was passed.
+ */
+async function writeTemplateFile(
+  filePath: string,
+  content: string,
+  force: boolean
+) {
+  if (!force && (await fs.pathExists(filePath))) {
+    console.log(
+      chalk.yellow(`Skipping ${filePath}: file already exists (use --force to overwrite)`)
+    );
+    return;
+  }
+  await fs.ensureDir(path.dirname(filePath));
+  await fs.writeFile(filePath, content);
+}
+
+async function createNextJSTemplate(config: any, force = false) {
   const middlewareContent = `import { createI18nMiddleware } from '@intl-party/nextjs/middleware';
 
 export default createI18nMiddleware({
@@ -230,12 +253,11 @@ export default function RootLayout({
 }
 `;
 
-  await fs.writeFile("middleware.ts", middlewareContent);
-  await fs.ensureDir("app/[locale]");
-  await fs.writeFile("app/[locale]/layout.tsx", layoutContent);
+  await writeTemplateFile("middleware.ts", middlewareContent, force);
+  await writeTemplateFile("app/[locale]/layout.tsx", layoutContent, force);
 }
 
-async function createReactTemplate(config: any) {
+async function createReactTemplate(config: any, force = false) {
   const appContent = `import { I18nProvider } from '@intl-party/react';
 import { createI18n } from '@intl-party/core';
 
@@ -259,10 +281,10 @@ function App() {
 export default App;
 `;
 
-  await fs.writeFile("src/App.tsx", appContent);
+  await writeTemplateFile("src/App.tsx", appContent, force);
 }
 
-async function createVanillaTemplate(config: any) {
+async function createVanillaTemplate(config: any, force = false) {
   const indexContent = `import { createI18n } from '@intl-party/core';
 
 const i18n = createI18n({
@@ -278,6 +300,5 @@ const i18n = createI18n({
 console.log(i18n.t('welcome'));
 `;
 
-  await fs.ensureDir("src");
-  await fs.writeFile("src/index.ts", indexContent);
+  await writeTemplateFile("src/index.ts", indexContent, force);
 }

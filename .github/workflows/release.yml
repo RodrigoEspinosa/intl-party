@@ -40,6 +40,16 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Gate publishing on the same checks as CI so a red master cannot ship
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
       # TODO: Complete this workflow once changesets are fully configured (see #15).
       # The changesets/action will handle creating release PRs and publishing
       # packages to npm when those PRs are merged.
@@ -53,3 +63,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # setup-node's registry-url writes an .npmrc that authenticates via
+          # NODE_AUTH_TOKEN; without it, publishes fail with auth errors.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

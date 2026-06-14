@@ -20,4 +20,19 @@ describe("ESLint Plugin", () => {
     expect(plugin.configs.recommended).toBeDefined();
     expect(plugin.configs.strict).toBeDefined();
   });
+
+  it("should export flat configs that reference the plugin", () => {
+    const flatRecommended = plugin.configs["flat/recommended"] as {
+      plugins: Record<string, unknown>;
+      rules: Record<string, unknown>;
+    };
+    expect(flatRecommended.plugins["@intl-party"]).toBe(plugin);
+    expect(flatRecommended.rules["@intl-party/no-missing-keys"]).toBeDefined();
+
+    const flatStrict = plugin.configs["flat/strict"] as {
+      plugins: Record<string, unknown>;
+      rules: Record<string, unknown>;
+    };
+    expect(flatStrict.plugins["@intl-party"]).toBe(plugin);
+  });
 });

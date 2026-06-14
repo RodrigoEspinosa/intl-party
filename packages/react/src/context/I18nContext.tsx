@@ -98,29 +98,25 @@ export function I18nProvider({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Handle locale changes
+  // Handle locale changes. State updates and the onLocaleChange callback
+  // happen exclusively in the localeChange event listener below — calling
+  // them here too would fire the callback twice per change (and miss
+  // changes made directly on the i18n instance).
   const handleLocaleChange = (newLocale: Locale) => {
     try {
-      setIsLoading(true);
       i18nInstance.setLocale(newLocale);
-      setLocaleState(newLocale);
-      onLocaleChange?.(newLocale);
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error("Failed to change locale");
       setError(error);
       onError?.(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Handle namespace changes
+  // Handle namespace changes (same single-source-of-truth pattern)
   const handleNamespaceChange = (newNamespace: Namespace) => {
     try {
       i18nInstance.setNamespace(newNamespace);
-      setNamespaceState(newNamespace);
-      onNamespaceChange?.(newNamespace);
     } catch (err) {
       const error =
         err instanceof Error ? err : new Error("Failed to change namespace");

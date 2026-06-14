@@ -61,8 +61,10 @@ function createStableCacheKey(options: TranslationOptions | undefined): string {
       return "";
     }
 
-    // Create sorted JSON for consistent keys
-    return JSON.stringify(cacheableOptions, Object.keys(cacheableOptions).sort());
+    // Keys are already inserted in deterministic order above; an array
+    // replacer would filter keys at every depth and drop nested
+    // interpolation values from the key, colliding cache entries.
+    return JSON.stringify(cacheableOptions);
   } catch {
     // If serialization fails (circular ref, etc.), return empty string
     // This means the translation won't be cached, which is safe
@@ -143,10 +145,10 @@ export class TranslationStore {
       this.translations[locale] = {};
     }
 
-    this.translations[locale][namespace] = {
-      ...this.translations[locale][namespace],
-      ...translations,
-    };
+    this.translations[locale][namespace] = deepMerge(
+      this.translations[locale][namespace] ?? {},
+      translations,
+    );
 
     // Invalidate cache entries for the affected locale+namespace and
     // any locale that falls back to it (their resolved translations may change).

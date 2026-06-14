@@ -3,9 +3,14 @@
  * Zero-config setup that detects everything from messages directory
  */
 
-import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import type { Locale } from "@intl-party/core";
+
+// Loaded lazily so this module can be bundled without a static node:fs
+// dependency leaking into client/edge bundles.
+async function getFs() {
+  return (await import("node:fs")).promises;
+}
 
 export interface AutoDetectedConfig {
   locales: Locale[];
@@ -25,6 +30,7 @@ export async function detectLocales(
   const fullPath = path.resolve(process.cwd(), messagesPath);
 
   try {
+    const fs = await getFs();
     const entries = await fs.readdir(fullPath);
 
     // Check each entry to see if it's a directory with JSON files
@@ -69,6 +75,7 @@ export async function detectNamespaces(
   const fullPath = path.resolve(process.cwd(), messagesPath, firstLocale);
 
   try {
+    const fs = await getFs();
     const files = await fs.readdir(fullPath);
     const namespaces = files
       .filter((file: string) => file.endsWith(".json"))

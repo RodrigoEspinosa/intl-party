@@ -43,6 +43,11 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
   create(context, [options]) {
     const { allowDirectUsage = false } = options || {};
 
+    // Scoped translations only pay off when a namespace is repeated;
+    // a single t('ns.key') call is idiomatic and should not be flagged.
+    const SCOPED_TRANSLATIONS_THRESHOLD = 3;
+    const namespaceUsage = new Map<string, TSESTree.CallExpression[]>();
+
     function checkMemberExpression(node: TSESTree.MemberExpression) {
       // Check for i18n.t() usage
       if (
@@ -77,15 +82,9 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
 
         if (namespacedKey.length > 1) {
           const namespace = namespacedKey[0];
-
-          // This would require tracking usage across the component to determine
-          // if scoped translations would be beneficial
-          // For now, we'll provide a simple suggestion
-          context.report({
-            node,
-            messageId: "preferScopedTranslations",
-            data: { namespace },
-          });
+          const calls = namespaceUsage.get(namespace) ?? [];
+          calls.push(node);
+          namespaceUsage.set(namespace, calls);
         }
       }
     }
@@ -93,6 +92,18 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     return {
       MemberExpression: checkMemberExpression,
       CallExpression: checkCallExpression,
+      "Program:exit"() {
+        for (const [namespace, calls] of namespaceUsage) {
+          if (calls.length >= SCOPED_TRANSLATIONS_THRESHOLD) {
+            // Report once per namespace, on the first usage
+            context.report({
+              node: calls[0],
+              messageId: "preferScopedTranslations",
+              data: { namespace },
+            });
+          }
+        }
+      },
     };
   },
 });

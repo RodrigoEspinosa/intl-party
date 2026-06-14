@@ -207,3 +207,65 @@ describe("unflattenTranslations - dot escaping", () => {
     expect(restored).toEqual(original);
   });
 });
+
+describe("TranslationStore - cache keys with interpolation", () => {
+  it("should not return stale results for different interpolation values", () => {
+    const store = new TranslationStore();
+    store.addTranslations("en", "common", { greeting: "Hello {{name}}!" });
+
+    const first = store.getTranslation("greeting", "en", "common", {
+      interpolation: { name: "Alice" },
+    });
+    const second = store.getTranslation("greeting", "en", "common", {
+      interpolation: { name: "Bob" },
+    });
+
+    expect(first).toBe("Hello Alice!");
+    expect(second).toBe("Hello Bob!");
+  });
+
+  it("should not collide cache entries for different counts", () => {
+    const store = new TranslationStore();
+    store.addTranslations("en", "common", {
+      items: "{{count}} {{count|item|items}}",
+    });
+
+    expect(
+      store.getTranslation("items", "en", "common", { count: 1 }),
+    ).toBe("1 item");
+    expect(
+      store.getTranslation("items", "en", "common", { count: 2 }),
+    ).toBe("2 items");
+  });
+});
+
+describe("TranslationStore - incremental addTranslations", () => {
+  it("should deep-merge nested keys instead of replacing the namespace object", () => {
+    const store = new TranslationStore();
+    store.addTranslations("en", "common", { nav: { home: "Home" } });
+    store.addTranslations("en", "common", { nav: { about: "About" } });
+
+    expect(store.getTranslation("nav.home", "en", "common")).toBe("Home");
+    expect(store.getTranslation("nav.about", "en", "common")).toBe("About");
+  });
+
+  it("should let later additions overwrite existing leaf values", () => {
+    const store = new TranslationStore();
+    store.addTranslations("en", "common", { nav: { home: "Home" } });
+    store.addTranslations("en", "common", { nav: { home: "Start" } });
+
+    expect(store.getTranslation("nav.home", "en", "common")).toBe("Start");
+  });
+
+  it("should invalidate cached lookups when nested keys are added", () => {
+    const store = new TranslationStore();
+    store.addTranslations("en", "common", { nav: { home: "Home" } });
+    // Prime the cache with a miss for the not-yet-added key
+    expect(store.getTranslation("nav.about", "en", "common")).toBe(
+      "[common:nav.about]",
+    );
+
+    store.addTranslations("en", "common", { nav: { about: "About" } });
+    expect(store.getTranslation("nav.about", "en", "common")).toBe("About");
+  });
+});

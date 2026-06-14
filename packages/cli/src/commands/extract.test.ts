@@ -282,6 +282,44 @@ describe("extractCommand", () => {
     );
   });
 
+  it("should preserve existing default-locale values without the update option", async () => {
+    const mockSourceFiles = ["src/App.tsx"];
+
+    const mockSourceContent = `
+      function App() {
+        return <div>{t('app.title')}</div>;
+      }
+    `;
+
+    // "title" is matched by extraction; "farewell" is not referenced anywhere
+    const existingTranslations = {
+      title: "Real Translated Title",
+      farewell: "Goodbye",
+    };
+
+    vi.mocked(glob).mockImplementation(() => Promise.resolve(mockSourceFiles));
+    vi.mocked(fs.readFile).mockImplementation(() =>
+      Promise.resolve(mockSourceContent),
+    );
+    vi.mocked(fs.pathExists).mockImplementation(() => Promise.resolve(true));
+    vi.mocked(fs.readJson).mockImplementation(() =>
+      Promise.resolve(existingTranslations),
+    );
+
+    await extractCommand({});
+
+    // The default-locale file must be merged, never rewritten from scratch:
+    // existing values and unmatched keys survive a plain `intl-party extract`
+    expect(fs.writeJson).toHaveBeenCalledWith(
+      "./messages/en/app.json",
+      expect.objectContaining({
+        title: "Real Translated Title",
+        farewell: "Goodbye",
+      }),
+      { spaces: 2 },
+    );
+  });
+
   it("should handle errors in config loading", async () => {
     vi.mocked(loadConfig).mockImplementation(() =>
       Promise.reject(new Error("Config not found")),

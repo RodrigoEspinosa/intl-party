@@ -1,12 +1,16 @@
 /**
- * Main middleware export
+ * Prebuilt demo middleware singleton.
+ *
+ * This is a convenience export with a FIXED locale list. There is no runtime
+ * auto-detection here — if your locales differ, build your own with
+ * `createI18nMiddleware({ locales: [...] })` from "@intl-party/nextjs".
  */
 
 import { createI18nMiddleware, createLocaleMatcher } from "./middleware/index";
 
-// Default configuration
+// Default configuration (fixed demo locales — configure your own via the factory)
 const defaultConfig = {
-  locales: ["en", "es", "fr", "de"], // Will be auto-detected at runtime
+  locales: ["en", "es", "fr", "de"],
   defaultLocale: "en",
   localePrefix: "never" as const,
   cookieName: "INTL_LOCALE",

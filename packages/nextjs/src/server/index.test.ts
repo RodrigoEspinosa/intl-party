@@ -52,6 +52,25 @@ describe("Server Utilities", () => {
       // Should fallback to default when unsupported locale
       expect(locale).toBe("en");
     });
-  });
 
+    it("should work when headers() returns a Promise (Next 15)", async () => {
+      // Next 15 makes headers() async; getLocale must await it.
+      vi.mocked(headers).mockImplementation(
+        () =>
+          Promise.resolve(
+            new Map([["x-locale", "fr"]]),
+          ) as unknown as ReturnType<typeof headers>,
+      );
+
+      const config = {
+        cookieName: "INTL_LOCALE",
+        locales: ["en", "fr", "es"],
+        defaultLocale: "en",
+      };
+
+      const locale = await getLocale(config);
+
+      expect(locale).toBe("fr");
+    });
+  });
 });

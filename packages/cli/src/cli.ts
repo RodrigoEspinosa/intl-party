@@ -23,6 +23,14 @@ program
   .option("-v, --verbose", "verbose output")
   .option("--no-color", "disable colored output");
 
+// Commander only passes a subcommand's own options to its action handler,
+// so merge in the program-level --config/--verbose/--no-color flags.
+type ActionHandler = (options: any) => void | Promise<void>;
+function withGlobals(handler: ActionHandler) {
+  return (_options: unknown, command: { optsWithGlobals(): any }) =>
+    handler(command.optsWithGlobals());
+}
+
 // Validate command
 program
   .command("validate")
@@ -32,7 +40,7 @@ program
   .option("--strict", "enable strict validation mode")
   .option("--format <format>", "output format (text|json|junit)", "text")
   .option("--output <file>", "output file path")
-  .action(validateCommand);
+  .action(withGlobals(validateCommand));
 
 // Extract command
 program
@@ -50,7 +58,7 @@ program
   .option("--update", "update existing translation files with new keys")
   .option("--remove-unused", "remove unused translation keys")
   .option("--format <format>", "output format (text|json|junit)", "text")
-  .action(extractCommand);
+  .action(withGlobals(extractCommand));
 
 // Sync command
 program
@@ -63,19 +71,17 @@ program
   .option("--format <format>", "output format (text|json|junit)", "text")
   .option("--output <file>", "output file path")
   .option("--dry-run", "show what would be synced without writing files")
-  .action(syncCommand);
+  .action(withGlobals(syncCommand));
 
 // Init command
 program
   .command("init")
   .description("initialize intl-party configuration and structure")
   .option("--force", "overwrite existing configuration")
-  .option(
-    "--template <template>",
-    "template to use (nextjs|react|vanilla)",
-    "react"
-  )
-  .action(initCommand);
+  // No default: writing template app files is opt-in, since templates
+  // can touch existing files like src/App.tsx.
+  .option("--template <template>", "template to use (nextjs|react|vanilla)")
+  .action(withGlobals(initCommand));
 
 // Check command
 program
@@ -83,7 +89,7 @@ program
   .description("check for issues in translations and configuration")
   .option("--missing", "check for missing translations")
   .option("--format-errors", "check for format errors in translations")
-  .action(checkCommand);
+  .action(withGlobals(checkCommand));
 
 // Check-config command
 program
@@ -118,25 +124,28 @@ program
   .option("-t, --types", "generate TypeScript type definitions")
   .option("-s, --schemas", "generate JSON schemas")
   .option("-d, --docs", "generate documentation")
-  .option("-c, --client", "generate client package files")
+  // No -c shorthand: it would shadow the global -c, --config flag
+  .option("--client", "generate client package files")
   .option(
     "-o, --output <dir>",
     "output directory for generated files",
     "./node_modules/.intl-party"
   )
   .option("--watch", "watch for changes and regenerate")
-  .option("--verbose", "verbose output")
-  .action(generateCommand);
+  .action(withGlobals(generateCommand));
 
 // Next.js command
 program.addCommand(nextjsCommand);
 
 // Error handling
 program.exitOverride((err) => {
-  if (err.code === "commander.help") {
-    process.exit(0);
-  }
-  if (err.code === "commander.version") {
+  // commander.helpDisplayed is thrown for --help/-h; commander.help for
+  // help shown in other circumstances. Both are successful exits.
+  if (
+    err.code === "commander.help" ||
+    err.code === "commander.helpDisplayed" ||
+    err.code === "commander.version"
+  ) {
     process.exit(0);
   }
   console.error(chalk.red("Error:"), err.message);

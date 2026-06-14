@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createI18n } from "./i18n";
+import { createI18n, createTypedI18n } from "./i18n";
 import type { I18nConfig, I18nError } from "./types";
 
 describe("I18n", () => {
@@ -557,5 +557,54 @@ describe("I18n", () => {
 
       expect(preloadedCount).toBe(1);
     });
+  });
+});
+
+describe("createTyped / createTypedI18n", () => {
+  interface AppTranslations {
+    welcome: string;
+  }
+
+  const typedConfig: I18nConfig = {
+    locales: ["en", "es"],
+    defaultLocale: "en",
+    namespaces: ["common"],
+    detection: { strategies: [] },
+    validation: { logMissing: false },
+  };
+
+  it("should return a fully functional instance from createTypedI18n", () => {
+    const typed = createTypedI18n<AppTranslations>(typedConfig);
+
+    typed.addTranslations("en", "common", { welcome: "Welcome" });
+    typed.addTranslations("es", "common", { welcome: "Bienvenido" });
+
+    expect(typed.t("welcome")).toBe("Welcome");
+
+    typed.setLocale("es");
+    expect(typed.getLocale()).toBe("es");
+    expect(typed.t("welcome")).toBe("Bienvenido");
+  });
+
+  it("should keep event subscription working on typed instances", () => {
+    const typed = createTypedI18n<AppTranslations>(typedConfig);
+    let observed: string | null = null;
+
+    typed.on("localeChange", (data) => {
+      observed = data.locale;
+    });
+    typed.setLocale("es");
+
+    expect(observed).toBe("es");
+  });
+
+  it("should return a working typed view from instance createTyped", () => {
+    const i18n = createI18n(typedConfig);
+    i18n.addTranslations("en", "common", { welcome: "Welcome" });
+
+    const typed = i18n.createTyped<AppTranslations>();
+    expect(typed.t("welcome")).toBe("Welcome");
+    typed.setLocale("es");
+    expect(i18n.getLocale()).toBe("es");
   });
 });

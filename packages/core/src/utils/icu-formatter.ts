@@ -88,16 +88,67 @@ export function loadICULibrary(): boolean {
 
   icuLoadAttempted = true;
 
-  try {
-    // Dynamic require for the optional dependency
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const lib = require("intl-messageformat");
+  const lib = loadOptionalICUModule();
+  if (lib) {
     IntlMessageFormat = lib.IntlMessageFormat || lib.default || lib;
     return true;
+  }
+
+  // intl-messageformat not installed - this is expected for users
+  // who don't need ICU support
+  return false;
+}
+
+interface ICUModuleShape {
+  IntlMessageFormat?: IntlMessageFormatConstructor;
+  default?: IntlMessageFormatConstructor;
+}
+
+/**
+ * Loads the optional intl-messageformat dependency in a way that works in
+ * both build formats. In the CJS build the ambient `require` is real; in the
+ * ESM build esbuild replaces it with a throwing shim, so fall back to
+ * `module.createRequire`, obtained via `process.getBuiltinModule` rather than
+ * a static `node:module` import that browser bundlers would try to resolve.
+ */
+function loadOptionalICUModule(): (ICUModuleShape & IntlMessageFormatConstructor) | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("intl-messageformat");
   } catch {
-    // intl-messageformat not installed - this is expected for users
-    // who don't need ICU support
-    return false;
+    // Fall through to the Node ESM strategy below.
+  }
+
+  try {
+    const getBuiltin = (
+      globalThis as {
+        process?: { getBuiltinModule?: (id: string) => unknown; cwd?: () => string };
+      }
+    ).process?.getBuiltinModule;
+    if (typeof getBuiltin !== "function") {
+      return null;
+    }
+    const moduleBuiltin = getBuiltin("module") as
+      | { createRequire?: (filename: string) => (id: string) => unknown }
+      | undefined;
+    if (!moduleBuiltin?.createRequire) {
+      return null;
+    }
+    // Resolve relative to this module so node_modules lookup walks the
+    // consumer's tree; import.meta.url is only populated in the ESM build,
+    // which is the only build that reaches this fallback.
+    const metaUrl =
+      typeof import.meta !== "undefined" ? import.meta.url : undefined;
+    const cwd = (globalThis as { process?: { cwd?: () => string } }).process?.cwd;
+    const base = metaUrl ?? (cwd ? `${cwd()}/__resolve__.js` : undefined);
+    if (!base) {
+      return null;
+    }
+    const requireFromHere = moduleBuiltin.createRequire(base);
+    return requireFromHere("intl-messageformat") as ICUModuleShape &
+      IntlMessageFormatConstructor;
+  } catch {
+    return null;
   }
 }
 
