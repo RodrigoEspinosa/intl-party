@@ -1,6 +1,9 @@
 import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 
-type MessageIds = "hardcodedString" | "hardcodedStringInAttribute";
+type MessageIds =
+  | "hardcodedString"
+  | "hardcodedStringInAttribute"
+  | "replaceWithTranslation";
 
 export interface NoHardcodedStringsOptions {
   attributes?: string[];
@@ -21,7 +24,10 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
         "Disallow hardcoded strings in JSX elements and specific attributes",
       recommended: "recommended",
     },
-    fixable: "code",
+    // Offered as a suggestion (opt-in) rather than an autofix: the rewrite
+    // introduces a t() call that may not be in scope and a key that doesn't
+    // exist yet, so applying it blindly via `eslint --fix` would break code.
+    hasSuggestions: true,
     schema: [
       {
         type: "object",
@@ -61,6 +67,7 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
         'Hardcoded string "{{text}}" should be translated using t() function',
       hardcodedStringInAttribute:
         'Hardcoded string "{{text}}" in {{attribute}} attribute should be translated using t() function',
+      replaceWithTranslation: "Replace with t('{{key}}')",
     },
   },
   defaultOptions: [{}],
@@ -124,6 +131,7 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
         isHardcodedString(node.value.value)
       ) {
         const literalValue = node.value.value as string;
+        const key = generateTranslationKey(literalValue);
         context.report({
           node: node.value,
           messageId: "hardcodedStringInAttribute",
@@ -131,12 +139,14 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
             text: literalValue,
             attribute: node.name.name,
           },
-          fix(fixer) {
-            return fixer.replaceText(
-              node.value!,
-              `{t('${generateTranslationKey(literalValue)}')}`,
-            );
-          },
+          suggest: [
+            {
+              messageId: "replaceWithTranslation",
+              data: { key },
+              fix: (fixer) =>
+                fixer.replaceText(node.value!, `{t('${key}')}`),
+            },
+          ],
         });
       }
     }
@@ -144,26 +154,31 @@ export const noHardcodedStrings = ESLintUtils.RuleCreator(
     function checkJSXText(node: TSESTree.JSXText) {
       const text = node.value.trim();
       if (text && isHardcodedString(text)) {
+        const key = generateTranslationKey(text);
         context.report({
           node,
           messageId: "hardcodedString",
           data: { text },
-          fix(fixer) {
-            return fixer.replaceText(
-              node,
-              `{t('${generateTranslationKey(text)}')}`,
-            );
-          },
+          suggest: [
+            {
+              messageId: "replaceWithTranslation",
+              data: { key },
+              fix: (fixer) => fixer.replaceText(node, `{t('${key}')}`),
+            },
+          ],
         });
       }
     }
 
     function generateTranslationKey(text: string): string {
-      return text
+      const key = text
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, "")
         .replace(/\s+/g, "_")
         .substring(0, 50);
+      // Non-Latin source text strips to empty; fall back to a placeholder so
+      // the suggestion never produces t('').
+      return key || "translation_key";
     }
 
     return {

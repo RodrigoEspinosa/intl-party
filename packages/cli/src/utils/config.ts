@@ -57,38 +57,70 @@ const DEFAULT_CONFIG: CLIConfig = {
   },
 };
 
+/**
+ * Loads a JS/TS/JSON config module. TS (and ESM JS) configs are loaded via
+ * jiti so a scaffolded `intl-party.config.ts` actually works instead of
+ * throwing "Unknown file extension .ts" at runtime.
+ */
+async function loadConfigFile(configFile: string): Promise<any> {
+  if (configFile.endsWith(".json")) {
+    const content = await fs.readFile(configFile, "utf-8");
+    return JSON.parse(content);
+  }
+
+  const resolved = path.resolve(configFile);
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createJiti } = require("jiti");
+  const jiti = createJiti(__filename, { interopDefault: true });
+  const loaded = await jiti.import(resolved, { default: true });
+  return loaded;
+}
+
+const CONFIG_CANDIDATES = [
+  "intl-party.config.js",
+  "intl-party.config.ts",
+  "intl-party.config.json",
+  ".intl-party.config.js",
+  ".intl-party.config.ts",
+  ".intl-party.config.json",
+];
+
+/**
+ * Resolves the path of the config file to use: the explicit one if given
+ * (erroring when it's missing), otherwise the first auto-detected candidate,
+ * or null when none exists. Lets commands respect intl-party.config.* without
+ * an explicit --config flag.
+ */
+export async function findConfigFile(
+  configPath?: string,
+): Promise<string | null> {
+  if (configPath) {
+    if (!(await fs.pathExists(configPath))) {
+      throw new Error(`Config file not found: ${configPath}`);
+    }
+    return configPath;
+  }
+  for (const candidate of CONFIG_CANDIDATES) {
+    if (await fs.pathExists(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 export async function loadConfig(configPath?: string): Promise<CLIConfig> {
-  const configFiles = [
-    configPath,
-    "intl-party.config.js",
-    "intl-party.config.ts",
-    "intl-party.config.json",
-    ".intl-party.config.js",
-    ".intl-party.config.ts",
-    ".intl-party.config.json",
-  ].filter(Boolean);
+  // An explicitly-provided path that doesn't exist is an error, not a reason
+  // to silently fall back to auto-detection.
+  if (configPath && !(await fs.pathExists(configPath))) {
+    throw new Error(`Config file not found: ${configPath}`);
+  }
+
+  const configFiles = [configPath, ...CONFIG_CANDIDATES].filter(Boolean);
 
   for (const configFile of configFiles) {
     if (configFile && (await fs.pathExists(configFile))) {
       try {
-        let config;
-
-        if (configFile.endsWith(".json")) {
-          const content = await fs.readFile(configFile, "utf-8");
-          config = JSON.parse(content);
-        } else {
-          // For JS/TS files, we need dynamic require to load config at runtime
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          delete require.cache[path.resolve(configFile)];
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          config = require(path.resolve(configFile));
-
-          // Handle ES modules
-          if (config.default) {
-            config = config.default;
-          }
-        }
-
+        const config = await loadConfigFile(configFile);
         return mergeConfig(DEFAULT_CONFIG, config);
       } catch (error) {
         throw new Error(

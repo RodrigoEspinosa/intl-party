@@ -349,7 +349,7 @@ describe("syncCommand", () => {
     expect(savedTranslations.fr.common).toHaveProperty("obsolete");
   });
 
-  it("should remove unused keys when --missing-only is not set", async () => {
+  it("removes unused keys when config.sync.removeUnused is enabled", async () => {
     const mockConfig: CLIConfig = {
       locales: ["en", "fr"],
       defaultLocale: "en",
@@ -360,6 +360,7 @@ describe("syncCommand", () => {
       },
       sourcePatterns: ["src/**/*.{ts,tsx}"],
       outputDir: "./translations",
+      sync: { removeUnused: true, addMissing: true, preserveOrder: true },
     };
 
     const mockTranslations: AllTranslations = {
@@ -378,6 +379,37 @@ describe("syncCommand", () => {
 
     // obsolete should be removed
     expect(savedTranslations.fr.common).not.toHaveProperty("obsolete");
+  });
+
+  it("keeps unused keys when config.sync.removeUnused is false (default)", async () => {
+    const mockConfig: CLIConfig = {
+      locales: ["en", "fr"],
+      defaultLocale: "en",
+      namespaces: ["common"],
+      translationPaths: {
+        en: { common: "locales/en/common.json" },
+        fr: { common: "locales/fr/common.json" },
+      },
+      sourcePatterns: ["src/**/*.{ts,tsx}"],
+      outputDir: "./translations",
+      sync: { removeUnused: false, addMissing: true, preserveOrder: true },
+    };
+
+    const mockTranslations: AllTranslations = {
+      en: { common: { welcome: "Welcome" } },
+      fr: { common: { welcome: "Bienvenue", obsolete: "Obsolete" } },
+    };
+
+    vi.mocked(loadConfig).mockResolvedValue(mockConfig);
+    vi.mocked(loadTranslations).mockResolvedValue(mockTranslations);
+
+    await syncCommand({});
+
+    const savedTranslations = vi.mocked(saveTranslations).mock
+      .calls[0][0] as AllTranslations;
+
+    // Non-destructive by default: obsolete is preserved
+    expect(savedTranslations.fr.common).toHaveProperty("obsolete");
   });
 
   it("should output JSON format when --format json is specified", async () => {

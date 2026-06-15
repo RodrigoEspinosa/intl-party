@@ -2,7 +2,7 @@ import chalk from "chalk";
 import ora from "ora";
 import fs from "fs-extra";
 import inquirer from "inquirer";
-import { loadConfig, type CLIConfig } from "../utils/config";
+import { loadConfig } from "../utils/config";
 import { loadTranslations, saveTranslations } from "../utils/translations";
 import type { AllTranslations } from "@intl-party/core";
 
@@ -78,13 +78,26 @@ export async function syncCommand(options: SyncOptions) {
       return;
     }
 
+    // Decide what to do. Start from config defaults, then let the CLI flag
+    // and (in interactive mode) the user's individual answers refine it.
+    const decisions: SyncDecisions = {
+      addMissing: config.sync?.addMissing ?? true,
+      // --missing-only forces removeUnused off regardless of config
+      removeUnused: options.missingOnly
+        ? false
+        : (config.sync?.removeUnused ?? false),
+    };
+
     // Handle interactive mode
     if (
       options.interactive &&
       (analysis.missingKeys.length > 0 || analysis.unusedKeys.length > 0)
     ) {
-      const shouldProceed = await confirmSync(analysis);
-      if (!shouldProceed) {
+      const answers = await confirmSync(analysis);
+      decisions.addMissing = answers.addMissing;
+      decisions.removeUnused = options.missingOnly ? false : answers.removeUnused;
+
+      if (!decisions.addMissing && !decisions.removeUnused) {
         console.log(chalk.yellow("Sync cancelled by user"));
         return;
       }
@@ -95,7 +108,7 @@ export async function syncCommand(options: SyncOptions) {
       translations,
       analysis,
       baseLocale,
-      options
+      decisions
     );
 
     // Save updated translations
@@ -103,8 +116,8 @@ export async function syncCommand(options: SyncOptions) {
     await saveTranslations(updatedTranslations, config.translationPaths);
     spinner.succeed("Translations synchronized successfully");
 
-    // Output results
-    await outputResults(analysis, options);
+    // Output results (report what was actually applied, not just analyzed)
+    await outputResults(analysis, options, decisions);
   } catch (error) {
     spinner.fail("Sync failed");
     console.error(
@@ -226,7 +239,12 @@ function groupKeysByLocale(keys: SyncAnalysis["missingKeys"]) {
   );
 }
 
-async function confirmSync(analysis: SyncAnalysis): Promise<boolean> {
+interface SyncDecisions {
+  addMissing: boolean;
+  removeUnused: boolean;
+}
+
+async function confirmSync(analysis: SyncAnalysis): Promise<SyncDecisions> {
   const questions = [];
 
   if (analysis.missingCount > 0) {
@@ -248,19 +266,22 @@ async function confirmSync(analysis: SyncAnalysis): Promise<boolean> {
   }
 
   const answers = await inquirer.prompt(questions);
-  return answers.addMissing || answers.removeUnused;
+  return {
+    addMissing: answers.addMissing ?? false,
+    removeUnused: answers.removeUnused ?? false,
+  };
 }
 
 function performSync(
   translations: AllTranslations,
   analysis: SyncAnalysis,
   baseLocale: string,
-  options: SyncOptions
+  decisions: SyncDecisions
 ): AllTranslations {
   const updatedTranslations = JSON.parse(JSON.stringify(translations));
 
   // Add missing keys with placeholder values
-  if (analysis.missingKeys.length > 0) {
+  if (decisions.addMissing && analysis.missingKeys.length > 0) {
     for (const missing of analysis.missingKeys) {
       const baseValue = getNestedValue(
         updatedTranslations[baseLocale]?.[missing.namespace] || {},
@@ -282,8 +303,8 @@ function performSync(
     }
   }
 
-  // Remove unused keys (only when not missing-only mode)
-  if (analysis.unusedKeys.length > 0 && !options.missingOnly) {
+  // Remove unused keys only when the decision says so
+  if (decisions.removeUnused && analysis.unusedKeys.length > 0) {
     for (const unused of analysis.unusedKeys) {
       removeNestedValue(
         updatedTranslations[unused.locale][unused.namespace],
@@ -328,7 +349,11 @@ function removeNestedValue(obj: Record<string, unknown>, path: string): void {
   }
 }
 
-async function outputResults(analysis: SyncAnalysis, options: SyncOptions) {
+async function outputResults(
+  analysis: SyncAnalysis,
+  options: SyncOptions,
+  decisions?: SyncDecisions,
+) {
   const format = options.format || "text";
 
   if (format === "json") {
@@ -361,13 +386,18 @@ async function outputResults(analysis: SyncAnalysis, options: SyncOptions) {
     return;
   }
 
-  displaySummary(analysis);
+  displaySummary(analysis, decisions);
 }
 
-function displaySummary(analysis: SyncAnalysis): void {
+function displaySummary(
+  analysis: SyncAnalysis,
+  decisions?: SyncDecisions,
+): void {
+  const added = decisions?.addMissing === false ? 0 : analysis.missingCount;
+  const removed = decisions?.removeUnused ? analysis.unusedCount : 0;
   console.log(chalk.bold.green("\nSync Complete!"));
-  console.log(`Added ${chalk.green(analysis.missingCount)} missing keys`);
-  console.log(`Removed ${chalk.red(analysis.unusedCount)} unused keys`);
+  console.log(`Added ${chalk.green(added)} missing keys`);
+  console.log(`Removed ${chalk.red(removed)} unused keys`);
 }
 
 function generateJUnitXML(analysis: SyncAnalysis): string {
