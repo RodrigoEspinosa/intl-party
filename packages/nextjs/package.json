@@ -36,7 +36,7 @@
     "dev": "tsup --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -66,7 +66,7 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.45",
-    "eslint": "^8.55.0",
+    "eslint": "^9.0.0",
     "jsdom": "^23.0.1",
     "next": "^14.0.0",
     "react": "^18.2.0",

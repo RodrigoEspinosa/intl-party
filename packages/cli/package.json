@@ -16,7 +16,7 @@
     "dev": "tsup --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -49,7 +49,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.10.0",
-    "eslint": "^8.55.0",
+    "eslint": "^9.0.0",
     "jsdom": "^23.0.1",
     "tsup": "^8.5.1",
     "typescript": "^5.3.0",

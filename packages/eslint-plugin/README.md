@@ -22,43 +22,48 @@ yarn add --dev @intl-party/eslint-plugin
 
 ## Configuration
 
-### Basic Setup
+### Flat config (ESLint 9, recommended)
 
-Add the plugin to your ESLint configuration:
+```javascript
+// eslint.config.js
+const intlParty = require("@intl-party/eslint-plugin");
+
+module.exports = [
+  intlParty.configs["flat/recommended"],
+  // ...your other config objects
+];
+```
+
+Or wire it up manually:
+
+```javascript
+// eslint.config.js
+const intlParty = require("@intl-party/eslint-plugin");
+
+module.exports = [
+  {
+    plugins: { "@intl-party": intlParty },
+    rules: {
+      "@intl-party/no-hardcoded-strings": "warn",
+      "@intl-party/no-missing-keys": "error",
+      "@intl-party/prefer-translation-hooks": "warn",
+    },
+  },
+];
+```
+
+### Legacy config (`.eslintrc`, ESLint 8)
 
 ```javascript
 // .eslintrc.js
 module.exports = {
   plugins: ["@intl-party"],
-  extends: ["@intl-party/recommended"],
+  extends: ["plugin:@intl-party/recommended"],
 };
 ```
 
-### Manual Configuration
-
-```javascript
-// .eslintrc.js
-module.exports = {
-  plugins: ["@intl-party"],
-  rules: {
-    "@intl-party/no-hardcoded-strings": "error",
-    "@intl-party/no-missing-keys": "error",
-    "@intl-party/prefer-translation-hooks": "warn",
-  },
-};
-```
-
-### TypeScript Configuration
-
-```javascript
-// .eslintrc.js
-module.exports = {
-  extends: ["@intl-party/recommended", "@intl-party/typescript"],
-  parserOptions: {
-    project: "./tsconfig.json",
-  },
-};
-```
+A `strict` preset is also available as `configs["flat/strict"]` (flat) or
+`plugin:@intl-party/strict` (legacy).
 
 ## Rules
 
