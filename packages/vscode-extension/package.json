@@ -14,7 +14,8 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:**/*.json"
+    "workspaceContains:**/locales/**/*.json",
+    "workspaceContains:**/intl-party.config.*"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -43,12 +44,14 @@
   "scripts": {
     "build": "tsup src/extension.ts --format cjs --external vscode --minify",
     "dev": "tsup src/extension.ts --format cjs --external vscode --watch",
+    "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "package": "vsce package"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
+    "eslint": "^8.55.0",
     "tsup": "^8.5.1",
     "typescript": "^5.3.0"
   },

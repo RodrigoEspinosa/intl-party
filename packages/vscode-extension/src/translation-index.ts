@@ -105,7 +105,12 @@ export class TranslationIndex {
         this.index.set(locale, new Map());
       }
 
-      const flat = this.flatten(json);
+      // Prefix keys with the namespace (the filename, when the locale came
+      // from a directory) so the index matches the `t('common.key')`
+      // convention used by the CLI and ESLint plugin. Without this,
+      // conventionally-namespaced keys are reported as "not found".
+      const namespace = this.inferNamespace(uri, locale);
+      const flat = this.flatten(json, namespace ?? "");
       const localeMap = this.index.get(locale)!;
 
       for (const [key, value] of Object.entries(flat)) {
@@ -142,6 +147,20 @@ export class TranslationIndex {
       return basename;
     }
     return undefined;
+  }
+
+  /**
+   * Infer the namespace for a translation file: the filename (without
+   * extension) when the locale was inferred from a directory segment
+   * (e.g. locales/en/common.json -> "common"). Returns undefined for flat
+   * per-locale files (e.g. locales/en.json) where the filename is the locale.
+   */
+  private inferNamespace(
+    uri: vscode.Uri,
+    locale: string,
+  ): string | undefined {
+    const basename = path.basename(uri.fsPath, ".json");
+    return basename !== locale ? basename : undefined;
   }
 
   /** Flatten nested JSON into dot-separated keys. */
