@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "i18n:generate": "node ../../packages/cli/dist/cli.js generate --client --types --output ./src/lib/generated",
     "i18n:extract": "node ../../packages/cli/dist/cli.js extract",
@@ -25,8 +25,7 @@
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
-    "eslint": "^8.55.0",
-    "eslint-config-next": "^14.0.0",
+    "eslint": "^9.0.0",
     "typescript": "^5.3.0"
   }
 }

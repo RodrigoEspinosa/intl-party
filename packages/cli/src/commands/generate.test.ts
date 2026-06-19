@@ -38,6 +38,7 @@ vi.mock("node:path", () => ({
 
 vi.mock("../utils/config", () => ({
   loadConfig: vi.fn(),
+  findConfigFile: vi.fn((p?: string) => Promise.resolve(p ?? null)),
 }));
 
 vi.mock("../utils/translations", () => ({

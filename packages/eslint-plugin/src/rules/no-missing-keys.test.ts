@@ -3,13 +3,16 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll } from "vitest";
 import { RuleTester } from "@typescript-eslint/rule-tester";
+import tsParser from "@typescript-eslint/parser";
 import { noMissingKeys } from "./no-missing-keys";
 
 const ruleTester = new RuleTester({
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: "module",
+  languageOptions: {
+    parser: tsParser,
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+    },
   },
 });
 

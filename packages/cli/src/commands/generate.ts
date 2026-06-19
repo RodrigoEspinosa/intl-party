@@ -4,7 +4,7 @@ import crypto from "crypto";
 import chalk from "chalk";
 import ora from "ora";
 import { watch } from "chokidar";
-import { loadConfig } from "../utils/config";
+import { loadConfig, findConfigFile } from "../utils/config";
 import { loadTranslations } from "../utils/translations";
 
 export interface GenerateOptions {
@@ -36,8 +36,11 @@ async function getMessageData(
   let namespaces: string[];
   let translationPaths: Record<string, Record<string, string>>;
 
-  if (configPath && (await fs.pathExists(configPath))) {
-    config = await loadConfig(configPath);
+  // Respect an auto-detected intl-party.config.* even when --config isn't
+  // passed; only fall back to filesystem scanning when no config exists.
+  const resolvedConfigPath = await findConfigFile(configPath);
+  if (resolvedConfigPath) {
+    config = await loadConfig(resolvedConfigPath);
     locales = config.locales;
     namespaces = config.namespaces;
     translationPaths = config.translationPaths;

@@ -27,7 +27,7 @@
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "eslint": "^8.55.0",
+    "eslint": "^9.0.0",
     "intl-messageformat": "^10.5.0",
     "jsdom": "^23.0.1",
     "tsup": "^8.5.1",

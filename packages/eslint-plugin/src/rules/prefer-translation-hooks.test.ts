@@ -1,11 +1,14 @@
 import { RuleTester } from "@typescript-eslint/rule-tester";
+import tsParser from "@typescript-eslint/parser";
 import { preferTranslationHooks } from "./prefer-translation-hooks";
 
 const ruleTester = new RuleTester({
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: "module",
+  languageOptions: {
+    parser: tsParser,
+    parserOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+    },
   },
 });
 

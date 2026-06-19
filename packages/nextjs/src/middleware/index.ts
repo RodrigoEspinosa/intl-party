@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { match } from "@formatjs/intl-localematcher";
 import type { Locale } from "@intl-party/core";
+import { matchAcceptLanguage } from "../shared/detect";
 
 export interface I18nMiddlewareConfig {
   locales: Locale[];
@@ -110,8 +110,7 @@ export function createI18nMiddleware(config: I18nMiddlewareConfig) {
   } = config;
 
   return function middleware(request: NextRequest): NextResponse | void {
-    const { pathname, search } = request.nextUrl;
-    const url = new URL(request.url);
+    const { pathname } = request.nextUrl;
 
     // Skip middleware for excluded paths
     if (shouldSkipPath(pathname, excludePaths, includePaths, basePath)) {
@@ -154,6 +153,7 @@ export function createI18nMiddleware(config: I18nMiddlewareConfig) {
         pathLocale,
         redirectStrategy,
         basePath,
+        cookieName,
       );
     } else if (localePrefix === "as-needed") {
       return handleAsNeededPrefix(
@@ -163,14 +163,10 @@ export function createI18nMiddleware(config: I18nMiddlewareConfig) {
         defaultLocale,
         redirectStrategy,
         basePath,
+        cookieName,
       );
     } else if (localePrefix === "never") {
-      return handleNeverPrefix(
-        request,
-        targetLocale,
-        cookieName,
-        redirectStrategy,
-      );
+      return handleNeverPrefix(targetLocale, cookieName);
     }
 
     return NextResponse.next();
@@ -257,21 +253,13 @@ function detectLocale(
     }
   }
 
-  // 6. From Accept-Language header
-  const acceptLanguage = request.headers.get("accept-language");
-  if (acceptLanguage) {
-    try {
-      const matched = match(
-        parseAcceptLanguage(acceptLanguage),
-        locales,
-        defaultLocale,
-      );
-      if (matched && locales.includes(matched)) {
-        return matched;
-      }
-    } catch {
-      // Ignore parsing errors
-    }
+  // 6. From Accept-Language header (q-value + region aware, shared with server)
+  const matched = matchAcceptLanguage(
+    request.headers.get("accept-language"),
+    locales,
+  );
+  if (matched && locales.includes(matched)) {
+    return matched;
   }
 
   return defaultLocale;
@@ -309,12 +297,32 @@ function getLocaleFromPath(
   return null;
 }
 
+/**
+ * Persists the chosen locale in a cookie on a response so detection doesn't
+ * re-run from Accept-Language on every request (and a path-based choice is
+ * remembered when the user next hits an unprefixed entry point).
+ */
+function persistLocale(
+  response: NextResponse,
+  cookieName: string,
+  locale: Locale,
+): NextResponse {
+  response.cookies.set(cookieName, locale, {
+    httpOnly: false,
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    path: "/",
+    sameSite: "lax",
+  });
+  return response;
+}
+
 function handleAlwaysPrefix(
   request: NextRequest,
   targetLocale: Locale,
   pathLocale: Locale | null,
   redirectStrategy: string,
   basePath: string,
+  cookieName: string,
 ): NextResponse {
   if (!pathLocale) {
     // Redirect to add locale prefix. request.url still includes basePath, so
@@ -324,13 +332,13 @@ function handleAlwaysPrefix(
     url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
-      return NextResponse.redirect(url);
+      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
     } else if (redirectStrategy === "rewrite") {
-      return NextResponse.rewrite(url);
+      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
     }
   }
 
-  return NextResponse.next();
+  return persistLocale(NextResponse.next(), cookieName, targetLocale);
 }
 
 function handleAsNeededPrefix(
@@ -340,6 +348,7 @@ function handleAsNeededPrefix(
   defaultLocale: Locale,
   redirectStrategy: string,
   basePath: string,
+  cookieName: string,
 ): NextResponse {
   if (targetLocale === defaultLocale && pathLocale) {
     // Remove unnecessary default locale prefix
@@ -350,7 +359,10 @@ function handleAsNeededPrefix(
     url.pathname = `${basePath}${pathWithoutLocale}`;
 
     if (redirectStrategy === "redirect") {
-      return NextResponse.redirect(url);
+      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
+    } else if (redirectStrategy === "rewrite") {
+      // Canonicalize away the default-locale prefix without a client redirect
+      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
     }
   } else if (targetLocale !== defaultLocale && !pathLocale) {
     // Add non-default locale prefix (strip basePath before prepending)
@@ -359,32 +371,21 @@ function handleAsNeededPrefix(
     url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
-      return NextResponse.redirect(url);
+      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
     } else if (redirectStrategy === "rewrite") {
-      return NextResponse.rewrite(url);
+      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
     }
   }
 
-  return NextResponse.next();
+  return persistLocale(NextResponse.next(), cookieName, targetLocale);
 }
 
 function handleNeverPrefix(
-  request: NextRequest,
   targetLocale: Locale,
   cookieName: string,
-  redirectStrategy: string,
 ): NextResponse {
-  const response = NextResponse.next();
-
-  // Store locale in cookie for server-side access
-  response.cookies.set(cookieName, targetLocale, {
-    httpOnly: false,
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-    path: "/",
-    sameSite: "lax",
-  });
-
-  return response;
+  // Clean URLs: never add a prefix, just remember the locale for the server
+  return persistLocale(NextResponse.next(), cookieName, targetLocale);
 }
 
 function shouldSkipPath(
@@ -412,20 +413,6 @@ function shouldSkipPath(
     }
     return pathWithoutBase === path || pathWithoutBase.startsWith(`${path}/`);
   });
-}
-
-function parseAcceptLanguage(acceptLanguage: string): string[] {
-  return acceptLanguage
-    .split(",")
-    .map((lang) => {
-      const [locale, q] = lang.trim().split(";q=");
-      return {
-        locale: locale.trim(),
-        quality: q ? parseFloat(q) : 1.0,
-      };
-    })
-    .sort((a, b) => b.quality - a.quality)
-    .map((item) => item.locale);
 }
 
 // Utility function to create matcher for Next.js middleware.

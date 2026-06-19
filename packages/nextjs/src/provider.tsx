@@ -73,7 +73,10 @@ export function Provider({
     }
   }, [initialMessages]);
 
-  // Handle locale switching
+  // Handle locale switching. Changing `locale` state rebuilds the i18n
+  // instance (below) with the new locale included, so we don't call
+  // setLocale on the current instance here — doing so would throw when the
+  // target locale's messages haven't been loaded into it yet.
   const handleLocaleChange = (newLocale: Locale) => {
     setLocale(newLocale);
 
@@ -81,19 +84,15 @@ export function Provider({
     if (typeof document !== "undefined") {
       document.cookie = `INTL_LOCALE=${newLocale}; path=/; max-age=31536000`; // 1 year
     }
-
-    // Update the i18n instance locale
-    if (i18nInstance) {
-      i18nInstance.setLocale(newLocale);
-    }
   };
 
   // Create i18n instance
   const i18nInstance = useMemo(() => {
-    // Get all available locales from messages
-    const availableLocales = Object.keys(messages);
-    const allLocales =
-      availableLocales.length > 0 ? (availableLocales as Locale[]) : [locale];
+    // Always include the current locale so switching to a locale whose
+    // messages aren't loaded yet doesn't throw "unsupported locale".
+    const allLocales = Array.from(
+      new Set<Locale>([locale, ...(Object.keys(messages) as Locale[])]),
+    );
 
     const instance = createI18n({
       locales: allLocales,
