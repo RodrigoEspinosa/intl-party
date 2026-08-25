@@ -1,5 +1,12 @@
 # @intl-party/client
 
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies [2f936f0]
+  - @intl-party/core@1.3.1
+
 ## 1.3.0
 
 ### Minor Changes
