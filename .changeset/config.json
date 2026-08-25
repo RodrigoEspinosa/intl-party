@@ -3,7 +3,7 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [["@intl-party/*"]],
+  "linked": [["@intl-party/*", "!@intl-party/react-native"]],
   "access": "public",
   "baseBranch": "master",
   "updateInternalDependencies": "patch",
