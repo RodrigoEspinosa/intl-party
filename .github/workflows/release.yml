@@ -17,6 +17,9 @@ jobs:
       contents: write
       packages: write
       id-token: write
+      # changesets/action opens the "version packages" PR with GITHUB_TOKEN;
+      # without this it fails with "Resource not accessible by integration".
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -50,9 +53,6 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # TODO: Complete this workflow once changesets are fully configured (see #15).
-      # The changesets/action will handle creating release PRs and publishing
-      # packages to npm when those PRs are merged.
       - name: Create release pull request or publish
         uses: changesets/action@v1
         with:
