@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/react-native",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React Native integration for IntlParty - detection strategies and provider for mobile apps",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
