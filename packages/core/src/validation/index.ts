@@ -86,19 +86,6 @@ export class TranslationValidator {
             });
           }
         }
-
-        // Find unused keys (potential warnings)
-        for (const key of currentKeys) {
-          if (!localeKeys.has(key)) {
-            warnings.push({
-              type: "unused_key",
-              locale,
-              namespace,
-              key,
-              message: `Potentially unused translation key "${key}" in namespace "${namespace}" for locale "${locale}"`,
-            });
-          }
-        }
       }
     }
 

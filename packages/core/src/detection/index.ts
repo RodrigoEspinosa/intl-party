@@ -3,7 +3,6 @@ import type {
   Locale,
   LocaleDetectionConfig,
   DetectionStrategy,
-  GeographicConfig,
   ErrorHandler,
 } from "../types";
 
@@ -121,7 +120,12 @@ export class LocaleDetector {
     const match = cookieHeader.match(
       new RegExp(`(?:^|;\\s*)${escaped}=([^;]+)`),
     );
-    return match ? decodeURIComponent(match[1]) : null;
+    if (!match) return null;
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return null;
+    }
   }
 
   private detectFromAcceptLanguage(request?: Request): Locale | null {
@@ -239,6 +243,19 @@ export class LocaleDetector {
           this.onError({
             code: "STORAGE_ERROR",
             message: "Failed to persist locale to localStorage",
+            source: "LocaleDetector.setLocale",
+            cause: error,
+          });
+        }
+      }
+
+      if (this.config.strategies.includes("sessionStorage")) {
+        try {
+          sessionStorage.setItem(this.config.storageKey || "locale", locale);
+        } catch (error) {
+          this.onError({
+            code: "STORAGE_ERROR",
+            message: "Failed to persist locale to sessionStorage",
             source: "LocaleDetector.setLocale",
             cause: error,
           });

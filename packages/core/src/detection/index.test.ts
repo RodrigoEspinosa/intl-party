@@ -107,6 +107,39 @@ describe("LocaleDetector", () => {
   });
 
   describe("cookie detection", () => {
+    it.each(["%", "%E0%A4%A", "%FF"])(
+      "falls through to the next strategy for malformed cookie value %s",
+      (value) => {
+        const cookieDetector = createLocaleDetector(["en", "fr"], "en", {
+          strategies: ["cookie", "queryParam"],
+        });
+        const request = new Request("http://localhost", {
+          headers: { cookie: `locale=${value}` },
+        });
+
+        expect(
+          cookieDetector.detect({ request, url: "http://localhost?locale=fr" }),
+        ).toBe("fr");
+        expect(cookieDetector.detect({ request })).toBe("en");
+      },
+    );
+
+    it("ignores malformed browser cookie encoding", () => {
+      const cookie = vi
+        .spyOn(document, "cookie", "get")
+        .mockReturnValue("locale=%");
+      try {
+        const cookieDetector = createLocaleDetector(["en", "fr"], "en", {
+          strategies: ["cookie", "queryParam"],
+        });
+        expect(
+          cookieDetector.detect({ url: "http://localhost?locale=fr" }),
+        ).toBe("fr");
+      } finally {
+        cookie.mockRestore();
+      }
+    });
+
     it("should detect locale from cookie", () => {
       const cookieConfig = {
         ...config,
@@ -303,6 +336,63 @@ describe("LocaleDetector", () => {
   });
 
   describe("locale persistence", () => {
+    it.each([undefined, "preferred-language"])(
+      "persists and detects session locale with storage key %s",
+      (storageKey) => {
+        const sessionDetector = createLocaleDetector(["en", "fr"], "en", {
+          strategies: ["sessionStorage"],
+          storageKey,
+        });
+        const key = storageKey || "locale";
+        sessionStorage.removeItem(key);
+        try {
+          sessionDetector.setLocale("fr", false);
+          expect(sessionStorage.getItem(key)).toBeNull();
+          sessionDetector.setLocale("fr");
+          expect(sessionStorage.getItem(key)).toBe("fr");
+          expect(sessionDetector.detect()).toBe("fr");
+        } finally {
+          sessionStorage.removeItem(key);
+        }
+      },
+    );
+
+    it("reports session storage failures and continues persisting cookies", () => {
+      const error = new Error("Storage unavailable");
+      const onError = vi.fn();
+      vi.stubGlobal("sessionStorage", {
+        setItem: vi.fn(() => {
+          throw error;
+        }),
+      });
+      const cookie = vi.spyOn(document, "cookie", "set");
+      try {
+        const sessionDetector = new LocaleDetector(
+          ["en", "fr"],
+          "en",
+          {
+            strategies: ["sessionStorage", "cookie"],
+          },
+          onError,
+        );
+        expect(() => sessionDetector.setLocale("fr")).not.toThrow();
+        expect(onError).toHaveBeenCalledWith(
+          expect.objectContaining({
+            code: "STORAGE_ERROR",
+            source: "LocaleDetector.setLocale",
+            cause: error,
+          }),
+        );
+        expect(cookie).toHaveBeenCalledWith(
+          expect.stringContaining("locale=fr;"),
+        );
+      } finally {
+        vi.unstubAllGlobals();
+        cookie.mockRestore();
+        document.cookie = "locale=; max-age=0; path=/";
+      }
+    });
+
     it("should persist locale to localStorage", () => {
       const mockSetItem = vi.fn();
       Object.defineProperty(window, "localStorage", {
@@ -353,11 +443,10 @@ describe("LocaleDetector", () => {
 
 describe("LocaleDetector - acceptLanguage fallthrough", () => {
   it("returns null (not the default) when no language matches, so later strategies run", () => {
-    const det = new LocaleDetector(
-      ["en", "fr"],
-      "en",
-      { strategies: ["acceptLanguage", "geographic"], geographic: { countryToLocale: { JP: "fr" } } },
-    );
+    const det = new LocaleDetector(["en", "fr"], "en", {
+      strategies: ["acceptLanguage", "geographic"],
+      geographic: { countryToLocale: { JP: "fr" } },
+    });
 
     const result = det.detect({
       request: new Request("http://x.com", {
