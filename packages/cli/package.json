@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/cli",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Command-line interface for IntlParty - validation, extraction, and management tools",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
