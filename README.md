@@ -39,8 +39,9 @@ npx intl-party nextjs --init
 This creates:
 
 - `intl-party.config.ts` - Your i18n configuration
-- `middleware.ts` - Automatic locale detection
+- `middleware.ts` (`proxy.ts` on Next.js 16+) - Automatic locale detection
 - `messages/` - Sample translation files
+- `intl-party.d.ts` - Registers your messages so keys are type-checked
 - Example layout and page components
 
 ### 3. Start Using
@@ -70,7 +71,8 @@ That's it! 🎉 Your app is now internationalized with full TypeScript support.
 ```
 your-app/
 ├── intl-party.config.ts     # Your i18n config
-├── middleware.ts            # Automatic locale detection
+├── intl-party.d.ts          # Type-checked translation keys
+├── middleware.ts            # Automatic locale detection (proxy.ts on Next 16+)
 ├── messages/               # Translation files
 │   ├── en/
 │   │   └── common.json
@@ -275,21 +277,33 @@ export default {
 };
 ```
 
-### Automatic Type Generation
+### Type-Checked Translation Keys
 
-Get full TypeScript support without any manual work:
+`npx intl-party nextjs --init` creates an `intl-party.d.ts` that registers your default locale's message files. From then on, `useTranslations` only accepts keys that exist in that namespace:
 
 ```typescript
-// Fully typed translation keys
 const t = useTranslations("common");
 
-t("welcome"); // ✅ Type-safe
-t("navigation.home"); // ✅ Type-safe
-t("invalid.key"); // ❌ TypeScript error
-
-// Auto-completion works everywhere
-t("nav"); // → suggests "navigation"
+t("welcome"); // ✅
+t("navigation.home"); // ✅ nested keys use dot paths
+t("welcom"); // ❌ TypeScript error: not a key in "common"
+t("navigation"); // ❌ TypeScript error: not a string
+useTranslations("checkout"); // ❌ TypeScript error: unknown namespace
 ```
+
+The file imports the JSON directly, so adding or renaming keys needs no build step. After adding or removing a namespace file, run `npx intl-party generate --types` to update it. The generated `intl-party.d.ts` looks like this:
+
+```typescript
+import type ns0_common from "./messages/en/common.json";
+
+declare module "@intl-party/nextjs" {
+  interface IntlPartyRegister {
+    messages: { common: typeof ns0_common };
+  }
+}
+```
+
+Your `tsconfig.json` needs `"resolveJsonModule": true`, which Next.js sets by default. For keys built at runtime, use `useUntypedTranslations` from `@intl-party/react`.
 
 ### Hot Reloading
 
@@ -372,8 +386,8 @@ Want to migrate from another i18n library? Check our detailed [Migration Guide](
 
 **Solutions**:
 
-1. Run `npx intl-party generate --types` to regenerate type definitions
-2. Check that your `tsconfig.json` includes the generated files
+1. Run `npx intl-party generate --types` to regenerate `intl-party.d.ts` (needed after adding a namespace)
+2. Check that `intl-party.d.ts` is covered by your `tsconfig.json` `include` and that `resolveJsonModule` is enabled
 3. Restart your TypeScript server (`Ctrl+Shift+P` → "TypeScript: Restart TS Server" in VSCode)
 4. Verify that the key exists in your translation files
 

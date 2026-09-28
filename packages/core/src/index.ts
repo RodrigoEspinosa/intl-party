@@ -35,6 +35,17 @@ export type {
   I18nEventMap,
 } from "./types";
 
+// Type-checked translation keys (augment IntlPartyRegister to enable)
+export type {
+  IntlPartyRegister,
+  MessageKeys,
+  RegisteredNamespace,
+  NamespaceKey,
+  AnyNamespaceKey,
+  TranslationKeyFor,
+  ScopedTranslationFunction,
+} from "./types/register";
+
 // Utilities
 export {
   TranslationStore,
@@ -70,4 +81,3 @@ export {
 
 // Version (sourced from package.json at build time to avoid drift)
 export const VERSION = version;
-

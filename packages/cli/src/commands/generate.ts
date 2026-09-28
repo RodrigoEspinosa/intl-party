@@ -20,7 +20,10 @@ export interface GenerateOptions {
 
 interface MessageData {
   locales: string[];
+  defaultLocale: string;
   namespaces: string[];
+  /** locale -> namespace -> JSON file path */
+  translationPaths: Record<string, Record<string, string>>;
   messages: Record<string, Record<string, any>>;
   translationKeys: string[];
   namespaceKeys: string[];
@@ -28,7 +31,7 @@ interface MessageData {
 
 async function getMessageData(
   configPath?: string,
-  options?: GenerateOptions
+  options?: GenerateOptions,
 ): Promise<MessageData> {
   // Try to load config if provided, otherwise auto-detect
   let config;
@@ -48,7 +51,7 @@ async function getMessageData(
     // Zero-config: Auto-detect everything from filesystem
     if (options?.verbose) {
       console.log(
-        chalk.gray("No config file found, auto-detecting from filesystem...")
+        chalk.gray("No config file found, auto-detecting from filesystem..."),
       );
     }
 
@@ -77,7 +80,7 @@ async function getMessageData(
             process.cwd(),
             nextjsConfig.messagesPath,
             locale,
-            `${namespace}.json`
+            `${namespace}.json`,
           );
         }
       }
@@ -87,8 +90,8 @@ async function getMessageData(
       if (options?.verbose) {
         console.log(
           chalk.gray(
-            `Using Next.js config: ${locales.length} locales, ${namespaces.length} namespaces`
-          )
+            `Using Next.js config: ${locales.length} locales, ${namespaces.length} namespaces`,
+          ),
         );
         console.log(chalk.gray(`Messages path: ${nextjsConfig.messagesPath}`));
       }
@@ -107,7 +110,7 @@ async function getMessageData(
             process.cwd(),
             standardConfig.messagesPath,
             locale,
-            `${namespace}.json`
+            `${namespace}.json`,
           );
         }
       }
@@ -117,21 +120,40 @@ async function getMessageData(
       if (options?.verbose) {
         console.log(
           chalk.gray(
-            `Using standard config: ${locales.length} locales, ${namespaces.length} namespaces`
-          )
+            `Using standard config: ${locales.length} locales, ${namespaces.length} namespaces`,
+          ),
         );
         console.log(
-          chalk.gray(`Messages path: ${standardConfig.messagesPath}`)
+          chalk.gray(`Messages path: ${standardConfig.messagesPath}`),
         );
       }
     }
   }
 
+  // Config written by `intl-party nextjs --init`: { locales, defaultLocale,
+  // messages: "./messages" } with namespaces discovered from the files.
+  const messagesDirOption = (config as any)?.messages;
+  if (
+    config &&
+    typeof messagesDirOption === "string" &&
+    Object.keys(translationPaths).length === 0
+  ) {
+    const detected = await autoDetectMessages(options, messagesDirOption);
+    locales = config.locales?.length ? config.locales : detected.locales;
+    namespaces = detected.namespaces;
+    translationPaths = detected.translationPaths;
+  }
+
+  const defaultLocale =
+    config?.defaultLocale && locales.includes(config.defaultLocale)
+      ? config.defaultLocale
+      : locales[0];
+
   // Load all translations using the existing utility
   const messages = await loadTranslations(
     translationPaths,
     locales,
-    namespaces
+    namespaces,
   );
 
   // Extract all translation keys for type generation
@@ -172,7 +194,9 @@ async function getMessageData(
 
   return {
     locales,
+    defaultLocale,
     namespaces,
+    translationPaths,
     messages,
     translationKeys: Array.from(translationKeys).sort(),
     namespaceKeys: Array.from(namespaceKeys).sort(),
@@ -387,13 +411,13 @@ function generateJsonSchemas(data: MessageData): string {
       },
     },
     null,
-    2
+    2,
   );
 }
 
 function createJsonSchema(
   obj: any,
-  prefix: string = ""
+  prefix: string = "",
 ): { properties: any; required: string[] } {
   const properties: any = {};
   const required: string[] = [];
@@ -486,7 +510,7 @@ function generateDocumentation(data: MessageData): string {
   for (const locale of data.locales) {
     const localeKeys = Object.values(data.messages[locale] || {}).reduce(
       (total, namespace) => total + countKeys(namespace),
-      0
+      0,
     );
     lines.push(`- **${locale}**: ${localeKeys} keys`);
   }
@@ -497,7 +521,7 @@ function generateDocumentation(data: MessageData): string {
 function generateNamespaceDocumentation(
   obj: any,
   lines: string[],
-  prefix: string
+  prefix: string,
 ): void {
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -530,7 +554,7 @@ function generateNamespaceDocumentation(
         lines.push("**Interpolation variables**:");
         lines.push("");
         const variables = interpolationMatches.map((match) =>
-          match.replace(/[{}]/g, "")
+          match.replace(/[{}]/g, ""),
         );
         const uniqueVariables = [...new Set(variables)];
         for (const variable of uniqueVariables) {
@@ -556,7 +580,10 @@ function countKeys(obj: any): number {
   return count;
 }
 
-async function autoDetectMessages(options?: GenerateOptions): Promise<{
+async function autoDetectMessages(
+  options?: GenerateOptions,
+  explicitMessagesDir?: string,
+): Promise<{
   locales: string[];
   namespaces: string[];
   translationPaths: Record<string, Record<string, string>>;
@@ -565,6 +592,7 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
 
   // Look for common message directory patterns
   const possibleMessageDirs = [
+    ...(explicitMessagesDir ? [path.resolve(cwd, explicitMessagesDir)] : []),
     path.join(cwd, "messages"),
     path.join(cwd, "locales"),
     path.join(cwd, "translations"),
@@ -581,7 +609,7 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
 
   if (!messagesDir) {
     throw new Error(
-      "No messages directory found. Expected one of: messages/, locales/, translations/, i18n/"
+      "No messages directory found. Expected one of: messages/, locales/, translations/, i18n/",
     );
   }
 
@@ -624,7 +652,7 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
       translationPaths[locale][namespace] = path.join(
         messagesDir,
         locale,
-        `${namespace}.json`
+        `${namespace}.json`,
       );
     }
   }
@@ -632,13 +660,13 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
   if (options?.verbose) {
     console.log(
       chalk.gray(
-        `Auto-detected ${validLocales.length} locales: ${validLocales.join(", ")}`
-      )
+        `Auto-detected ${validLocales.length} locales: ${validLocales.join(", ")}`,
+      ),
     );
     console.log(
       chalk.gray(
-        `Auto-detected ${detectedNamespaces.length} namespaces: ${detectedNamespaces.join(", ")}`
-      )
+        `Auto-detected ${detectedNamespaces.length} namespaces: ${detectedNamespaces.join(", ")}`,
+      ),
     );
   }
 
@@ -647,6 +675,93 @@ async function autoDetectMessages(options?: GenerateOptions): Promise<{
     namespaces: detectedNamespaces,
     translationPaths,
   };
+}
+
+export const REGISTER_FILE_HEADER =
+  "// Generated by @intl-party/cli - do not edit.";
+
+/**
+ * Picks the package whose IntlPartyRegister the project should augment: the
+ * one it actually depends on (augmenting through a re-export works, and it
+ * avoids importing a package that strict installers like pnpm hide).
+ */
+export async function detectRegisterModule(
+  cwd = process.cwd(),
+): Promise<string> {
+  try {
+    const pkg = await fs.readJson(path.join(cwd, "package.json"));
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    for (const name of [
+      "@intl-party/nextjs",
+      "@intl-party/react-native",
+      "@intl-party/react",
+    ]) {
+      if (deps[name]) return name;
+    }
+  } catch {
+    // No package.json: fall through to core
+  }
+  return "@intl-party/core";
+}
+
+/**
+ * Builds `intl-party.d.ts`, which registers the default locale's messages so
+ * `useTranslations(namespace)` only accepts keys that exist. It imports the
+ * JSON files themselves, so editing keys needs no regeneration — only adding
+ * or removing a namespace file does.
+ */
+export function generateRegisterFile(options: {
+  moduleName: string;
+  /** namespace -> JSON path, relative to the directory of the .d.ts */
+  files: Record<string, string>;
+}): string {
+  const entries = Object.entries(options.files).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  const identifier = (ns: string, i: number) =>
+    `ns${i}_${ns.replace(/[^A-Za-z0-9_$]/g, "_")}`;
+
+  const imports = entries
+    .map(([ns, file], i) => {
+      const specifier = file.startsWith(".") ? file : `./${file}`;
+      return `import type ${identifier(ns, i)} from ${JSON.stringify(specifier)};`;
+    })
+    .join("\n");
+  const fields = entries
+    .map(
+      ([ns], i) => `      ${JSON.stringify(ns)}: typeof ${identifier(ns, i)};`,
+    )
+    .join("\n");
+
+  return `${REGISTER_FILE_HEADER}
+// Registers your messages so translation keys are type-checked.
+// Re-run \`intl-party generate --types\` after adding or removing a namespace.
+${imports}
+
+declare module ${JSON.stringify(options.moduleName)} {
+  interface IntlPartyRegister {
+    messages: {
+${fields}
+    };
+  }
+}
+`;
+}
+
+/**
+ * Writes the register file unless a hand-written file already occupies that
+ * path. Returns whether it was written.
+ */
+export async function writeRegisterFile(
+  filePath: string,
+  content: string,
+): Promise<boolean> {
+  if (await fs.pathExists(filePath)) {
+    const existing = await fs.readFile(filePath, "utf-8");
+    if (!existing.startsWith(REGISTER_FILE_HEADER)) return false;
+  }
+  await fs.writeFile(filePath, content);
+  return true;
 }
 
 function generateCacheHash(data: MessageData): string {
@@ -661,9 +776,15 @@ function generateCacheHash(data: MessageData): string {
 async function writeGeneratedFiles(
   data: MessageData,
   outputDir: string,
-  options: GenerateOptions
+  options: GenerateOptions,
 ): Promise<void> {
   await fs.ensureDir(outputDir);
+
+  // Written before the cache check: it only depends on which namespace files
+  // exist, and must appear for projects whose message cache is unchanged.
+  if (options.types !== false) {
+    await writeProjectRegisterFile(data, options);
+  }
 
   // Generate cache hash
   const cacheHash = generateCacheHash(data);
@@ -727,9 +848,44 @@ async function writeGeneratedFiles(
   await fs.writeFile(cacheFilePath, cacheHash);
 }
 
+async function writeProjectRegisterFile(
+  data: MessageData,
+  options: GenerateOptions,
+): Promise<void> {
+  const cwd = process.cwd();
+  const registerPath = path.join(cwd, "intl-party.d.ts");
+  const files: Record<string, string> = {};
+  for (const namespace of data.namespaces) {
+    const file = data.translationPaths[data.defaultLocale]?.[namespace];
+    if (!file) continue;
+    files[namespace] = path
+      .relative(cwd, path.resolve(cwd, file))
+      .split(path.sep)
+      .join("/");
+  }
+  if (Object.keys(files).length === 0) return;
+
+  const written = await writeRegisterFile(
+    registerPath,
+    generateRegisterFile({
+      moduleName: await detectRegisterModule(cwd),
+      files,
+    }),
+  );
+  if (!written) {
+    console.log(
+      chalk.yellow(
+        "⚠️  intl-party.d.ts exists and wasn't generated by intl-party; left it unchanged.",
+      ),
+    );
+  } else if (options.verbose) {
+    console.log(chalk.green(`✓ Registered message types: ${registerPath}`));
+  }
+}
+
 async function generateClientPackage(
   data: MessageData,
-  options: GenerateOptions
+  options: GenerateOptions,
 ): Promise<void> {
   console.log(chalk.blue("🔧 Generating client package files..."));
   if (options.verbose) {
@@ -777,7 +933,7 @@ async function generateClientPackage(
 
   if (options.verbose) {
     console.log(
-      chalk.green(`✓ Generated client package files in ${clientDir}`)
+      chalk.green(`✓ Generated client package files in ${clientDir}`),
     );
   }
 }
@@ -785,7 +941,7 @@ async function generateClientPackage(
 async function setupWatcher(
   configPath: string | undefined,
   outputDir: string,
-  options: GenerateOptions
+  options: GenerateOptions,
 ): Promise<void> {
   const config = await loadConfig(configPath);
   const { translationPaths } = config;
@@ -797,7 +953,7 @@ async function setupWatcher(
   }
 
   console.log(
-    chalk.blue(`👀 Watching for changes in ${watchPaths.length} files...`)
+    chalk.blue(`👀 Watching for changes in ${watchPaths.length} files...`),
   );
 
   const watcher = watch(watchPaths, {
@@ -831,7 +987,7 @@ export async function generateCommand(options: GenerateOptions) {
   // Debug logging
   if (options.verbose) {
     console.log(
-      chalk.gray(`Debug options: ${JSON.stringify(options, null, 2)}`)
+      chalk.gray(`Debug options: ${JSON.stringify(options, null, 2)}`),
     );
   }
 
@@ -840,7 +996,7 @@ export async function generateCommand(options: GenerateOptions) {
     const data = await getMessageData(options.config, options);
 
     spinner.succeed(
-      `Loaded ${data.locales.length} locales, ${data.namespaces.length} namespaces, ${data.translationKeys.length} keys`
+      `Loaded ${data.locales.length} locales, ${data.namespaces.length} namespaces, ${data.translationKeys.length} keys`,
     );
 
     // Determine output directory
@@ -866,7 +1022,7 @@ export async function generateCommand(options: GenerateOptions) {
     spinner.fail("Generation failed");
     console.error(
       chalk.red("Error:"),
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     process.exit(1);
   }

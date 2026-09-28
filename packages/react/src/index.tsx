@@ -14,25 +14,18 @@ export {
 // Hooks exports
 export {
   useTranslations,
+  useUntypedTranslations,
   useScopedTranslations,
   useMultipleTranslations,
   useHasTranslation,
 } from "./hooks/useTranslations";
 
-export {
-  useLocale,
-  useLocaleInfo,
-} from "./hooks/useLocale";
+export { useLocale, useLocaleInfo } from "./hooks/useLocale";
 
-export {
-  useNamespace,
-} from "./hooks/useNamespace";
+export { useNamespace } from "./hooks/useNamespace";
 
 // Component exports
-export {
-  Trans,
-  type TransProps,
-} from "./components/Trans";
+export { Trans, type TransProps } from "./components/Trans";
 
 export {
   LocaleSelector,
@@ -50,6 +43,12 @@ export type {
   Translations,
   TranslationOptions,
   TranslationFunction,
+  IntlPartyRegister,
+  RegisteredNamespace,
+  NamespaceKey,
+  AnyNamespaceKey,
+  TranslationKeyFor,
+  ScopedTranslationFunction,
 } from "@intl-party/core";
 
 // Version (sourced from package.json at build time to avoid drift)

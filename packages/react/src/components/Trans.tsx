@@ -1,5 +1,5 @@
 import React, { ReactNode, Fragment, useMemo } from "react";
-import { useTranslations } from "../hooks/useTranslations";
+import { useUntypedTranslations } from "../hooks/useTranslations";
 import type {
   TranslationKey,
   TranslationOptions,
@@ -26,7 +26,7 @@ export function Trans({
   fallback,
   children,
 }: TransProps) {
-  const t = useTranslations(namespace);
+  const t = useUntypedTranslations(namespace);
 
   const rendered = useMemo(() => {
     const options: TranslationOptions = {
@@ -105,4 +105,3 @@ function parseTranslationWithComponents(
 
   return parts.length > 0 ? parts : [text];
 }
-

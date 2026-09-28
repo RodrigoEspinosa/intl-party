@@ -19,7 +19,9 @@ program
 
 // Global options
 program
-  .option("-c, --config <path>", "path to config file", "intl-party.config.js")
+  // No default: commands auto-detect intl-party.config.{js,ts,json} when
+  // --config isn't given, which a hardcoded ".js" default would bypass.
+  .option("-c, --config <path>", "path to config file")
   .option("-v, --verbose", "verbose output")
   .option("--no-color", "disable colored output");
 
@@ -52,7 +54,7 @@ program
   .option(
     "-o, --output <dir>",
     "output directory for extracted keys",
-    "./messages"
+    "./messages",
   )
   .option("--dry-run", "show what would be extracted without writing files")
   .option("--update", "update existing translation files with new keys")
@@ -111,7 +113,7 @@ program
       spinner.fail("Configuration is invalid");
       console.error(
         chalk.red("Error:"),
-        error instanceof Error ? error.message : error
+        error instanceof Error ? error.message : error,
       );
       process.exit(1);
     }
@@ -129,7 +131,7 @@ program
   .option(
     "-o, --output <dir>",
     "output directory for generated files",
-    "./node_modules/.intl-party"
+    "./node_modules/.intl-party",
   )
   .option("--watch", "watch for changes and regenerate")
   .action(withGlobals(generateCommand));

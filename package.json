@@ -24,6 +24,7 @@
     "test": "VITE_CJS_IGNORE_WARNING=true turbo run test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "test:types": "tsc -p type-tests/registered && tsc -p type-tests/unregistered",
     "clean": "turbo run clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",

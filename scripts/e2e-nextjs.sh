@@ -14,7 +14,8 @@ REACT_VERSION=${2:?react version required}
 PORT=${PORT:-3999}
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d)
-trap 'kill "${SERVER_PID:-}" 2>/dev/null || true; rm -rf "$WORK"' EXIT
+# Set KEEP=1 to keep the scaffolded app for debugging.
+trap 'kill "${SERVER_PID:-}" 2>/dev/null || true; [[ -n "${KEEP:-}" ]] && echo "Kept $WORK" || rm -rf "$WORK"' EXIT
 
 echo "▶ Packing local packages"
 for pkg in core react nextjs; do
@@ -56,6 +57,28 @@ mv app/page.intl-party.tsx app/page.tsx
 
 echo "▶ Building"
 npx next build
+
+echo "▶ Checking type-checked translation keys"
+# `next build` above already type-checked the valid keys in app/page.tsx.
+# A misspelled key must now fail to compile.
+cat > app/typo-check.tsx <<'TSX'
+"use client";
+import { useTranslations } from "@intl-party/nextjs";
+export function TypoCheck() {
+  const t = useTranslations("common");
+  return <p>{t("welcom")}</p>;
+}
+TSX
+if npx tsc --noEmit -p . > tsc.log 2>&1; then
+  echo "  ✗ misspelled key compiled; translation keys are not type-checked"
+  exit 1
+elif grep -q '"welcom"' tsc.log; then
+  echo "  ✓ misspelled key rejected"
+else
+  echo "  ✗ tsc failed for an unexpected reason:"; cat tsc.log
+  exit 1
+fi
+rm app/typo-check.tsx
 
 echo "▶ Serving"
 npx next start -p "$PORT" > server.log 2>&1 &

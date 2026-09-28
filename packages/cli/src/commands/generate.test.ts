@@ -28,12 +28,26 @@ vi.mock("fs-extra", () => ({
 vi.mock("node:path", () => ({
   default: {
     join: vi.fn((...args: string[]) => args.join("/")),
-    basename: vi.fn((p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? ""),
+    basename: vi.fn(
+      (p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? "",
+    ),
     dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
+    resolve: vi.fn((...args: string[]) => args.join("/")),
+    relative: vi.fn((from: string, to: string) =>
+      to.startsWith(`${from}/`) ? to.slice(from.length + 1) : to,
+    ),
+    sep: "/",
   },
   join: vi.fn((...args: string[]) => args.join("/")),
-  basename: vi.fn((p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? ""),
+  basename: vi.fn(
+    (p: string, ext: string) => p.split("/").pop()?.replace(ext, "") ?? "",
+  ),
   dirname: vi.fn((p: string) => p.split("/").slice(0, -1).join("/")),
+  resolve: vi.fn((...args: string[]) => args.join("/")),
+  relative: vi.fn((from: string, to: string) =>
+    to.startsWith(`${from}/`) ? to.slice(from.length + 1) : to,
+  ),
+  sep: "/",
 }));
 
 vi.mock("../utils/config", () => ({
@@ -74,6 +88,27 @@ describe("generateCommand", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("augments the package the project depends on", async () => {
+    const { detectRegisterModule } = await import("./generate");
+    vi.mocked(fs.readJson).mockResolvedValueOnce({
+      dependencies: { "@intl-party/react": "^1", "@intl-party/nextjs": "^1" },
+    });
+    await expect(detectRegisterModule("/app")).resolves.toBe(
+      "@intl-party/nextjs",
+    );
+  });
+
+  it("leaves a hand-written intl-party.d.ts alone", async () => {
+    const { writeRegisterFile } = await import("./generate");
+    vi.mocked(fs.pathExists).mockResolvedValueOnce(true as never);
+    vi.mocked(fs.readFile).mockResolvedValueOnce("// mine\n" as never);
+
+    await expect(writeRegisterFile("intl-party.d.ts", "x")).resolves.toBe(
+      false,
+    );
+    expect(fs.writeFile).not.toHaveBeenCalled();
   });
 
   it("should generate type definitions for translations", async () => {
@@ -130,7 +165,19 @@ describe("generateCommand", () => {
     );
 
     expect(fs.ensureDir).toHaveBeenCalled();
-    expect(fs.writeFile).toHaveBeenCalledTimes(3);
+    // types, JS messages, cache, and the project's intl-party.d.ts
+    expect(fs.writeFile).toHaveBeenCalledTimes(4);
+
+    const register = vi
+      .mocked(fs.writeFile)
+      .mock.calls.find(([file]) => String(file).endsWith("intl-party.d.ts"));
+    expect(String(register?.[1])).toContain(
+      'import type ns0_common from "./messages/en/common.json";',
+    );
+    // No @intl-party UI package in package.json, so core is augmented
+    expect(String(register?.[1])).toContain(
+      'declare module "@intl-party/core"',
+    );
 
     expect(fs.writeFile).toHaveBeenCalledWith(
       expect.stringContaining("translations.generated.ts"),
@@ -155,9 +202,9 @@ describe("generateCommand", () => {
       return Promise.resolve(false);
     });
 
-    await expect(generateCommand({ config: "intl-party.config.json" })).rejects.toThrow(
-      "Process exit with code 1",
-    );
+    await expect(
+      generateCommand({ config: "intl-party.config.json" }),
+    ).rejects.toThrow("Process exit with code 1");
 
     expect(consoleError).toHaveBeenCalledWith(
       expect.anything(),
@@ -195,7 +242,11 @@ describe("generateCommand", () => {
     vi.mocked(fs.ensureDir).mockImplementation(() => Promise.resolve());
     vi.mocked(fs.writeFile).mockImplementation(() => Promise.resolve());
 
-    await generateCommand({ types: true, client: true, config: "intl-party.config.json" });
+    await generateCommand({
+      types: true,
+      client: true,
+      config: "intl-party.config.json",
+    });
 
     expect(fs.ensureDir).toHaveBeenCalledWith(
       expect.stringContaining("packages/client/generated"),
