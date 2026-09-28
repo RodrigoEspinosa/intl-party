@@ -1,5 +1,13 @@
 # @intl-party/react-native
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [08ce400]
+  - @intl-party/core@1.5.0
+  - @intl-party/react@1.5.0
+
 ## 0.1.3
 
 ### Patch Changes
