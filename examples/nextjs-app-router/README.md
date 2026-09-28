@@ -86,12 +86,16 @@ export default {
 
 ```typescript
 import { createSetup } from "@intl-party/nextjs";
-import config from "./intl-party.config";
+import intlConfig from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(config);
+const { middleware } = createSetup(intlConfig);
 
 export { middleware };
-export const config = middlewareConfig;
+
+// Next.js reads this at build time, so it must be a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
 ```
 
 ### app/layout.tsx
@@ -311,14 +315,14 @@ IntlParty works out of the box with:
 
 ## 🆚 Why IntlParty?
 
-| Feature            | IntlParty     | Other Libraries  |
-| ------------------ | ------------- | ---------------- |
-| **Files Required** | 2 files       | 5+ files         |
-| **Setup Time**     | 2 minutes     | 15-30 minutes    |
-| **Configuration**  | Minimal       | Complex          |
-| **Type Safety**    | Automatic     | Manual casting   |
-| **Hot Reloading**  | Built-in      | Manual setup     |
-| **Learning Curve** | Easy          | Medium           |
+| Feature            | IntlParty | Other Libraries |
+| ------------------ | --------- | --------------- |
+| **Files Required** | 2 files   | 5+ files        |
+| **Setup Time**     | 2 minutes | 15-30 minutes   |
+| **Configuration**  | Minimal   | Complex         |
+| **Type Safety**    | Automatic | Manual casting  |
+| **Hot Reloading**  | Built-in  | Manual setup    |
+| **Learning Curve** | Easy      | Medium          |
 
 ## 🤝 Contributing
 

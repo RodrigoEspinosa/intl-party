@@ -46,3 +46,39 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  e2e-nextjs:
+    name: E2E (Next.js ${{ matrix.next }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - next: "14"
+            react: "18"
+          - next: "15"
+            react: "19"
+          - next: "16"
+            react: "19"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Scaffold, build, and serve a CLI-generated app
+        run: scripts/e2e-nextjs.sh ${{ matrix.next }} ${{ matrix.react }}

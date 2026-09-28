@@ -23,8 +23,12 @@ export async function loadMessages({
 
         if (typeof window === "undefined") {
           // Server-side: use fs to read JSON files
-          const { readFile } = await import("fs/promises");
-          const { join } = await import("path");
+          const { readFile } = await import(
+            /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:fs/promises"
+          );
+          const { join } = await import(
+            /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:path"
+          );
           const fullPath = join(process.cwd(), messagePath);
           const fileContent = await readFile(fullPath, "utf-8");
           result[locale][namespace] = JSON.parse(fileContent);
@@ -37,7 +41,7 @@ export async function loadMessages({
         // If file doesn't exist, use empty object
         console.warn(
           `Could not load messages for ${locale}/${namespace}:`,
-          error
+          error,
         );
         result[locale][namespace] = {};
       }
@@ -49,7 +53,7 @@ export async function loadMessages({
 
 export async function loadMessagesForLocale(
   locale: Locale,
-  options: Omit<MessageLoadOptions, "locales">
+  options: Omit<MessageLoadOptions, "locales">,
 ): Promise<Record<Namespace, any>> {
   const allMessages = await loadMessages({ ...options, locales: [locale] });
   return allMessages[locale] || {};
@@ -73,7 +77,7 @@ export async function loadAllMessages(config: {
         const { detectAvailableNamespaces } = await import("./server/utils");
         finalNamespaces = await detectAvailableNamespaces(
           locales,
-          messagesPath
+          messagesPath,
         );
       } catch {
         finalNamespaces = ["common"];

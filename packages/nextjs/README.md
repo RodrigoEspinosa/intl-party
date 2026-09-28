@@ -28,6 +28,8 @@ npx intl-party nextjs --init
 ### 3. Use
 
 ```tsx
+"use client";
+
 import { useTranslations } from "@intl-party/nextjs";
 
 export default function Page() {
@@ -58,7 +60,6 @@ import config from "./intl-party.config";
 
 const {
   middleware, // Next.js middleware
-  middlewareConfig, // Middleware matcher config
   getLocale, // Server-side locale detection
   getMessages, // Server-side message loading
   Provider, // React provider
@@ -107,13 +108,19 @@ interface I18nConfig {
 ```typescript
 // middleware.ts
 import { createSetup } from "@intl-party/nextjs";
-import config from "./intl-party.config";
+import intlConfig from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(config);
+const { middleware } = createSetup(intlConfig);
 
 export { middleware };
-export const config = middlewareConfig;
+
+// Next.js reads this at build time, so it must be a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
 ```
+
+On Next.js 16+, name the file `proxy.ts` and export the function as `proxy`: `export { middleware as proxy };`. `npx intl-party nextjs --init` does this for you.
 
 ### Layout with SSR
 
@@ -138,29 +145,6 @@ export default async function RootLayout({ children }) {
     </html>
   );
 }
-```
-
-### Next.js Config Integration
-
-```javascript
-// next.config.js
-const { createNextConfigWithIntl } = require("@intl-party/nextjs");
-
-module.exports = createNextConfigWithIntl(
-  {
-    i18nConfig: {
-      locales: ["en", "es", "fr"],
-      defaultLocale: "en",
-      messages: "./messages",
-    },
-    autoGenerate: true,
-    watchMode: true,
-  },
-  {
-    // Your existing Next.js config
-    reactStrictMode: true,
-  },
-);
 ```
 
 ## 🌐 Translation Files
@@ -253,29 +237,31 @@ import { createSetup } from "@intl-party/nextjs";
 
 const { getLocale, getMessages } = createSetup(config);
 
-// Get current locale
-const locale = await getLocale(request);
+// Current request's locale (cookie, then Accept-Language)
+const locale = await getLocale();
 
-// Get messages for a locale
+// Messages keyed by locale: { es: { common: {...}, ... } }
 const messages = await getMessages("es");
 ```
 
 ## 🛠️ Advanced Setup
 
-If you need more control, you can use the advanced setup:
+For full control over detection, build the middleware yourself:
 
 ```typescript
-import {
-  createSharedI18nConfig,
-  AppI18nProvider,
-  getLocale,
-} from "@intl-party/nextjs";
+// middleware.ts
+import { createI18nMiddleware } from "@intl-party/nextjs";
 
-const { middleware, client, shared } = createSharedI18nConfig({
+export const middleware = createI18nMiddleware({
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  // ... more options
+  localePrefix: "as-needed",
+  detectFromQuery: false,
 });
+
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
 ```
 
 ## 🆚 Migration from next-intl
@@ -306,35 +292,12 @@ const t = useTranslations("common");
 
 ## 📦 Exports
 
-```typescript
-// Main setup
-export {
-  createSetup,
-  I18nProvider,
-  useTranslations,
-  type I18nConfig,
-} from "./setup";
-
-// Next.js integration
-export {
-  withIntlParty,
-  createNextConfigWithIntl,
-  type NextIntegrationOptions,
-} from "./next-integration";
-
-// Advanced setup
-export {
-  createSharedI18nConfig,
-  AppI18nProvider,
-  NextIntlClientProvider,
-} from "./index";
-
-// Server utilities
-export { getLocale, getServerTranslations, getMessages } from "./server";
-
-// Middleware
-export { createI18nMiddleware, createLocaleMatcher } from "./middleware";
-```
+| Entry point                         | Use from                         | Exports                                                                                                                                                                              |
+| ----------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@intl-party/nextjs`                | middleware, layouts, client code | `createSetup`, `useTranslations`, `createI18nMiddleware`, `createLocaleMatcher`, `createZeroConfigSetup`, `loadMessages`, `loadMessagesForLocale`, `loadAllMessages`, `detectConfig` |
+| `@intl-party/nextjs/client`         | client components                | `Provider`, `useTranslations`, `useLocale`, `AppI18nProvider`, `NextIntlClientProvider`                                                                                              |
+| `@intl-party/nextjs/server`         | server components                | `getLocale`, `getServerTranslations`, `createServerTranslations`, `getLocaleFromParams`, `loadMessagesForLocale`                                                                     |
+| `@intl-party/nextjs/webpack-plugin` | `next.config.js`                 | `withIntlPartyHotReload` (webpack builds only)                                                                                                                                       |
 
 ## 🤝 Contributing
 

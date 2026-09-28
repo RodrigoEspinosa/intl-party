@@ -9,7 +9,11 @@ import type { Locale } from "@intl-party/core";
 // Loaded lazily so this module can be bundled without a static node:fs
 // dependency leaking into client/edge bundles.
 async function getFs() {
-  return (await import("node:fs")).promises;
+  return (
+    await import(
+      /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:fs"
+    )
+  ).promises;
 }
 
 export interface AutoDetectedConfig {
@@ -25,7 +29,7 @@ export interface AutoDetectedConfig {
  * Auto-detect locales from messages directory
  */
 export async function detectLocales(
-  messagesPath: string = "./messages"
+  messagesPath: string = "./messages",
 ): Promise<Locale[]> {
   const fullPath = path.resolve(process.cwd(), messagesPath);
 
@@ -44,7 +48,7 @@ export async function detectLocales(
         // Check if directory has any JSON files
         const files = await fs.readdir(entryPath);
         const hasJsonFiles = files.some((file: string) =>
-          file.endsWith(".json")
+          file.endsWith(".json"),
         );
 
         return hasJsonFiles ? entry : null;
@@ -55,7 +59,7 @@ export async function detectLocales(
 
     const resolvedLocales = await Promise.all(localePromises);
     const validLocales = resolvedLocales.filter(
-      (locale): locale is Locale => locale !== null
+      (locale): locale is Locale => locale !== null,
     );
 
     return validLocales.length > 0 ? validLocales : ["en"];
@@ -69,7 +73,7 @@ export async function detectLocales(
  */
 export async function detectNamespaces(
   locales: Locale[],
-  messagesPath: string = "./messages"
+  messagesPath: string = "./messages",
 ): Promise<string[]> {
   const firstLocale = locales[0] || "en";
   const fullPath = path.resolve(process.cwd(), messagesPath, firstLocale);
@@ -91,7 +95,7 @@ export async function detectNamespaces(
  * Auto-detect configuration from messages directory
  */
 export async function detectConfig(
-  messagesPath: string = "./messages"
+  messagesPath: string = "./messages",
 ): Promise<AutoDetectedConfig> {
   const locales = await detectLocales(messagesPath);
   const namespaces = await detectNamespaces(locales, messagesPath);
@@ -106,4 +110,3 @@ export async function detectConfig(
     localePrefix: "never", // Clean URLs by default
   };
 }
-

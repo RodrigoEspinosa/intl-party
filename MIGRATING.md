@@ -52,12 +52,16 @@ export default {
 
 // middleware.ts
 import { createSetup } from "@intl-party/nextjs";
-import config from "./intl-party.config";
+import intlConfig from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(config);
+const { middleware } = createSetup(intlConfig);
 
 export { middleware };
-export const config = middlewareConfig;
+
+// Next.js reads this at build time, so it must be a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
 ```
 
 ### Usage in Components

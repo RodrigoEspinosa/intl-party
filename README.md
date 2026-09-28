@@ -47,6 +47,8 @@ This creates:
 
 ```tsx
 // app/page.tsx
+"use client";
+
 import { useTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
@@ -131,7 +133,6 @@ import config from "./intl-party.config";
 
 const {
   middleware, // Next.js middleware
-  middlewareConfig, // Middleware matcher config
   getLocale, // Server-side locale detection
   getMessages, // Server-side message loading
   Provider, // React provider
@@ -205,13 +206,19 @@ npm install intl-messageformat
 ```typescript
 // middleware.ts
 import { createSetup } from "@intl-party/nextjs";
-import config from "./intl-party.config";
+import intlConfig from "./intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(config);
+const { middleware } = createSetup(intlConfig);
 
 export { middleware };
-export const config = middlewareConfig;
+
+// Next.js reads this at build time, so it must be a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
 ```
+
+On Next.js 16+, name the file `proxy.ts` and export the function as `proxy`: `export { middleware as proxy };`. `npx intl-party nextjs --init` does this for you.
 
 ### Layout (Automatic SSR)
 
@@ -236,30 +243,6 @@ export default async function RootLayout({ children }) {
     </html>
   );
 }
-```
-
-### Next.js Config Integration
-
-```javascript
-// next.config.js
-const { createNextConfigWithIntl } = require("@intl-party/nextjs");
-
-module.exports = createNextConfigWithIntl(
-  {
-    i18nConfig: {
-      locales: ["en", "es", "fr"],
-      defaultLocale: "en",
-      messages: "./messages",
-    },
-    autoGenerate: true, // Auto-generate types during build
-    watchMode: true, // Watch for changes in development
-  },
-  {
-    // Your existing Next.js config
-    reactStrictMode: true,
-    swcMinify: true,
-  },
-);
 ```
 
 ## 🎨 Advanced Features

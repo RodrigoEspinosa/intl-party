@@ -21,6 +21,7 @@
     "paths": {
       "@intl-party/core": ["./packages/core/src"],
       "@intl-party/react": ["./packages/react/src"],
+      "@intl-party/nextjs/client": ["./packages/nextjs/src/client-exports.ts"],
       "@intl-party/nextjs": ["./packages/nextjs/src"],
       "@intl-party/cli": ["./packages/cli/src"],
       "@intl-party/eslint-plugin": ["./packages/eslint-plugin/src"]

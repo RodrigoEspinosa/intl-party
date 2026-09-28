@@ -10,9 +10,29 @@ export interface NextjsCommandOptions {
   force?: boolean;
 }
 
-export async function initializeNextjsProject(
-  force = false,
-) {
+/** Major version of the project's installed (or declared) Next.js, if known. */
+function getNextMajorVersion(): number | null {
+  const candidates = [
+    () =>
+      JSON.parse(readFileSync("node_modules/next/package.json", "utf-8"))
+        .version,
+    () => {
+      const pkg = JSON.parse(readFileSync("package.json", "utf-8"));
+      return pkg.dependencies?.next ?? pkg.devDependencies?.next;
+    },
+  ];
+  for (const read of candidates) {
+    try {
+      const major = String(read()).match(/\d+/)?.[0];
+      if (major) return parseInt(major, 10);
+    } catch {
+      // Try the next source
+    }
+  }
+  return null;
+}
+
+export async function initializeNextjsProject(force = false) {
   console.log(chalk.cyan("🚀 Initializing IntlParty for Next.js..."));
 
   // Check if it's already initialized
@@ -24,7 +44,9 @@ export async function initializeNextjsProject(
       console.log(chalk.yellow("⚠️  IntlParty already initialized!"));
       return true;
     }
-    console.log(chalk.yellow("⚠️  Force flag set, overwriting existing files..."));
+    console.log(
+      chalk.yellow("⚠️  Force flag set, overwriting existing files..."),
+    );
   }
 
   // Detect src directory
@@ -95,45 +117,25 @@ export default {
 
   console.log(chalk.green("✅ Created sample message files in ./messages"));
 
-  // Create middleware
-  const middlewarePath = hasSrcDir ? "src/middleware.ts" : "middleware.ts";
+  // Create middleware. Next.js 16 renamed the file convention to proxy.ts.
+  const useProxy = (getNextMajorVersion() ?? 0) >= 16;
+  const middlewareFile = useProxy ? "proxy.ts" : "middleware.ts";
+  const middlewarePath = hasSrcDir ? `src/${middlewareFile}` : middlewareFile;
   const middlewareContent = `import { createSetup } from "@intl-party/nextjs";
 import intlConfig from "${hasSrcDir ? "../" : "./"}intl-party.config";
 
-const { middleware, middlewareConfig } = createSetup(intlConfig);
+const { middleware } = createSetup(intlConfig);
 
-export { middleware };
-export const config = middlewareConfig;`;
+export { ${useProxy ? "middleware as proxy" : "middleware"} };
+
+// Next.js reads this at build time, so it must stay a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\\\.ico).*)", "/"],
+};
+`;
 
   writeFileSync(middlewarePath, middlewareContent);
   console.log(chalk.green(`✅ Created ${middlewarePath}`));
-
-  // Update next.config.js if it exists
-  if (existsSync("next.config.js")) {
-    const nextConfigIntlPath = "next.config.intl-party.js";
-    const nextConfigContent = `const { createNextConfigWithIntl } = require("@intl-party/nextjs");
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-};
-
-module.exports = createNextConfigWithIntl(
-  {
-    i18nConfig: require("./intl-party.config").default,
-    autoGenerate: true,
-    watchMode: true,
-  },
-  nextConfig
-);`;
-
-    writeFileSync(nextConfigIntlPath, nextConfigContent);
-    console.log(
-      chalk.green(
-        `✅ Created ${nextConfigIntlPath} (merge with your next.config.js)`,
-      ),
-    );
-  }
 
   // Create layout and page examples in the correct app directory
   if (!existsSync(appDir)) {
@@ -166,7 +168,9 @@ export default async function RootLayout({
 
   writeFileSync(join(appDir, "layout.intl-party.tsx"), layoutContent);
 
-  const pageContent = `import { useTranslations } from "@intl-party/nextjs";
+  const pageContent = `"use client";
+
+import { useTranslations } from "@intl-party/nextjs";
 
 export default function HomePage() {
   const t = useTranslations("common");
@@ -209,7 +213,9 @@ export default function HomePage() {
   console.log("3. Add translations to your message files in ./messages");
   console.log("4. Run your development server");
 
-  console.log(`\n📚 For more information, visit: https://intl-party.ai/docs`);
+  console.log(
+    `\n📚 For more information, visit: https://github.com/RodrigoEspinosa/intl-party#readme`,
+  );
 
   return true;
 }
