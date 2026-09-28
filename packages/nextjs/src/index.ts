@@ -2,11 +2,19 @@
 // Everything auto-detected from your messages directory
 //
 // NOTE: This is the server-safe entry. Client components (Provider,
-// useZeroTranslations, AppI18nProvider, ...) are exported from
-// "@intl-party/nextjs/client" so the "use client" boundary is preserved and
-// React is not pulled into server bundles.
+// useZeroTranslations, AppI18nProvider, ...) live in
+// "@intl-party/nextjs/client"; the few re-exported here are imported through
+// that entry so the "use client" boundary is preserved.
 
-// Main setup (the only way to use this package)
+// One-call setup driven by intl-party.config.ts (see README)
+export { createSetup, type SetupConfig, type SetupResult } from "./setup";
+
+// Translation hook for client components. Re-exported through the package's
+// own "./client" entry (kept external by the build) so the "use client"
+// boundary is preserved.
+export { useTranslations } from "@intl-party/nextjs/client";
+
+// Zero-config setup: auto-detects locales and namespaces from ./messages
 export { createZeroConfigSetup, type ZeroConfigResult } from "./config";
 
 // Configurable middleware factory (the documented way to set up middleware)

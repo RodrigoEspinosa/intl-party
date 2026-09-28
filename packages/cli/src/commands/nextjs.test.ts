@@ -42,16 +42,15 @@ describe("nextjsCommand", () => {
   describe("initializeNextjsProject", () => {
     it("should initialize a Next.js project", async () => {
       const fileExistenceValues = [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        true,
+        false, // intl-party.config.ts
+        false, // intl-party.config.js
+        false, // src dir
+        false, // messages dir
+        false, // messages/en
+        false, // messages/es
+        false, // messages/fr
+        false, // app dir
+        true, // .gitignore
       ];
 
       fileExistenceValues.forEach((value) => {
@@ -97,6 +96,61 @@ describe("nextjsCommand", () => {
       expect(result).toBe(true);
     });
 
+    it("writes middleware with a static matcher that Next.js can parse", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.readFileSync).mockImplementation((file) =>
+        String(file).endsWith("package.json")
+          ? JSON.stringify({ version: "15.2.0" })
+          : "",
+      );
+
+      await initializeNextjsProject();
+
+      const call = vi
+        .mocked(fs.writeFileSync)
+        .mock.calls.find(([file]) => file === "middleware.ts");
+      const content = String(call?.[1]);
+      expect(content).toContain("export { middleware };");
+      expect(content).not.toContain("middlewareConfig");
+      // The generated file must contain an escaped dot so the regex matches
+      // a literal "favicon.ico".
+      expect(content).toContain(
+        'matcher: ["/((?!api|_next|_vercel|favicon\\\\.ico).*)", "/"]',
+      );
+    });
+
+    it("writes proxy.ts exporting `proxy` for Next.js 16+", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.readFileSync).mockImplementation((file) =>
+        String(file).endsWith("package.json")
+          ? JSON.stringify({ version: "16.1.0" })
+          : "",
+      );
+
+      await initializeNextjsProject();
+
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        "proxy.ts",
+        expect.stringContaining("export { middleware as proxy };"),
+      );
+      expect(fs.writeFileSync).not.toHaveBeenCalledWith(
+        "middleware.ts",
+        expect.anything(),
+      );
+    });
+
+    it("marks the example page as a client component", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.readFileSync).mockReturnValue("");
+
+      await initializeNextjsProject();
+
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        "./app/page.intl-party.tsx",
+        expect.stringMatching(/^"use client";/),
+      );
+    });
+
     it("should skip initialization if config already exists", async () => {
       // First call is for intl-party.config.ts check
       vi.mocked(fs.existsSync).mockReturnValueOnce(true);
@@ -139,7 +193,9 @@ describe("nextjsCommand", () => {
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         "src/middleware.ts",
-        expect.stringContaining('import intlConfig from "../intl-party.config"'),
+        expect.stringContaining(
+          'import intlConfig from "../intl-party.config"',
+        ),
       );
 
       expect(path.join).toHaveBeenCalledWith("src", "app");
@@ -151,18 +207,16 @@ describe("nextjsCommand", () => {
       // 2. intl-party.config.js check - false
       // 3. src directory check - false (no src dir)
       // 4-7. messages dirs - some exist
-      // 8. next.config.js check - false
-      // 9. appDir check - false
-      // 10. .gitignore check - false
+      // 8. appDir check - false
+      // 9. .gitignore check - false
       vi.mocked(fs.existsSync)
-        .mockReturnValueOnce(true)   // intl-party.config.ts
-        .mockReturnValueOnce(false)  // src dir
-        .mockReturnValueOnce(false)  // messages dir
-        .mockReturnValueOnce(false)  // messages/en
-        .mockReturnValueOnce(false)  // messages/es
-        .mockReturnValueOnce(false)  // messages/fr
-        .mockReturnValueOnce(false)  // next.config.js
-        .mockReturnValueOnce(false)  // app dir
+        .mockReturnValueOnce(true) // intl-party.config.ts
+        .mockReturnValueOnce(false) // src dir
+        .mockReturnValueOnce(false) // messages dir
+        .mockReturnValueOnce(false) // messages/en
+        .mockReturnValueOnce(false) // messages/es
+        .mockReturnValueOnce(false) // messages/fr
+        .mockReturnValueOnce(false) // app dir
         .mockReturnValueOnce(false); // .gitignore
 
       const result = await initializeNextjsProject(true);

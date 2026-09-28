@@ -6,7 +6,12 @@
  */
 
 // Main provider (auto-loads messages)
-export { Provider, useZeroTranslations, useLocale } from "./provider";
+export {
+  Provider,
+  useZeroTranslations,
+  useZeroTranslations as useTranslations,
+  useLocale,
+} from "./provider";
 
 // Client components and providers
 export {

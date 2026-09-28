@@ -3,7 +3,7 @@ import type { Locale, Namespace } from "@intl-party/core";
 // Server-only utilities
 export async function detectAvailableNamespaces(
   locales: Locale[],
-  messagesPath: string = "./messages"
+  messagesPath: string = "./messages",
 ): Promise<Namespace[]> {
   const namespaces = new Set<Namespace>();
 
@@ -12,8 +12,12 @@ export async function detectAvailableNamespaces(
       // It's preferable not to move these to standard imports at the top of the file,
       // because 'fs/promises' and 'path' are Node.js modules and may not be available in all execution environments
       // (such as during static builds or in edge runtimes). Dynamic import with await ensures graceful error handling.
-      const fs = await import("fs/promises");
-      const path = await import("path");
+      const fs = await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:fs/promises"
+      );
+      const path = await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:path"
+      );
 
       const localeDir = path.join(process.cwd(), messagesPath, locale);
 

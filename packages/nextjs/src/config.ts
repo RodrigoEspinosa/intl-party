@@ -11,7 +11,11 @@ import * as path from "node:path";
 // Loaded lazily so this module can be bundled without a static node:fs
 // dependency leaking into client/edge bundles.
 async function getFs() {
-  return (await import("node:fs")).promises;
+  return (
+    await import(
+      /* webpackIgnore: true */ /* turbopackIgnore: true */ "node:fs"
+    )
+  ).promises;
 }
 
 export interface ZeroConfigResult {
@@ -55,7 +59,7 @@ async function detectLocales(): Promise<string[]> {
         // Check if directory has any JSON files
         const files = await fs.readdir(path.join(messagesPath, entry));
         const hasJsonFiles = files.some((file: string) =>
-          file.endsWith(".json")
+          file.endsWith(".json"),
         );
 
         return hasJsonFiles ? entry : null;
@@ -66,7 +70,7 @@ async function detectLocales(): Promise<string[]> {
 
     const resolvedLocales = await Promise.all(localePromises);
     const validLocales = resolvedLocales.filter(
-      (locale): locale is string => locale !== null
+      (locale): locale is string => locale !== null,
     );
 
     return validLocales.length > 0 ? validLocales : ["en"];

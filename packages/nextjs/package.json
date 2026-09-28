@@ -32,7 +32,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/server.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher,chokidar && tsup src/client-exports.ts --format cjs,esm --dts --external next,react,react-dom && tsup src/webpack-plugin.ts --format cjs --dts --external child_process,path,fs,chokidar",
+    "build": "tsup src/index.ts src/server.ts --format cjs,esm --dts --external next,react,react-dom,@formatjs/intl-localematcher,chokidar,@intl-party/nextjs/client && tsup src/client-exports.ts --format cjs,esm --dts --external next,react,react-dom && tsup src/webpack-plugin.ts --format cjs --dts --external child_process,path,fs,chokidar",
     "dev": "tsup --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
