@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/core",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Core internationalization library with type-safe translations and advanced locale detection",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
