@@ -1,5 +1,11 @@
 # @intl-party/eslint-plugin
 
+## 1.4.0
+
+### Patch Changes
+
+- 2473750: Improve npm discoverability: expand package keywords and add a README for `@intl-party/react-native`.
+
 ## 1.2.0
 
 ### Minor Changes

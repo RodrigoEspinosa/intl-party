@@ -1,5 +1,13 @@
 # @intl-party/react
 
+## 1.4.0
+
+### Patch Changes
+
+- 2473750: Improve npm discoverability: expand package keywords and add a README for `@intl-party/react-native`.
+- Updated dependencies [2473750]
+  - @intl-party/core@1.4.0
+
 ## 1.3.2
 
 ### Patch Changes
