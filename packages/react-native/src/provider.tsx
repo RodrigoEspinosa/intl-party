@@ -2,7 +2,10 @@ import { useState, useEffect, type ReactNode } from "react";
 import { I18nProvider, type I18nProviderProps } from "@intl-party/react";
 import type { I18nConfig, Locale } from "@intl-party/core";
 
-export interface ReactNativeI18nProviderProps extends Omit<I18nProviderProps, "initialLocale"> {
+export interface ReactNativeI18nProviderProps extends Omit<
+  I18nProviderProps,
+  "initialLocale"
+> {
   /**
    * Async function to detect the initial locale (e.g., from AsyncStorage or device settings).
    * While resolving, the provider renders `loadingComponent` if provided, or nothing.
@@ -47,11 +50,14 @@ export function ReactNativeI18nProvider({
   loadingComponent,
   onLocaleChange,
   config,
+  i18n,
   children,
   ...rest
 }: ReactNativeI18nProviderProps) {
   const [detectedLocale, setDetectedLocale] = useState<Locale | null>(
-    detectLocale ? null : (fallbackLocale ?? (config as I18nConfig)?.defaultLocale ?? null)
+    detectLocale
+      ? null
+      : (fallbackLocale ?? (config as I18nConfig)?.defaultLocale ?? null),
   );
 
   useEffect(() => {
@@ -65,7 +71,15 @@ export function ReactNativeI18nProvider({
     Promise.resolve()
       .then(() => detectLocale())
       .then((locale) => {
-        if (!cancelled) setDetectedLocale(locale);
+        if (cancelled) return;
+        // I18nProvider only applies `initialLocale` to instances it creates
+        // from `config`, so a caller-supplied instance must be switched here —
+        // before the provider mounts, so the detection result isn't reported
+        // through onLocaleChange as if the user had picked it.
+        if (i18n && i18n.getAvailableLocales().includes(locale)) {
+          i18n.setLocale(locale);
+        }
+        setDetectedLocale(locale);
       })
       .catch(() => {
         if (!cancelled) {
@@ -78,7 +92,7 @@ export function ReactNativeI18nProvider({
     return () => {
       cancelled = true;
     };
-  }, [detectLocale, fallbackLocale, config]);
+  }, [detectLocale, fallbackLocale, config, i18n]);
 
   if (detectedLocale === null) {
     return <>{loadingComponent ?? null}</>;
@@ -87,6 +101,7 @@ export function ReactNativeI18nProvider({
   return (
     <I18nProvider
       config={config}
+      i18n={i18n}
       initialLocale={detectedLocale}
       onLocaleChange={onLocaleChange}
       {...rest}
