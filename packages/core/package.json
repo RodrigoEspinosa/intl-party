@@ -36,7 +36,13 @@
     "internationalization",
     "typescript",
     "localization",
-    "translations"
+    "translations",
+    "l10n",
+    "translation",
+    "type-safe",
+    "icu",
+    "messageformat",
+    "pluralization"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",

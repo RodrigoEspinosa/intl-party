@@ -1,5 +1,12 @@
 # IntlParty 🎉
 
+[![npm version](https://img.shields.io/npm/v/@intl-party/nextjs.svg?label=%40intl-party%2Fnextjs)](https://www.npmjs.com/package/@intl-party/nextjs)
+[![npm downloads](https://img.shields.io/npm/dm/@intl-party/core.svg)](https://www.npmjs.com/package/@intl-party/core)
+[![CI](https://github.com/RodrigoEspinosa/intl-party/actions/workflows/ci.yml/badge.svg)](https://github.com/RodrigoEspinosa/intl-party/actions/workflows/ci.yml)
+[![bundle size](https://deno.bundlejs.com/badge?q=@intl-party/core)](https://bundlejs.com/?q=@intl-party/core)
+[![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](https://www.typescriptlang.org/)
+[![license](https://img.shields.io/npm/l/@intl-party/core.svg)](./LICENSE)
+
 The **easiest and most developer-friendly** internationalization (i18n) library for Next.js with TypeScript. Built with zero-config setup and perfect TypeScript integration.
 
 ## ✨ Why Choose IntlParty?
@@ -344,6 +351,8 @@ npx intl-party validate
 - **[@intl-party/core](./packages/core)** - Core internationalization library
 - **[@intl-party/react](./packages/react)** - React hooks and components
 - **[@intl-party/cli](./packages/cli)** - Command-line tools
+- **[@intl-party/react-native](./packages/react-native)** - React Native and Expo integration
+- **[@intl-party/eslint-plugin](./packages/eslint-plugin)** - Lint rules for hardcoded strings and i18n best practices
 
 ## 🆚 Comparison
 

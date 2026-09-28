@@ -29,7 +29,15 @@
     "i18n",
     "internationalization",
     "expo",
-    "localization"
+    "localization",
+    "react-native-localize",
+    "expo-localization",
+    "async-storage",
+    "l10n",
+    "translation",
+    "typescript",
+    "type-safe",
+    "mobile"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",

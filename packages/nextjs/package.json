@@ -49,7 +49,15 @@
     "app-router",
     "pages-router",
     "ssr",
-    "ssg"
+    "ssg",
+    "next-intl",
+    "next-i18next",
+    "l10n",
+    "localization",
+    "translation",
+    "type-safe",
+    "server-components",
+    "react"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",
