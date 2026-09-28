@@ -22,7 +22,12 @@
     "i18n",
     "internationalization",
     "typescript",
-    "hardcoded-strings"
+    "hardcoded-strings",
+    "eslintplugin",
+    "l10n",
+    "localization",
+    "react",
+    "jsx"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",

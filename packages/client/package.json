@@ -48,7 +48,11 @@
     "typescript",
     "client",
     "generated",
-    "translations"
+    "translations",
+    "l10n",
+    "localization",
+    "codegen",
+    "type-safe"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",

@@ -31,7 +31,13 @@
     "internationalization",
     "typescript",
     "hooks",
-    "context"
+    "context",
+    "react-intl",
+    "react-i18next",
+    "l10n",
+    "localization",
+    "translation",
+    "type-safe"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",

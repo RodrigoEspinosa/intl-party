@@ -26,7 +26,13 @@
     "internationalization",
     "validation",
     "extraction",
-    "typescript"
+    "typescript",
+    "l10n",
+    "localization",
+    "translation",
+    "type-generation",
+    "missing-translations",
+    "codegen"
   ],
   "author": "RodrigoEspinosa",
   "license": "MIT",
