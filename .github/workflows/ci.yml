@@ -41,6 +41,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Type-checked translation keys
+        run: pnpm test:types
+
       - name: Test
         run: pnpm test
 

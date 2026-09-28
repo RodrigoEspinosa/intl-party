@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { existsSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import chalk from "chalk";
+import { generateRegisterFile, REGISTER_FILE_HEADER } from "./generate";
 
 export interface NextjsCommandOptions {
   init?: boolean;
@@ -116,6 +117,22 @@ export default {
   });
 
   console.log(chalk.green("✅ Created sample message files in ./messages"));
+
+  // Register the messages so useTranslations() keys are type-checked
+  const registerPath = "intl-party.d.ts";
+  const hasCustomRegister =
+    existsSync(registerPath) &&
+    !readFileSync(registerPath, "utf-8").startsWith(REGISTER_FILE_HEADER);
+  if (!hasCustomRegister) {
+    writeFileSync(
+      registerPath,
+      generateRegisterFile({
+        moduleName: "@intl-party/nextjs",
+        files: { common: "./messages/en/common.json" },
+      }),
+    );
+    console.log(chalk.green("✅ Created intl-party.d.ts (type-checked keys)"));
+  }
 
   // Create middleware. Next.js 16 renamed the file convention to proxy.ts.
   const useProxy = (getNextMajorVersion() ?? 0) >= 16;

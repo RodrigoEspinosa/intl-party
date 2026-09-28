@@ -11,9 +11,13 @@ import React, {
   createContext,
   useContext,
 } from "react";
-import { I18nProvider, useTranslations } from "@intl-party/react";
+import { I18nProvider, useUntypedTranslations } from "@intl-party/react";
 import { createI18n } from "@intl-party/core";
-import type { Locale, TranslationValue } from "@intl-party/core";
+import type {
+  Locale,
+  RegisteredNamespace,
+  TranslationKeyFor,
+} from "@intl-party/core";
 
 // Context for locale switching
 const LocaleContext = createContext<{
@@ -38,7 +42,7 @@ export function Provider({
   initialMessages = {},
 }: ProviderProps) {
   const [locale, setLocale] = useState<Locale>(
-    (propLocale as Locale) || defaultLocale
+    (propLocale as Locale) || defaultLocale,
   );
   const [messages, setMessages] = useState(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,9 +111,9 @@ export function Provider({
           instance.addTranslations(
             targetLocale as Locale,
             namespace,
-            namespaceMessages
+            namespaceMessages,
           );
-        }
+        },
       );
     });
 
@@ -131,22 +135,20 @@ export function Provider({
 }
 
 /**
- * Hook for using translations
+ * Hook for using translations: `t(key, params)`. Keys are type-checked
+ * against the namespace once IntlPartyRegister is augmented.
  */
-export function useZeroTranslations(namespace?: string) {
-  const t = useTranslations(namespace);
+export function useZeroTranslations<N extends RegisteredNamespace = never>(
+  namespace?: N,
+): (
+  key: TranslationKeyFor<N>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params?: Record<string, any>,
+) => string {
+  // Keys were already checked against N by this hook's signature.
+  const t = useUntypedTranslations(namespace);
 
-  // Return a namespaced translation function if namespace is provided
-  if (namespace) {
-    return (key: string, params?: Record<string, any>) => {
-      return t(key, { interpolation: params });
-    };
-  }
-
-  // Return default translation function
-  return (key: string, params?: Record<string, any>) => {
-    return t(key, { interpolation: params });
-  };
+  return (key, params) => t(key, { interpolation: params });
 }
 
 /**

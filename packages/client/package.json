@@ -6,6 +6,13 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
+  "typesVersions": {
+    "*": {
+      "runtime": [
+        "./dist/runtime.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "import": {

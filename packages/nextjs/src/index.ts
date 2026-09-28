@@ -52,6 +52,10 @@ export type {
   TranslationKey,
   TranslationValue,
   I18nConfig as CoreI18nConfig,
+  IntlPartyRegister,
+  RegisteredNamespace,
+  NamespaceKey,
+  AnyNamespaceKey,
 } from "@intl-party/core";
 
 // Note: Server-specific functions like getLocale, getServerTranslations, etc.

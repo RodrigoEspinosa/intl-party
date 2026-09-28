@@ -139,6 +139,21 @@ describe("nextjsCommand", () => {
       );
     });
 
+    it("registers the sample messages for type-checked keys", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.readFileSync).mockReturnValue("");
+
+      await initializeNextjsProject();
+
+      const call = vi
+        .mocked(fs.writeFileSync)
+        .mock.calls.find(([file]) => file === "intl-party.d.ts");
+      expect(String(call?.[1])).toContain(
+        'declare module "@intl-party/nextjs"',
+      );
+      expect(String(call?.[1])).toContain('"./messages/en/common.json"');
+    });
+
     it("marks the example page as a client component", async () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
       vi.mocked(fs.readFileSync).mockReturnValue("");

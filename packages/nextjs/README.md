@@ -203,17 +203,33 @@ export default {
 };
 ```
 
-### Automatic Type Generation
+### Type-Checked Translation Keys
 
-Get full TypeScript support:
+`npx intl-party nextjs --init` creates an `intl-party.d.ts` that registers your default locale's message files. From then on, `useTranslations` only accepts keys that exist in that namespace:
 
 ```typescript
 const t = useTranslations("common");
 
-t("welcome"); // ✅ Type-safe with auto-completion
-t("navigation.home"); // ✅ Type-safe
-t("invalid.key"); // ❌ TypeScript error
+t("welcome"); // ✅
+t("navigation.home"); // ✅ nested keys use dot paths
+t("welcom"); // ❌ TypeScript error: not a key in "common"
+t("navigation"); // ❌ TypeScript error: not a string
+useTranslations("checkout"); // ❌ TypeScript error: unknown namespace
 ```
+
+The file imports the JSON directly, so adding or renaming keys needs no build step. After adding or removing a namespace file, run `npx intl-party generate --types` to update it. The generated `intl-party.d.ts` looks like this:
+
+```typescript
+import type ns0_common from "./messages/en/common.json";
+
+declare module "@intl-party/nextjs" {
+  interface IntlPartyRegister {
+    messages: { common: typeof ns0_common };
+  }
+}
+```
+
+Your `tsconfig.json` needs `"resolveJsonModule": true`, which Next.js sets by default. For keys built at runtime, use `useUntypedTranslations` from `@intl-party/react`.
 
 ### Hot Reloading
 

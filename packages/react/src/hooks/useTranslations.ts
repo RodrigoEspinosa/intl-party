@@ -5,10 +5,24 @@ import type {
   TranslationOptions,
   TranslationFunction,
   Namespace,
+  RegisteredNamespace,
+  TranslationKeyFor,
+  ScopedTranslationFunction,
 } from "@intl-party/core";
 
-// Basic useTranslations hook
-export function useTranslations(namespace?: Namespace): TranslationFunction {
+// Basic useTranslations hook. Keys are type-checked against the namespace
+// once IntlPartyRegister is augmented; otherwise any string is accepted.
+export function useTranslations<N extends RegisteredNamespace = never>(
+  namespace?: N,
+): ScopedTranslationFunction<TranslationKeyFor<N>> {
+  return useUntypedTranslations(namespace);
+}
+
+// Same hook without registry checks, for library code (e.g. <Trans>) whose
+// namespaces and keys come from props rather than literals.
+export function useUntypedTranslations(
+  namespace?: Namespace,
+): TranslationFunction {
   const { i18n, namespace: currentNamespace, locale } = useI18nContext();
 
   const targetNamespace = namespace || currentNamespace;
@@ -29,9 +43,9 @@ export function useTranslations(namespace?: Namespace): TranslationFunction {
 }
 
 // Hook for scoped translations (automatically bound to namespace)
-export function useScopedTranslations(
-  namespace: Namespace,
-): TranslationFunction {
+export function useScopedTranslations<N extends RegisteredNamespace>(
+  namespace: N,
+): ScopedTranslationFunction<TranslationKeyFor<N>> {
   const { i18n } = useI18nContext();
 
   return useMemo(() => {
@@ -71,4 +85,3 @@ export function useHasTranslation(): (
     [i18n, currentNamespace],
   );
 }
-
