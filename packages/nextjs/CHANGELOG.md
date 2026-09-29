@@ -1,5 +1,11 @@
 # @intl-party/nextjs
 
+## 1.5.1
+
+### Patch Changes
+
+- eaf4f1a: The middleware now passes the resolved locale to the current request, so `?locale=` links and newly detected locales render correctly on the first request instead of from the next navigation (#45).
+
 ## 1.5.0
 
 ### Minor Changes
