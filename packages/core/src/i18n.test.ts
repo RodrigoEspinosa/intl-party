@@ -152,6 +152,46 @@ describe("I18n", () => {
       expect(i18n.t("welcome")).toBe("Welcome!");
     });
 
+    it("should fall back to the default locale without a fallbackChain", () => {
+      const i18n = createI18n({
+        locales: ["en", "es"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+      });
+      i18n.addTranslations("en", "common", { onlyEn: "English only" });
+      i18n.setLocale("es");
+
+      expect(i18n.getFallbackChain()).toEqual(["es", "en"]);
+      expect(i18n.t("onlyEn")).toBe("English only");
+    });
+
+    it("should end a configured fallbackChain at the default locale", () => {
+      const i18n = createI18n({
+        locales: ["en", "es", "fr"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+        fallbackChain: { fr: "es" },
+      });
+
+      expect(i18n.getFallbackChain("fr")).toEqual(["fr", "es", "en"]);
+      expect(i18n.getFallbackChain("en")).toEqual(["en"]);
+    });
+
+    it("should refresh cached lookups when a locale further down the chain changes", () => {
+      const i18n = createI18n({
+        locales: ["en", "es", "fr"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+        fallbackChain: { fr: "es" },
+      });
+      i18n.setLocale("fr");
+      expect(i18n.t("late")).toBe("[common:late]"); // cached miss
+
+      // fr → es → en: adding the key in en must invalidate fr's cache
+      i18n.addTranslations("en", "common", { late: "Added later" });
+      expect(i18n.t("late")).toBe("Added later");
+    });
+
     it("should return fallback for missing keys", () => {
       const i18n = createI18n(config);
 

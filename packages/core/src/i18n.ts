@@ -60,6 +60,9 @@ export class I18n implements I18nInstance {
   /** Currently active namespace */
   private currentNamespace: Namespace;
 
+  /** Configured fallbackChain plus a default-locale fallback for every locale */
+  private fallbackChain: Record<Locale, Locale>;
+
   /**
    * Monotonically increasing counter, bumped on every setLocale() call.
    * Async consumers (preloadTranslations, React hooks) can snapshot this
@@ -79,8 +82,10 @@ export class I18n implements I18nInstance {
    * avoids rebuilding one on every formatDate/formatNumber/... call. Cleared
    * whenever the locale changes (entries are locale-specific).
    */
-  private formatterCache: Map<string, Intl.DateTimeFormat | Intl.NumberFormat | Intl.RelativeTimeFormat> =
-    new Map();
+  private formatterCache: Map<
+    string,
+    Intl.DateTimeFormat | Intl.NumberFormat | Intl.RelativeTimeFormat
+  > = new Map();
 
   /** Set by dispose(); the instance keeps working but releases cached data. */
   private disposed = false;
@@ -110,8 +115,17 @@ export class I18n implements I18nInstance {
     this.currentLocale = config.defaultLocale;
     this.currentNamespace = config.namespaces[0] || "common";
 
+    // Every locale without an explicit fallback falls back to the default
+    // locale, so each chain ends there (fr → es → en rather than fr → es).
+    this.fallbackChain = { ...config.fallbackChain };
+    for (const locale of config.locales) {
+      if (locale !== config.defaultLocale && !this.fallbackChain[locale]) {
+        this.fallbackChain[locale] = config.defaultLocale;
+      }
+    }
+
     this.store = new TranslationStore({
-      fallbackChain: config.fallbackChain,
+      fallbackChain: this.fallbackChain,
       maxCacheSize: config.cache?.maxSize,
     });
 
@@ -139,9 +153,7 @@ export class I18n implements I18nInstance {
    */
   private static validateConfig(config: I18nConfig): void {
     if (!config.locales || config.locales.length === 0) {
-      throw new Error(
-        "Invalid config: `locales` must be a non-empty array",
-      );
+      throw new Error("Invalid config: `locales` must be a non-empty array");
     }
 
     for (const locale of config.locales) {
@@ -165,9 +177,7 @@ export class I18n implements I18nInstance {
     }
 
     if (!config.namespaces || config.namespaces.length === 0) {
-      throw new Error(
-        "Invalid config: `namespaces` must be a non-empty array",
-      );
+      throw new Error("Invalid config: `namespaces` must be a non-empty array");
     }
 
     for (const ns of config.namespaces) {
@@ -439,9 +449,7 @@ export class I18n implements I18nInstance {
         value !== null &&
         !Array.isArray(value)
       ) {
-        result[key] = I18n.sanitizeTranslations(
-          value as Translations,
-        );
+        result[key] = I18n.sanitizeTranslations(value as Translations);
       } else {
         result[key] = value;
       }
@@ -588,8 +596,8 @@ export class I18n implements I18nInstance {
     const chain: Locale[] = [targetLocale];
     let current = targetLocale;
 
-    while (this.config.fallbackChain?.[current]) {
-      current = this.config.fallbackChain[current];
+    while (this.fallbackChain[current]) {
+      current = this.fallbackChain[current];
       if (chain.includes(current)) break; // Prevent circular references
       chain.push(current);
     }
