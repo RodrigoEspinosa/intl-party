@@ -1,5 +1,15 @@
 # @intl-party/core
 
+## 1.6.0
+
+### Minor Changes
+
+- bc55192: Missing translations now fall back to the default locale. Before, without a `fallbackChain` entry, a key missing from the current locale rendered as `[namespace:key]` even when the default locale had it. Every fallback chain now ends at `defaultLocale` (e.g. `{ fr: "es" }` resolves fr → es → en), and `getFallbackChain()` reports it. `hasTranslation()` follows the same chain, so it returns `true` when only the default locale has the key; use `validateTranslations()` to find gaps in one locale. Cached lookups are now refreshed when any locale further down a chain changes, not only the next one.
+
+### Patch Changes
+
+- 0e51a7b: Legacy plural messages (`"{{count|item|items}}"`) now use a numeric `count` from the interpolation values when no `count` option is given. The Next.js `useTranslations` hook's `t("items", { count: 2 })` returned the raw template before.
+
 ## 1.5.0
 
 ### Minor Changes
