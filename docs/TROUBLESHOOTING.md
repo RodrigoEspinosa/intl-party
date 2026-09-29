@@ -31,7 +31,7 @@ Use `useUntypedTranslations` from `@intl-party/react` for dynamic keys.
 1. Check that `middleware.ts` (or `proxy.ts` on Next.js 16+) is in the project root, or in `src/` if you use a `src` directory.
 2. Check that the locale you expect is listed in `locales` in `intl-party.config.ts`.
 3. Check the `INTL_LOCALE` cookie. A stored choice takes priority over `Accept-Language`. Clear it to test browser-language detection.
-4. A `?locale=` query parameter currently applies from the next navigation, not the request that carries it ([#45](https://github.com/RodrigoEspinosa/intl-party/issues/45)).
+4. To test a specific locale, add `?locale=fr` to the URL. It takes priority over the cookie and `Accept-Language`, and is remembered in the cookie. This applies on the same request from `@intl-party/nextjs` 1.5.1.
 
 ## Edits to message files don't show up
 
