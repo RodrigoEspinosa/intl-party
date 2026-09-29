@@ -11,6 +11,8 @@ vi.mock("next/server", () => {
   const mockHeaders = {
     get: vi.fn(),
     set: vi.fn(),
+    // Iterable so the middleware can copy it into a real Headers object
+    *[Symbol.iterator]() {},
   };
 
   const mockSearchParams = {
@@ -82,6 +84,28 @@ describe("Next.js Middleware", () => {
     expect(NextResponse.next).toHaveBeenCalled();
   });
 
+  it("forwards the resolved locale to the current request", async () => {
+    // A `?locale=` override (or a freshly detected locale) must reach
+    // getLocale() on this request, not only via the cookie on the next one.
+    const middleware = createI18nMiddleware({
+      locales: ["en", "fr"],
+      defaultLocale: "en",
+      localePrefix: "never",
+    });
+
+    const mockRequest = new NextRequest("https://example.com/?locale=fr");
+    vi.mocked(mockRequest.nextUrl.searchParams.get).mockImplementationOnce(
+      (name: string) => (name === "locale" ? "fr" : null),
+    );
+
+    await middleware(mockRequest);
+
+    const init = vi.mocked(NextResponse.next).mock.calls.at(-1)?.[0] as
+      | { request: { headers: Headers } }
+      | undefined;
+    expect(init?.request.headers.get("x-locale")).toBe("fr");
+  });
+
   it("should detect locale from accept-language header", async () => {
     const mockConfig = {
       locales: ["en", "fr", "es"],
@@ -93,7 +117,8 @@ describe("Next.js Middleware", () => {
 
     const mockRequest = new NextRequest("https://example.com");
     vi.mocked(mockRequest.headers.get).mockImplementation((header) => {
-      if (header === "accept-language") return "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7";
+      if (header === "accept-language")
+        return "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7";
       return null;
     });
 
