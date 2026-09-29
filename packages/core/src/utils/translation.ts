@@ -8,11 +8,7 @@ import type {
   NestedTranslations,
   AllTranslations,
 } from "../types";
-import {
-  isICUFormat,
-  formatICUMessage,
-  clearICUCache,
-} from "./icu-formatter";
+import { isICUFormat, formatICUMessage, clearICUCache } from "./icu-formatter";
 
 /**
  * Creates a stable cache key from translation options.
@@ -247,7 +243,9 @@ export class TranslationStore {
         typeof current === "object" &&
         Object.prototype.hasOwnProperty.call(current, key)
       ) {
-        current = (current as Record<string, TranslationValue | NestedTranslations>)[key];
+        current = (
+          current as Record<string, TranslationValue | NestedTranslations>
+        )[key];
       } else {
         return undefined;
       }
@@ -287,8 +285,14 @@ export class TranslationStore {
         result = this.interpolate(result, options.interpolation);
       }
 
-      if (options?.count !== undefined) {
-        result = this.handlePluralization(result, options.count);
+      // `count` may also arrive as an interpolation value, e.g. from the
+      // Next.js hook's t(key, { count }) — honor it for plural forms too.
+      const interpolatedCount = options?.interpolation?.count;
+      const count =
+        options?.count ??
+        (typeof interpolatedCount === "number" ? interpolatedCount : undefined);
+      if (count !== undefined) {
+        result = this.handlePluralization(result, count);
       }
     }
 
