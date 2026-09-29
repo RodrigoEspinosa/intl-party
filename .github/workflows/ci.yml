@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
-    branches: ['*']
+    branches: ['**'] # '*' doesn't match names with a slash (stacked PRs)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
