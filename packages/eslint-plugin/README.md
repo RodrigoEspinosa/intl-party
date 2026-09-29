@@ -120,11 +120,11 @@ If no messages can be loaded, the missing-key check is skipped. Loaded messages 
 | `defaultLocale`    | `string`   | `"en"`                                                               |
 | `configPath`       | `string`   | auto-detected                                                        |
 
-> **Known issue:** nested keys like `t("navigation.home")` are reported as missing even when they exist, because the rule reads the first segment as a namespace. A fix is in progress. Until then, turn the rule off if you use nested keys. In TypeScript projects, [type-checked keys](../../README.md#-type-checked-translation-keys) catch missing keys at compile time.
+With `const t = useTranslations("common")`, keys passed to `t` are looked up inside `common`, so nested keys like `t("navigation.home")` work. This applies to translators from `useTranslations`, `useScopedTranslations`, and `useZeroTranslations`, whatever the variable is named. A `t` that isn't bound to a namespace accepts a key that exists as a full path in any namespace, or as `namespace.key`.
 
 ### `prefer-translation-hooks`
 
-Reports direct `i18n.t(...)` calls and suggests the `useTranslations()` hook. It also reports when three or more `t("x.…")` calls in a file share the prefix `x`, suggesting a scoped translator for it.
+Reports direct `i18n.t(...)` calls and suggests the `useTranslations()` hook. It also reports when three or more `t("x.…")` calls in a file share the prefix `x`, suggesting a scoped translator for it. Translators that are already scoped (`useTranslations("common")`) are ignored.
 
 ```jsx
 // ❌

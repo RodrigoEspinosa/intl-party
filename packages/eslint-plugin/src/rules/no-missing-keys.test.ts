@@ -49,10 +49,28 @@ ruleTester.run("no-missing-keys", noMissingKeys, {
     { code: `t(key);` },
     // Non-t calls are ignored
     { code: `parseInt('10');` },
+    // Nested keys inside a scoped translator (the recommended pattern)
+    {
+      code: `const t = useTranslations('common'); t('nav.home'); t('greeting');`,
+    },
+    // Translators with other names are resolved too
+    { code: `const tc = useTranslations('common'); tc('nav.home');` },
+    // Unscoped translator: full path in any namespace
+    { code: `const t = useTranslations(); t('nav.home');` },
   ],
   invalid: [
     {
       code: `t('common.missing');`,
+      errors: [{ messageId: "missingTranslationKey" }],
+    },
+    {
+      // Scoped translator: the key must exist in that namespace
+      code: `const t = useTranslations('common'); t('nav.missing');`,
+      errors: [{ messageId: "missingTranslationKey" }],
+    },
+    {
+      // Bound translators are checked even when not named t
+      code: `const tc = useTranslations('common'); tc('missing');`,
       errors: [{ messageId: "missingTranslationKey" }],
     },
     {

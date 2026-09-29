@@ -1,4 +1,5 @@
 import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
+import { TranslatorBindings } from "../utils/translator-bindings";
 
 type MessageIds = "preferUseTranslations" | "preferScopedTranslations";
 
@@ -46,6 +47,7 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     // a single t('ns.key') call is idiomatic and should not be flagged.
     const SCOPED_TRANSLATIONS_THRESHOLD = 3;
     const namespaceUsage = new Map<string, TSESTree.CallExpression[]>();
+    const bindings = new TranslatorBindings();
 
     function checkMemberExpression(node: TSESTree.MemberExpression) {
       // Check for i18n.t() usage
@@ -72,6 +74,9 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
       if (
         node.callee.type === "Identifier" &&
         node.callee.name === "t" &&
+        // Already scoped (e.g. useTranslations("common")): a dotted key is a
+        // nested key inside that namespace, not a namespace prefix.
+        bindings.namespaceOf(node.callee.name) === null &&
         node.arguments.length > 0 &&
         node.arguments[0].type === "Literal" &&
         typeof node.arguments[0].value === "string"
@@ -89,6 +94,9 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     }
 
     return {
+      VariableDeclarator(node) {
+        bindings.record(node);
+      },
       MemberExpression: checkMemberExpression,
       CallExpression: checkCallExpression,
       "Program:exit"() {
