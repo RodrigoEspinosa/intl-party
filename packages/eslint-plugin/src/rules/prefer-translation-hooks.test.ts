@@ -39,9 +39,16 @@ ruleTester.run("prefer-translation-hooks", preferTranslationHooks, {
       errors: [{ messageId: "preferScopedTranslations" }],
     },
     {
+      // Offered as a suggestion; `eslint --fix` leaves the code unchanged
       code: `i18n.t('greeting');`,
-      errors: [{ messageId: "preferUseTranslations" }],
-      output: `t('greeting');`,
+      errors: [
+        {
+          messageId: "preferUseTranslations",
+          suggestions: [
+            { messageId: "replaceWithHook", output: `t('greeting');` },
+          ],
+        },
+      ],
     },
   ],
 });
