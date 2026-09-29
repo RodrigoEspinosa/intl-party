@@ -106,6 +106,7 @@ expect_locale "default locale" en "Welcome to IntlParty!"
 expect_locale "Accept-Language" es "¡Bienvenido a IntlParty!" -H "Accept-Language: es-ES,es;q=0.9"
 expect_locale "cookie beats header" fr "Bienvenue chez IntlParty !" -H "Cookie: INTL_LOCALE=fr" -H "Accept-Language: es"
 expect_locale "unsupported falls back" en "Welcome to IntlParty!" -H "Accept-Language: de"
+expect_locale "?locale= applies to the same request" fr "Bienvenue chez IntlParty !" -H "Accept-Language: es" --url-query "locale=fr"
 
 if curl -s -D - -o /dev/null -H "Accept-Language: es" "http://localhost:$PORT/" | grep -qi '^set-cookie: INTL_LOCALE=es'; then
   echo "  ✓ middleware sets locale cookie"

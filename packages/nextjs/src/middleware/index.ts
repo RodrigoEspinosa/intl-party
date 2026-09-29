@@ -24,9 +24,7 @@ export interface I18nMiddlewareConfig {
 
 function validateMiddlewareConfig(config: I18nMiddlewareConfig): void {
   if (!Array.isArray(config.locales) || config.locales.length === 0) {
-    throw new Error(
-      "Invalid config: `locales` must be a non-empty array",
-    );
+    throw new Error("Invalid config: `locales` must be a non-empty array");
   }
 
   if (!config.locales.includes(config.defaultLocale)) {
@@ -154,6 +152,7 @@ export function createI18nMiddleware(config: I18nMiddlewareConfig) {
         redirectStrategy,
         basePath,
         cookieName,
+        headerName,
       );
     } else if (localePrefix === "as-needed") {
       return handleAsNeededPrefix(
@@ -164,9 +163,10 @@ export function createI18nMiddleware(config: I18nMiddlewareConfig) {
         redirectStrategy,
         basePath,
         cookieName,
+        headerName,
       );
     } else if (localePrefix === "never") {
-      return handleNeverPrefix(targetLocale, cookieName);
+      return handleNeverPrefix(request, targetLocale, cookieName, headerName);
     }
 
     return NextResponse.next();
@@ -302,6 +302,23 @@ function getLocaleFromPath(
  * re-run from Accept-Language on every request (and a path-based choice is
  * remembered when the user next hits an unprefixed entry point).
  */
+/**
+ * Forwards the resolved locale to the rest of this request as a header, so
+ * server code (getLocale) sees the same locale the middleware chose. The
+ * cookie set on the response only arrives with the *next* request, which is
+ * why a `?locale=` link used to render the old locale once.
+ * Overwrites any client-sent value with the validated locale.
+ */
+function withLocaleHeader(
+  request: NextRequest,
+  headerName: string,
+  locale: Locale,
+): { request: { headers: Headers } } {
+  const headers = new Headers(request.headers);
+  headers.set(headerName, locale);
+  return { request: { headers } };
+}
+
 function persistLocale(
   response: NextResponse,
   cookieName: string,
@@ -323,7 +340,9 @@ function handleAlwaysPrefix(
   redirectStrategy: string,
   basePath: string,
   cookieName: string,
+  headerName: string,
 ): NextResponse {
+  const forward = withLocaleHeader(request, headerName, targetLocale);
   if (!pathLocale) {
     // Redirect to add locale prefix. request.url still includes basePath, so
     // strip it before prepending to avoid /base/<locale>/base/...
@@ -332,13 +351,21 @@ function handleAlwaysPrefix(
     url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
-      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.redirect(url),
+        cookieName,
+        targetLocale,
+      );
     } else if (redirectStrategy === "rewrite") {
-      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.rewrite(url, forward),
+        cookieName,
+        targetLocale,
+      );
     }
   }
 
-  return persistLocale(NextResponse.next(), cookieName, targetLocale);
+  return persistLocale(NextResponse.next(forward), cookieName, targetLocale);
 }
 
 function handleAsNeededPrefix(
@@ -349,7 +376,9 @@ function handleAsNeededPrefix(
   redirectStrategy: string,
   basePath: string,
   cookieName: string,
+  headerName: string,
 ): NextResponse {
+  const forward = withLocaleHeader(request, headerName, targetLocale);
   if (targetLocale === defaultLocale && pathLocale) {
     // Remove unnecessary default locale prefix
     const url = new URL(request.url);
@@ -359,10 +388,18 @@ function handleAsNeededPrefix(
     url.pathname = `${basePath}${pathWithoutLocale}`;
 
     if (redirectStrategy === "redirect") {
-      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.redirect(url),
+        cookieName,
+        targetLocale,
+      );
     } else if (redirectStrategy === "rewrite") {
       // Canonicalize away the default-locale prefix without a client redirect
-      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.rewrite(url, forward),
+        cookieName,
+        targetLocale,
+      );
     }
   } else if (targetLocale !== defaultLocale && !pathLocale) {
     // Add non-default locale prefix (strip basePath before prepending)
@@ -371,21 +408,35 @@ function handleAsNeededPrefix(
     url.pathname = `${basePath}/${targetLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
 
     if (redirectStrategy === "redirect") {
-      return persistLocale(NextResponse.redirect(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.redirect(url),
+        cookieName,
+        targetLocale,
+      );
     } else if (redirectStrategy === "rewrite") {
-      return persistLocale(NextResponse.rewrite(url), cookieName, targetLocale);
+      return persistLocale(
+        NextResponse.rewrite(url, forward),
+        cookieName,
+        targetLocale,
+      );
     }
   }
 
-  return persistLocale(NextResponse.next(), cookieName, targetLocale);
+  return persistLocale(NextResponse.next(forward), cookieName, targetLocale);
 }
 
 function handleNeverPrefix(
+  request: NextRequest,
   targetLocale: Locale,
   cookieName: string,
+  headerName: string,
 ): NextResponse {
   // Clean URLs: never add a prefix, just remember the locale for the server
-  return persistLocale(NextResponse.next(), cookieName, targetLocale);
+  return persistLocale(
+    NextResponse.next(withLocaleHeader(request, headerName, targetLocale)),
+    cookieName,
+    targetLocale,
+  );
 }
 
 function shouldSkipPath(

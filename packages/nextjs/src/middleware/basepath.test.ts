@@ -28,7 +28,7 @@ function makeRequest(fullUrl: string, strippedPathname: string) {
   return {
     url: fullUrl,
     cookies: { get: vi.fn(() => undefined) },
-    headers: { get: vi.fn(() => null) },
+    headers: { get: vi.fn(() => null), *[Symbol.iterator]() {} },
     nextUrl: {
       // Next strips basePath from nextUrl.pathname
       pathname: strippedPathname,
