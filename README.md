@@ -7,30 +7,28 @@
 [![TypeScript](https://img.shields.io/badge/types-included-blue.svg)](https://www.typescriptlang.org/)
 [![license](https://img.shields.io/npm/l/@intl-party/core.svg)](./LICENSE)
 
-The **easiest and most developer-friendly** internationalization (i18n) library for Next.js with TypeScript. Built with zero-config setup and perfect TypeScript integration.
+Type-safe internationalization for the Next.js App Router, React, and React Native. Translation keys are checked at compile time, URLs stay clean (`/about`, not `/en/about`), and one command sets up a working project.
 
-## ✨ Why Choose IntlParty?
+## ✨ Why IntlParty?
 
-- **🚀 Zero-Config Setup**: Get started in 2 minutes, not 2 hours
-- **🔒 Perfect TypeScript**: Full type safety with auto-completion, no casting required
-- **⚡ Next.js Native**: Built specifically for Next.js App Router with SSR/SSG
-- **🌍 Clean URLs**: No more ugly `/en/` prefixes (optional)
-- **🎯 Developer First**: Intuitive API that just works
-- **🛠️ Automatic**: Type generation, message loading, and hot reloading
+- **🔒 Type-checked keys**: `t("welcom")` is a compile error, and your editor autocompletes keys from your JSON files. No manual type declarations.
+- **🚀 One-command setup**: `npx intl-party nextjs --init` scaffolds the config, middleware, messages, layout, and types.
+- **🌍 Clean URLs**: the locale comes from a cookie or `Accept-Language`, so routes stay the same in every language.
+- **💬 Two message formats**: simple `{{name}}` interpolation, or ICU MessageFormat for plurals and selects. Mix them freely.
+- **🛠️ CLI checks**: find missing translations and format errors in CI with `intl-party check`.
+- **📱 React Native too**: the same hooks, with device-locale detection and a persisted preference.
+
+Every change is tested end to end: CI scaffolds an app with the CLI and builds it on Next.js 14, 15, and 16. It then checks that a misspelled key fails to compile and that pages render in the right language.
 
 ## 🚀 Quick Start (Next.js)
 
-### 1. Installation
+### 1. Install
 
 ```bash
 npm install @intl-party/nextjs
-# or
-pnpm add @intl-party/nextjs
-# or
-yarn add @intl-party/nextjs
 ```
 
-### 2. Initialize (One Command)
+### 2. Initialize
 
 ```bash
 npx intl-party nextjs --init
@@ -38,13 +36,13 @@ npx intl-party nextjs --init
 
 This creates:
 
-- `intl-party.config.ts` - Your i18n configuration
-- `middleware.ts` (`proxy.ts` on Next.js 16+) - Automatic locale detection
-- `messages/` - Sample translation files
-- `intl-party.d.ts` - Registers your messages so keys are type-checked
-- Example layout and page components
+- `intl-party.config.ts`: locales and the messages directory
+- `middleware.ts` (`proxy.ts` on Next.js 16+): locale detection
+- `messages/{en,es,fr}/common.json`: sample translations
+- `intl-party.d.ts`: registers your messages so keys are type-checked
+- `app/layout.intl-party.tsx` and `app/page.intl-party.tsx`: an example layout and page to merge into yours
 
-### 3. Start Using
+### 3. Translate
 
 ```tsx
 // app/page.tsx
@@ -58,88 +56,120 @@ export default function HomePage() {
   return (
     <div>
       <h1>{t("welcome")}</h1>
-      <p>{t("description", { name: "John" })}</p>
+      <p>{t("description")}</p>
+      <a href="/about">{t("navigation.about")}</a>
     </div>
   );
 }
 ```
 
-That's it! 🎉 Your app is now internationalized with full TypeScript support.
+Visitors see the page in the first locale their browser prefers that you support, falling back to `defaultLocale`.
 
-## 📁 Project Structure
+## 🔒 Type-Checked Translation Keys
 
+`npx intl-party nextjs --init` creates an `intl-party.d.ts` that registers your default locale's message files. From then on, `useTranslations` only accepts keys that exist in that namespace:
+
+```typescript
+const t = useTranslations("common");
+
+t("welcome"); // ✅
+t("navigation.home"); // ✅ nested keys use dot paths
+t("welcom"); // ❌ TypeScript error: not a key in "common"
+t("navigation"); // ❌ TypeScript error: not a string
+useTranslations("checkout"); // ❌ TypeScript error: unknown namespace
 ```
-your-app/
-├── intl-party.config.ts     # Your i18n config
-├── intl-party.d.ts          # Type-checked translation keys
-├── middleware.ts            # Automatic locale detection (proxy.ts on Next 16+)
-├── messages/               # Translation files
-│   ├── en/
-│   │   └── common.json
-│   ├── es/
-│   │   └── common.json
-│   └── fr/
-│       └── common.json
-└── app/
-    ├── layout.tsx           # Auto-configured
-    └── page.tsx            # Use translations
+
+The file imports the JSON directly, so adding or renaming keys needs no build step. After adding or removing a namespace file, run `npx intl-party generate --types` to update it. The generated `intl-party.d.ts` looks like this:
+
+```typescript
+import type ns0_common from "./messages/en/common.json";
+
+declare module "@intl-party/nextjs" {
+  interface IntlPartyRegister {
+    messages: { common: typeof ns0_common };
+  }
+}
 ```
+
+Your `tsconfig.json` needs `"resolveJsonModule": true`, which Next.js sets by default. For keys built at runtime, use `useUntypedTranslations` from `@intl-party/react`.
 
 ## 🔧 Configuration
-
-Create `intl-party.config.ts` in your project root:
 
 ```typescript
 // intl-party.config.ts
 export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
-  messages: "./messages", // Optional - defaults to "./messages"
-
-  // Advanced options (optional)
-  // localePrefix: "never", // Clean URLs without /en/ prefix
-  // cookieName: "INTL_LOCALE", // Cookie name for locale storage
+  messages: "./messages", // optional, this is the default
+  // cookieName: "INTL_LOCALE", // optional, this is the default
 };
 ```
 
-## 🎯 API Reference
+The locale is resolved from the `INTL_LOCALE` cookie first, then `Accept-Language`, then `defaultLocale`. URLs never carry a locale prefix. Locale-prefixed routes (`/es/about`) aren't supported by `createSetup` yet ([#46](https://github.com/RodrigoEspinosa/intl-party/issues/46)).
 
-### `useTranslations(namespace?)`
+## 🏗️ How the Setup Fits Together
 
-The main hook for using translations.
-
-```tsx
-// Without namespace (uses default)
-const t = useTranslations();
-
-// With namespace
-const t = useTranslations("common");
-
-// Simple usage
-t("welcome"); // "Welcome!"
-
-// With interpolation
-t("greeting", { name: "John" }); // "Hello John!"
-
-// Nested keys
-t("navigation.home"); // "Home"
-```
-
-### `createSetup(config)`
-
-Creates the complete i18n setup for Next.js.
+`createSetup(config)` returns everything the generated files use:
 
 ```typescript
 import { createSetup } from "@intl-party/nextjs";
 import config from "./intl-party.config";
 
 const {
-  middleware, // Next.js middleware
-  getLocale, // Server-side locale detection
-  getMessages, // Server-side message loading
-  Provider, // React provider
+  middleware, // detects the locale and stores it in a cookie
+  getLocale, // resolves the current request's locale (server)
+  getMessages, // loads messages for a locale (server)
+  Provider, // client provider for your root layout
 } = createSetup(config);
 ```
+
+### Middleware
+
+```typescript
+// middleware.ts
+import { createSetup } from "@intl-party/nextjs";
+import intlConfig from "./intl-party.config";
+
+const { middleware } = createSetup(intlConfig);
+
+export { middleware };
+
+// Next.js reads this at build time, so it must be a static literal.
+export const config = {
+  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
+};
+```
+
+On Next.js 16+, name the file `proxy.ts` and export the function as `proxy`: `export { middleware as proxy };`. `npx intl-party nextjs --init` does this for you.
+
+### Root layout
+
+```tsx
+// app/layout.tsx
+import { createSetup } from "@intl-party/nextjs";
+import config from "../intl-party.config";
+
+const { getLocale, getMessages, Provider } = createSetup(config);
+
+export default async function RootLayout({ children }) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
+
+  return (
+    <html lang={locale}>
+      <body>
+        <Provider locale={locale} initialMessages={messages}>
+          {children}
+        </Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+Message files are read on each request, so edits show up on the next page load without restarting the dev server.
+
+Translation hooks run in Client Components (`"use client"`). Server Components can render inside the `Provider`, but they can't call `useTranslations` themselves.
 
 ## 🌐 Translation Files
 
@@ -201,340 +231,53 @@ npm install intl-messageformat
 }
 ```
 
-## 🏗️ Setup Examples
-
-### Middleware (Automatic)
-
-```typescript
-// middleware.ts
-import { createSetup } from "@intl-party/nextjs";
-import intlConfig from "./intl-party.config";
-
-const { middleware } = createSetup(intlConfig);
-
-export { middleware };
-
-// Next.js reads this at build time, so it must be a static literal.
-export const config = {
-  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
-};
-```
-
-On Next.js 16+, name the file `proxy.ts` and export the function as `proxy`: `export { middleware as proxy };`. `npx intl-party nextjs --init` does this for you.
-
-### Layout (Automatic SSR)
-
-```tsx
-// app/layout.tsx
-import { createSetup } from "@intl-party/nextjs";
-import config from "../intl-party.config";
-
-const { getLocale, getMessages, Provider } = createSetup(config);
-
-export default async function RootLayout({ children }) {
-  const locale = await getLocale();
-  const messages = await getMessages(locale);
-
-  return (
-    <html lang={locale}>
-      <body>
-        <Provider locale={locale} initialMessages={messages}>
-          {children}
-        </Provider>
-      </body>
-    </html>
-  );
-}
-```
-
-## 🎨 Advanced Features
-
-### Clean URLs (Default)
-
-By default, IntlParty uses cookie-based locale detection for clean URLs:
-
-```
-✅ Clean URLs:
-  /about          # Shows in user's preferred language
-  /contact        # Shows in user's preferred language
-
-❌ Traditional URLs:
-  /en/about        # English version
-  /es/about        # Spanish version
-  /fr/about        # French version
-```
-
-### URL Prefixes (Optional)
-
-If you prefer URL prefixes, just change the config:
-
-```typescript
-// intl-party.config.ts
-export default {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  localePrefix: "always", // or "as-needed"
-};
-```
-
-### Type-Checked Translation Keys
-
-`npx intl-party nextjs --init` creates an `intl-party.d.ts` that registers your default locale's message files. From then on, `useTranslations` only accepts keys that exist in that namespace:
-
-```typescript
-const t = useTranslations("common");
-
-t("welcome"); // ✅
-t("navigation.home"); // ✅ nested keys use dot paths
-t("welcom"); // ❌ TypeScript error: not a key in "common"
-t("navigation"); // ❌ TypeScript error: not a string
-useTranslations("checkout"); // ❌ TypeScript error: unknown namespace
-```
-
-The file imports the JSON directly, so adding or renaming keys needs no build step. After adding or removing a namespace file, run `npx intl-party generate --types` to update it. The generated `intl-party.d.ts` looks like this:
-
-```typescript
-import type ns0_common from "./messages/en/common.json";
-
-declare module "@intl-party/nextjs" {
-  interface IntlPartyRegister {
-    messages: { common: typeof ns0_common };
-  }
-}
-```
-
-Your `tsconfig.json` needs `"resolveJsonModule": true`, which Next.js sets by default. For keys built at runtime, use `useUntypedTranslations` from `@intl-party/react`.
-
-### Hot Reloading
-
-Translation changes automatically reload in development:
-
-1. Edit `messages/en/common.json`
-2. Save the file
-3. See changes immediately in your browser
-
-## 🛠️ CLI Commands
-
-### Initialize Project
+## 🛠️ CLI
 
 ```bash
-# Initialize your project
-npx intl-party nextjs --init
+npx intl-party nextjs --init        # scaffold a Next.js project
+npx intl-party generate --types     # update intl-party.d.ts after adding a namespace
+npx intl-party check --missing      # list keys missing from any locale
+npx intl-party check --format-errors
+npx intl-party validate             # completeness and consistency report
+npx intl-party check-config
 ```
 
-### Generate Types
-
-```bash
-# Generate TypeScript types
-npx intl-party generate --types
-
-# Watch for changes
-npx intl-party generate --types --watch
-```
-
-### Validate Translations
-
-```bash
-# Check for missing translations
-npx intl-party check --missing
-
-# Validate all translations
-npx intl-party validate
-```
+Run `npx intl-party --help` for all commands, including `extract` and `sync`.
 
 ## 📦 Packages
 
-- **[@intl-party/nextjs](./packages/nextjs)** - Next.js integration (main package)
-- **[@intl-party/core](./packages/core)** - Core internationalization library
-- **[@intl-party/react](./packages/react)** - React hooks and components
-- **[@intl-party/cli](./packages/cli)** - Command-line tools
-- **[@intl-party/react-native](./packages/react-native)** - React Native and Expo integration
-- **[@intl-party/eslint-plugin](./packages/eslint-plugin)** - Lint rules for hardcoded strings and i18n best practices
+| Package                                                 | Use it for                                         |
+| ------------------------------------------------------- | -------------------------------------------------- |
+| [`@intl-party/nextjs`](./packages/nextjs)               | Next.js App Router (start here)                    |
+| [`@intl-party/react`](./packages/react)                 | React apps without Next.js                         |
+| [`@intl-party/react-native`](./packages/react-native)   | React Native and Expo                              |
+| [`@intl-party/cli`](./packages/cli)                     | Scaffolding, type registration, translation checks |
+| [`@intl-party/eslint-plugin`](./packages/eslint-plugin) | Catching hardcoded strings                         |
+| [`@intl-party/core`](./packages/core)                   | Framework-agnostic engine the others build on      |
 
-## 🆚 Comparison
+## 🆚 How It Compares
 
-| Feature                  | IntlParty   | next-intl  | react-i18next       |
-| ------------------------ | ----------- | ---------- | ------------------- |
-| **Setup Time**           | 2 minutes   | 15 minutes | 30 minutes          |
-| **Type Safety**          | ✅ Perfect  | ✅ Good    | ⚠️ Requires casting |
-| **Clean URLs**           | ✅ Default  | ⚠️ Complex | ⚠️ Manual           |
-| **Next.js App Router**   | ✅ Native   | ✅ Good    | ⚠️ Limited          |
-| **Auto Type Generation** | ✅ Built-in | ⚠️ Manual  | ❌ None             |
-| **Hot Reloading**        | ✅ Built-in | ⚠️ Manual  | ❌ None             |
-| **Learning Curve**       | 🟢 Easy     | 🟡 Medium  | 🔴 Hard             |
+|                                        | IntlParty                           | next-intl                  | react-i18next            |
+| -------------------------------------- | ----------------------------------- | -------------------------- | ------------------------ |
+| Type-checked keys                      | ✅ declaration generated by the CLI | ✅ declaration you write   | ✅ declaration you write |
+| Project scaffolding                    | ✅ `intl-party nextjs --init`       | Manual                     | Manual                   |
+| Clean URLs (no `/en/`)                 | ✅ default                          | ✅ `localePrefix: "never"` | Not routing-aware        |
+| Locale-prefixed routes                 | ❌ not yet ([#46][i46])             | ✅                         | Not routing-aware        |
+| Hooks in Server Components             | ❌ Client Components only           | ✅                         | ❌                       |
+| Missing-translation checks             | ✅ `intl-party check --missing`     | Not built in               | Not built in             |
+| Client bundle (provider + hook, gzip)¹ | 14.2 kB                             | 12.6 kB                    | 17 kB                    |
 
-Want to migrate from another i18n library? Check our detailed [Migration Guide](./MIGRATING.md) for step-by-step instructions on migrating from next-intl, react-i18next, FormatJS (react-intl), and lingui.
+¹ Measured with [bundlejs](https://bundlejs.com) (React and Next.js external): `@intl-party/nextjs/client` 1.4.0 `{ Provider, useTranslations }`, `next-intl` 4.14.7 `{ NextIntlClientProvider, useTranslations }`, and `react-i18next` + `i18next` `{ I18nextProvider, useTranslation }`.
 
-## 🔧 Troubleshooting Guide
+[i46]: https://github.com/RodrigoEspinosa/intl-party/issues/46
 
-### Common Issues
+next-intl is the more complete choice today if you need locale-prefixed routing or translations in Server Components. IntlParty is aimed at teams who want clean URLs and type-checked keys with as little setup as possible.
 
-#### Missing Translations
+Migrating? The [Migration Guide](./MIGRATING.md) covers next-intl, react-i18next, FormatJS (react-intl), and Lingui.
 
-**Symptom**: Seeing translation keys instead of translated text (`common.welcome` instead of "Welcome").
+## 🔧 Troubleshooting
 
-**Solutions**:
-
-1. Ensure the correct namespace is being used: `useTranslations("common")`
-2. Check that the translation file exists in your locale directory (e.g., `/messages/en/common.json`)
-3. Verify the key exists in your translation file with exact spelling and casing
-4. Run `npx intl-party check --missing` to identify all missing translations
-
-#### Type Generation Issues
-
-**Symptom**: TypeScript errors or missing type completion for translation keys.
-
-**Solutions**:
-
-1. Run `npx intl-party generate --types` to regenerate `intl-party.d.ts` (needed after adding a namespace)
-2. Check that `intl-party.d.ts` is covered by your `tsconfig.json` `include` and that `resolveJsonModule` is enabled
-3. Restart your TypeScript server (`Ctrl+Shift+P` → "TypeScript: Restart TS Server" in VSCode)
-4. Verify that the key exists in your translation files
-
-#### Locale Detection Not Working
-
-**Symptom**: App always shows default locale regardless of browser settings or URL.
-
-**Solutions**:
-
-1. Ensure `middleware.ts` is correctly set up and exported
-2. Check that your `next.config.js` doesn't override the i18n configuration
-3. Clear browser cookies and try again
-4. Test with query parameter override: `?locale=fr`
-5. Check server logs for middleware execution errors
-
-#### Hot Reloading Not Working
-
-**Symptom**: Changes to translation files don't appear immediately.
-
-**Solutions**:
-
-1. Ensure you're in development mode (`npm run dev`)
-2. Check that your `next.config.js` includes the IntlParty plugin
-3. Restart the development server
-4. Run with watch mode explicitly: `npx intl-party generate --watch`
-
-#### Next.js App Router SSR Issues
-
-**Symptom**: Server components show different translations than client components.
-
-**Solutions**:
-
-1. Ensure you're using `getServerTranslations` for server components
-2. Check that your `Provider` in `layout.tsx` correctly passes `initialMessages`
-3. Verify locale detection consistency between server and client
-4. Use the `debug` option in configuration to log i18n state: `debug: process.env.NODE_ENV !== 'production'`
-
-#### URL Prefix Configuration
-
-**Symptom**: URL prefixes not working as expected (`/en/about` vs `/about`).
-
-**Solutions**:
-
-1. Check your `localePrefix` setting in `intl-party.config.ts`:
-   - `"never"` - No prefixes, uses cookies (default)
-   - `"as-needed"` - Only non-default locales have prefix
-   - `"always"` - All locales have prefix
-2. Update `middleware.ts` if you changed the configuration
-3. Clear cookies and refresh
-
-### Debugging
-
-#### Enable Debug Mode
-
-Add debug mode to your configuration:
-
-```typescript
-// intl-party.config.ts
-export default {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  debug: process.env.NODE_ENV !== "production",
-  // ...other settings
-};
-```
-
-#### Inspect Generated Files
-
-Generated files are located at:
-
-- Type definitions: `node_modules/.intl-party/types`
-- Client package: `node_modules/@intl-party/client/generated`
-
-#### CLI Diagnostics
-
-```bash
-# Validate configuration
-npx intl-party check-config
-
-# Check for missing translations
-npx intl-party check --missing
-
-# Validate translation format
-npx intl-party check --format-errors
-
-# Get verbose output
-npx intl-party check --verbose
-```
-
-### Specific Package Issues
-
-#### Next.js Integration
-
-**Issue**: Middleware conflicts with other middleware
-
-**Solution**: Use the matcher option in `middleware.ts` to limit scope:
-
-```typescript
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};
-```
-
-#### ESLint Plugin
-
-**Issue**: False positives for hardcoded strings
-
-**Solution**: Add patterns to ignore in your `.eslintrc.js`:
-
-```javascript
-{
-  "rules": {
-    "@intl-party/no-hardcoded-strings": ["error", {
-      "ignorePatterns": [
-        "^\\d+$", // Numbers
-        "^[A-Z_]+$", // Constants
-        "^https?://", // URLs
-      ]
-    }]
-  }
-}
-```
-
-#### React Integration
-
-**Issue**: Component re-renders on every locale change
-
-**Solution**: Use memoization:
-
-```jsx
-import { useTranslations, useLocale } from "@intl-party/react";
-import { memo } from "react";
-
-const MyComponent = memo(function MyComponent() {
-  const t = useTranslations("common");
-  return <div>{t("title")}</div>;
-});
-```
-
-### Getting Help
-
-If you can't solve your issue with this guide:
-
-1. Check existing [GitHub issues](https://github.com/RodrigoEspinosa/intl-party/issues)
-2. Search the documentation for your specific error
-3. Create a minimal reproduction in a new project
-4. Open a detailed issue with steps to reproduce
+See [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) for missing translations, type errors, and locale detection issues. If that doesn't help, [open an issue](https://github.com/RodrigoEspinosa/intl-party/issues) with a minimal reproduction.
 
 ## 🤝 Contributing
 
