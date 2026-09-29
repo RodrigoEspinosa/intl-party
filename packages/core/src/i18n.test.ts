@@ -48,7 +48,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setLocale("de")).toThrow(
-        'Locale "de" is not supported'
+        'Locale "de" is not supported',
       );
     });
 
@@ -81,7 +81,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setNamespace("invalid")).toThrow(
-        'Namespace "invalid" is not supported'
+        'Namespace "invalid" is not supported',
       );
     });
   });
@@ -122,6 +122,25 @@ describe("I18n", () => {
 
       expect(i18n.t("items", { count: 1 })).toBe("item");
       expect(i18n.t("items", { count: 2 })).toBe("items");
+    });
+
+    it("should pluralize with a count passed as an interpolation value", () => {
+      // The Next.js hook passes t(key, { count }) as interpolation values
+      const i18n = createI18n(config);
+      i18n.addTranslations("en", "common", {
+        items: "{{count|item|items}}",
+        summary: "{{count}} {{count|item|items}} in {{place}}",
+      });
+
+      expect(i18n.t("items", { interpolation: { count: 1 } })).toBe("item");
+      expect(i18n.t("items", { interpolation: { count: 2 } })).toBe("items");
+      expect(
+        i18n.t("summary", { interpolation: { count: 3, place: "cart" } }),
+      ).toBe("3 items in cart");
+      // An explicit count option still wins
+      expect(i18n.t("items", { count: 1, interpolation: { count: 5 } })).toBe(
+        "item",
+      );
     });
 
     it("should use fallback chain", () => {
@@ -290,39 +309,39 @@ describe("I18n", () => {
 
   describe("config validation", () => {
     it("should throw on empty locales array", () => {
-      expect(() =>
-        createI18n({ ...config, locales: [] }),
-      ).toThrow("`locales` must be a non-empty array");
+      expect(() => createI18n({ ...config, locales: [] })).toThrow(
+        "`locales` must be a non-empty array",
+      );
     });
 
     it("should throw on locales containing empty strings", () => {
-      expect(() =>
-        createI18n({ ...config, locales: ["en", ""] }),
-      ).toThrow("`locales` must not contain empty strings");
+      expect(() => createI18n({ ...config, locales: ["en", ""] })).toThrow(
+        "`locales` must not contain empty strings",
+      );
     });
 
     it("should throw on locales containing whitespace-only strings", () => {
-      expect(() =>
-        createI18n({ ...config, locales: ["en", "  "] }),
-      ).toThrow("`locales` must not contain empty strings");
+      expect(() => createI18n({ ...config, locales: ["en", "  "] })).toThrow(
+        "`locales` must not contain empty strings",
+      );
     });
 
     it("should throw when defaultLocale is empty", () => {
-      expect(() =>
-        createI18n({ ...config, defaultLocale: "" }),
-      ).toThrow("`defaultLocale` must be a non-empty string");
+      expect(() => createI18n({ ...config, defaultLocale: "" })).toThrow(
+        "`defaultLocale` must be a non-empty string",
+      );
     });
 
     it("should throw when defaultLocale is not in locales", () => {
-      expect(() =>
-        createI18n({ ...config, defaultLocale: "de" }),
-      ).toThrow('`defaultLocale` "de" is not in `locales`');
+      expect(() => createI18n({ ...config, defaultLocale: "de" })).toThrow(
+        '`defaultLocale` "de" is not in `locales`',
+      );
     });
 
     it("should throw on empty namespaces array", () => {
-      expect(() =>
-        createI18n({ ...config, namespaces: [] }),
-      ).toThrow("`namespaces` must be a non-empty array");
+      expect(() => createI18n({ ...config, namespaces: [] })).toThrow(
+        "`namespaces` must be a non-empty array",
+      );
     });
 
     it("should throw on namespaces containing empty strings", () => {
