@@ -136,7 +136,7 @@ const t = useTranslations("common");
 t("welcome");
 ```
 
-`eslint --fix` rewrites `i18n.t` to `t`. It doesn't add the `useTranslations()` call, so check that `t` is in scope.
+Your editor offers a suggestion to rewrite `i18n.t` to `t`. It isn't applied by `eslint --fix`, because it doesn't add the `useTranslations()` call that defines `t`.
 
 | Option             | Type      | Default                                      |
 | ------------------ | --------- | -------------------------------------------- |

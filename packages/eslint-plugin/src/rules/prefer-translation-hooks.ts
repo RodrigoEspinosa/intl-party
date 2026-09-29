@@ -1,7 +1,10 @@
 import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
 import { TranslatorBindings } from "../utils/translator-bindings";
 
-type MessageIds = "preferUseTranslations" | "preferScopedTranslations";
+type MessageIds =
+  | "preferUseTranslations"
+  | "replaceWithHook"
+  | "preferScopedTranslations";
 
 export interface PreferTranslationHooksOptions {
   allowDirectUsage?: boolean;
@@ -18,7 +21,9 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
       description:
         "Prefer using translation hooks over direct i18n instance usage in React components",
     },
-    fixable: "code",
+    // A suggestion, not an autofix: the rewrite assumes a `t` from
+    // useTranslations() is in scope, which `eslint --fix` can't guarantee.
+    hasSuggestions: true,
     schema: [
       {
         type: "object",
@@ -35,6 +40,8 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
     messages: {
       preferUseTranslations:
         "Prefer using useTranslations() hook instead of direct i18n.t() usage",
+      replaceWithHook:
+        "Replace i18n.t with t (requires `const t = useTranslations()` in scope)",
       preferScopedTranslations:
         'Consider using scoped translations for namespace "{{namespace}}"',
     },
@@ -61,10 +68,12 @@ export const preferTranslationHooks = ESLintUtils.RuleCreator(
         context.report({
           node,
           messageId: "preferUseTranslations",
-          fix(fixer) {
-            // Simple fix - replace i18n.t with t (assuming useTranslations hook is available)
-            return fixer.replaceText(node, "t");
-          },
+          suggest: [
+            {
+              messageId: "replaceWithHook",
+              fix: (fixer) => fixer.replaceText(node, "t"),
+            },
+          ],
         });
       }
     }
