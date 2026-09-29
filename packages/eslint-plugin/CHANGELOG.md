@@ -1,5 +1,12 @@
 # @intl-party/eslint-plugin
 
+## 1.6.0
+
+### Patch Changes
+
+- 4939f0c: `prefer-translation-hooks` now offers the `i18n.t` → `t` rewrite as an editor suggestion instead of an autofix, so `eslint --fix` no longer produces code that references an undefined `t`.
+- eb1e9e5: `no-missing-keys` resolves keys inside the namespace of the translator they're called on (`const t = useTranslations("common")`), so nested keys like `t("navigation.home")` are no longer reported as missing. Translators with any variable name are checked. `prefer-translation-hooks` no longer suggests scoping for nested keys on a translator that's already scoped.
+
 ## 1.4.0
 
 ### Patch Changes

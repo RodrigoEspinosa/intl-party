@@ -1,5 +1,13 @@
 # @intl-party/client
 
+## 1.6.0
+
+### Patch Changes
+
+- Updated dependencies [bc55192]
+- Updated dependencies [0e51a7b]
+  - @intl-party/core@1.6.0
+
 ## 1.5.0
 
 ### Patch Changes

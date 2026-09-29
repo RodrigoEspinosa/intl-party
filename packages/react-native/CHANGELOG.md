@@ -1,5 +1,14 @@
 # @intl-party/react-native
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [bc55192]
+- Updated dependencies [0e51a7b]
+  - @intl-party/core@1.6.0
+  - @intl-party/react@1.6.0
+
 ## 0.1.4
 
 ### Patch Changes
