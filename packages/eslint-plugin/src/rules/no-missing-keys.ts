@@ -1,4 +1,5 @@
 import { ESLintUtils, TSESTree } from "@typescript-eslint/utils";
+import { TranslatorBindings } from "../utils/translator-bindings";
 import { TranslationUtils } from "../utils/translation-utils";
 
 type MessageIds = "missingTranslationKey" | "invalidTranslationKey";
@@ -11,7 +12,7 @@ export interface NoMissingKeysOptions {
 
 export const noMissingKeys = ESLintUtils.RuleCreator(
   (name) =>
-    `https://github.com/RodrigoEspinosa/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`
+    `https://github.com/RodrigoEspinosa/intl-party/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
 )<[NoMissingKeysOptions], MessageIds>({
   name: "no-missing-keys",
   meta: {
@@ -76,11 +77,36 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
       }
     }
 
+    const bindings = new TranslatorBindings();
+
+    // A key exists if it's in the translator's namespace; for an unscoped
+    // translator, if it's a full path in any namespace or `namespace.rest`.
+    function keyExists(key: string, namespace: string | null): boolean {
+      if (namespace) {
+        return translationUtils.hasTranslationKey(
+          defaultLocale,
+          key,
+          namespace,
+        );
+      }
+      if (translationUtils.hasTranslationKey(defaultLocale, key)) return true;
+      const prefix = translationUtils.extractNamespace(key);
+      return (
+        prefix !== null &&
+        translationUtils.getNamespaces(defaultLocale).includes(prefix) &&
+        translationUtils.hasTranslationKey(
+          defaultLocale,
+          translationUtils.getBaseKey(key),
+          prefix,
+        )
+      );
+    }
+
     function checkTranslationCall(node: TSESTree.CallExpression) {
-      // Check t() function calls
+      // Check t() calls and translators bound from translation hooks
       if (
         node.callee.type === "Identifier" &&
-        node.callee.name === "t" &&
+        (node.callee.name === "t" || bindings.isTranslator(node.callee.name)) &&
         node.arguments.length > 0 &&
         node.arguments[0].type === "Literal" &&
         typeof node.arguments[0].value === "string"
@@ -103,15 +129,7 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
         }
 
         try {
-          const namespace = translationUtils.extractNamespace(key);
-          const baseKey = translationUtils.getBaseKey(key);
-          const hasKey = translationUtils.hasTranslationKey(
-            defaultLocale,
-            namespace ? baseKey : key,
-            namespace || undefined
-          );
-
-          if (!hasKey) {
+          if (!keyExists(key, bindings.namespaceOf(node.callee.name))) {
             context.report({
               node: node.arguments[0],
               messageId: "missingTranslationKey",
@@ -155,6 +173,9 @@ export const noMissingKeys = ESLintUtils.RuleCreator(
     }
 
     return {
+      VariableDeclarator(node) {
+        bindings.record(node);
+      },
       CallExpression(node) {
         checkTranslationCall(node);
         checkUseTranslationsCall(node);

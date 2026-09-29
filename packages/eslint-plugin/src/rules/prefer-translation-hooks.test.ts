@@ -20,6 +20,10 @@ ruleTester.run("prefer-translation-hooks", preferTranslationHooks, {
     { code: `t('common.greeting'); t('common.farewell');` },
     // Three usages across different namespaces
     { code: `t('common.a'); t('nav.b'); t('auth.c');` },
+    // Nested keys on a scoped translator aren't namespace prefixes
+    {
+      code: `const t = useTranslations('common'); t('nav.a'); t('nav.b'); t('nav.c');`,
+    },
     // Un-namespaced keys are never flagged
     { code: `t('greeting'); t('farewell'); t('welcome');` },
     // Direct i18n.t is allowed when configured
