@@ -48,7 +48,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setLocale("de")).toThrow(
-        'Locale "de" is not supported'
+        'Locale "de" is not supported',
       );
     });
 
@@ -81,7 +81,7 @@ describe("I18n", () => {
       const i18n = createI18n(config);
 
       expect(() => i18n.setNamespace("invalid")).toThrow(
-        'Namespace "invalid" is not supported'
+        'Namespace "invalid" is not supported',
       );
     });
   });
@@ -131,6 +131,46 @@ describe("I18n", () => {
       i18n.setLocale("es");
 
       expect(i18n.t("welcome")).toBe("Welcome!");
+    });
+
+    it("should fall back to the default locale without a fallbackChain", () => {
+      const i18n = createI18n({
+        locales: ["en", "es"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+      });
+      i18n.addTranslations("en", "common", { onlyEn: "English only" });
+      i18n.setLocale("es");
+
+      expect(i18n.getFallbackChain()).toEqual(["es", "en"]);
+      expect(i18n.t("onlyEn")).toBe("English only");
+    });
+
+    it("should end a configured fallbackChain at the default locale", () => {
+      const i18n = createI18n({
+        locales: ["en", "es", "fr"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+        fallbackChain: { fr: "es" },
+      });
+
+      expect(i18n.getFallbackChain("fr")).toEqual(["fr", "es", "en"]);
+      expect(i18n.getFallbackChain("en")).toEqual(["en"]);
+    });
+
+    it("should refresh cached lookups when a locale further down the chain changes", () => {
+      const i18n = createI18n({
+        locales: ["en", "es", "fr"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+        fallbackChain: { fr: "es" },
+      });
+      i18n.setLocale("fr");
+      expect(i18n.t("late")).toBe("[common:late]"); // cached miss
+
+      // fr → es → en: adding the key in en must invalidate fr's cache
+      i18n.addTranslations("en", "common", { late: "Added later" });
+      expect(i18n.t("late")).toBe("Added later");
     });
 
     it("should return fallback for missing keys", () => {
@@ -290,39 +330,39 @@ describe("I18n", () => {
 
   describe("config validation", () => {
     it("should throw on empty locales array", () => {
-      expect(() =>
-        createI18n({ ...config, locales: [] }),
-      ).toThrow("`locales` must be a non-empty array");
+      expect(() => createI18n({ ...config, locales: [] })).toThrow(
+        "`locales` must be a non-empty array",
+      );
     });
 
     it("should throw on locales containing empty strings", () => {
-      expect(() =>
-        createI18n({ ...config, locales: ["en", ""] }),
-      ).toThrow("`locales` must not contain empty strings");
+      expect(() => createI18n({ ...config, locales: ["en", ""] })).toThrow(
+        "`locales` must not contain empty strings",
+      );
     });
 
     it("should throw on locales containing whitespace-only strings", () => {
-      expect(() =>
-        createI18n({ ...config, locales: ["en", "  "] }),
-      ).toThrow("`locales` must not contain empty strings");
+      expect(() => createI18n({ ...config, locales: ["en", "  "] })).toThrow(
+        "`locales` must not contain empty strings",
+      );
     });
 
     it("should throw when defaultLocale is empty", () => {
-      expect(() =>
-        createI18n({ ...config, defaultLocale: "" }),
-      ).toThrow("`defaultLocale` must be a non-empty string");
+      expect(() => createI18n({ ...config, defaultLocale: "" })).toThrow(
+        "`defaultLocale` must be a non-empty string",
+      );
     });
 
     it("should throw when defaultLocale is not in locales", () => {
-      expect(() =>
-        createI18n({ ...config, defaultLocale: "de" }),
-      ).toThrow('`defaultLocale` "de" is not in `locales`');
+      expect(() => createI18n({ ...config, defaultLocale: "de" })).toThrow(
+        '`defaultLocale` "de" is not in `locales`',
+      );
     });
 
     it("should throw on empty namespaces array", () => {
-      expect(() =>
-        createI18n({ ...config, namespaces: [] }),
-      ).toThrow("`namespaces` must be a non-empty array");
+      expect(() => createI18n({ ...config, namespaces: [] })).toThrow(
+        "`namespaces` must be a non-empty array",
+      );
     });
 
     it("should throw on namespaces containing empty strings", () => {

@@ -8,11 +8,7 @@ import type {
   NestedTranslations,
   AllTranslations,
 } from "../types";
-import {
-  isICUFormat,
-  formatICUMessage,
-  clearICUCache,
-} from "./icu-formatter";
+import { isICUFormat, formatICUMessage, clearICUCache } from "./icu-formatter";
 
 /**
  * Creates a stable cache key from translation options.
@@ -247,7 +243,9 @@ export class TranslationStore {
         typeof current === "object" &&
         Object.prototype.hasOwnProperty.call(current, key)
       ) {
-        current = (current as Record<string, TranslationValue | NestedTranslations>)[key];
+        current = (
+          current as Record<string, TranslationValue | NestedTranslations>
+        )[key];
       } else {
         return undefined;
       }
@@ -397,12 +395,7 @@ export class TranslationStore {
       delete this.translations[locale];
       // Removing all namespaces for a locale — invalidate everything
       // that might reference it (direct or via fallback chain)
-      const affected = new Set<Locale>([locale]);
-      for (const [from, to] of Object.entries(this.fallbackChain)) {
-        if (to === locale) {
-          affected.add(from);
-        }
-      }
+      const affected = this.localesFallingBackTo(locale);
       for (const key of this.cache.keys()) {
         for (const loc of affected) {
           if (key.startsWith(`${loc}:`)) {
@@ -415,6 +408,25 @@ export class TranslationStore {
   }
 
   /**
+   * The locale plus every locale whose fallback chain reaches it, directly or
+   * through other locales (fr → es → en: changing en affects es and fr).
+   */
+  private localesFallingBackTo(locale: Locale): Set<Locale> {
+    const affected = new Set<Locale>([locale]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const [from, to] of Object.entries(this.fallbackChain)) {
+        if (affected.has(to) && !affected.has(from)) {
+          affected.add(from);
+          grew = true;
+        }
+      }
+    }
+    return affected;
+  }
+
+  /**
    * Invalidates cache entries for a locale+namespace and any locale
    * whose fallback chain includes the affected locale.
    */
@@ -424,12 +436,7 @@ export class TranslationStore {
   ): void {
     // Collect all locales whose cache could be affected:
     // the locale itself + any locale that falls back through it
-    const affected = new Set<Locale>([locale]);
-    for (const [from, to] of Object.entries(this.fallbackChain)) {
-      if (to === locale) {
-        affected.add(from);
-      }
-    }
+    const affected = this.localesFallingBackTo(locale);
 
     for (const key of this.cache.keys()) {
       for (const loc of affected) {
