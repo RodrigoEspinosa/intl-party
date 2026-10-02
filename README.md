@@ -9,6 +9,8 @@
 
 Type-safe internationalization for the Next.js App Router, React, and React Native. Translation keys are checked at compile time, URLs stay clean (`/about`, not `/en/about`), and one command sets up a working project.
 
+**Try it in your browser:** [open the Next.js starter in StackBlitz](https://stackblitz.com/github/RodrigoEspinosa/intl-party/tree/master/examples/nextjs-starter).
+
 ## ✨ Why IntlParty?
 
 - **🔒 Type-checked keys**: `t("welcom")` is a compile error, and your editor autocompletes keys from your JSON files. No manual type declarations.

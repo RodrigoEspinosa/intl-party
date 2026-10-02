@@ -13,11 +13,6 @@
   },
   "license": "MIT",
   "author": "RodrigoEspinosa",
-  "workspaces": [
-    "packages/*",
-    "examples/*",
-    "apps/*"
-  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",

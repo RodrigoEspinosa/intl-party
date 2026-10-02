@@ -1,0 +1,9 @@
+{
+  "welcome": "Bienvenue chez IntlParty !",
+  "description": "Une solution i18n moderne pour Next.js",
+  "navigation": {
+    "home": "Accueil",
+    "about": "À propos",
+    "contact": "Contact"
+  }
+}
