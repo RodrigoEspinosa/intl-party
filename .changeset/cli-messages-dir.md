@@ -8,3 +8,4 @@ The CLI now works on projects created by `intl-party nextjs --init`.
 - `extract` scans `src/`, `app/`, `pages/`, `components/`, and `lib/` by default, and `--source` no longer overrides the config's `sourcePatterns` when it isn't passed.
 - `extract` resolves keys in the translator's namespace (`const t = useTranslations("common"); t("navigation.home")`), reads and writes nested keys, and picks up calls with params (`t("greeting", { name })`). It used to write `navigation.json` with a flat `home` key. Keys are now reported as `namespace:key`.
 - Removed `extract --update` and `extract --remove-unused`. They were never implemented: `extract` always merges new keys. To remove unused keys, use `intl-party sync` with `sync: { removeUnused: true }` in the config, or `sync --interactive`.
+- `check` and `validate` exit with an error when no translation files are found, instead of reporting "no issues" for a misconfigured project.

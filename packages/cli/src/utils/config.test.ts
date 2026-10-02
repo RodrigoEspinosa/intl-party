@@ -76,3 +76,16 @@ describe("loadConfig with a messages directory", () => {
     expect(config.translationPaths.en.custom).toBe("elsewhere/en.json");
   });
 });
+
+describe("assertTranslationFilesExist", () => {
+  it("throws when no configured translation file exists", async () => {
+    const { assertTranslationFilesExist } = await import("./translations");
+    await expect(
+      assertTranslationFilesExist(
+        { en: { common: "/nonexistent/en/common.json" } },
+        ["en"],
+        ["common"],
+      ),
+    ).rejects.toThrow(/No translation files found/);
+  });
+});
