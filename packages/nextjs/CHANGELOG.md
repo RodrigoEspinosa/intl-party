@@ -1,5 +1,13 @@
 # @intl-party/nextjs
 
+## 1.7.0
+
+### Patch Changes
+
+- Updated dependencies [81239e8]
+  - @intl-party/core@1.7.0
+  - @intl-party/react@1.7.0
+
 ## 1.6.0
 
 ### Patch Changes
