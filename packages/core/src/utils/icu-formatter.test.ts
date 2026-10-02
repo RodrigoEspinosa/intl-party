@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   isICUFormat,
   isLegacyFormat,
@@ -16,25 +16,25 @@ describe("ICU Formatter", () => {
 
   describe("isICUFormat", () => {
     it("should detect ICU plural patterns", () => {
+      expect(isICUFormat("{count, plural, one {# item} other {# items}}")).toBe(
+        true,
+      );
       expect(
-        isICUFormat("{count, plural, one {# item} other {# items}}")
-      ).toBe(true);
-      expect(
-        isICUFormat("{n, plural, =0 {no items} =1 {one item} other {# items}}")
+        isICUFormat("{n, plural, =0 {no items} =1 {one item} other {# items}}"),
       ).toBe(true);
     });
 
     it("should detect ICU select patterns", () => {
       expect(
-        isICUFormat("{gender, select, male {He} female {She} other {They}}")
+        isICUFormat("{gender, select, male {He} female {She} other {They}}"),
       ).toBe(true);
     });
 
     it("should detect ICU selectordinal patterns", () => {
       expect(
         isICUFormat(
-          "{position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}"
-        )
+          "{position, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}",
+        ),
       ).toBe(true);
     });
 
@@ -80,7 +80,9 @@ describe("ICU Formatter", () => {
 
     it("should not detect ICU format as legacy", () => {
       expect(isLegacyFormat("Hello {name}!")).toBe(false);
-      expect(isLegacyFormat("{count, plural, one {# item} other {# items}}")).toBe(false);
+      expect(
+        isLegacyFormat("{count, plural, one {# item} other {# items}}"),
+      ).toBe(false);
     });
 
     it("should return false for plain text", () => {
@@ -95,7 +97,9 @@ describe("ICU Formatter", () => {
 
   describe("detectMessageFormat", () => {
     it("should detect ICU format", () => {
-      expect(detectMessageFormat("{count, plural, one {#} other {#}}")).toBe("icu");
+      expect(detectMessageFormat("{count, plural, one {#} other {#}}")).toBe(
+        "icu",
+      );
       expect(detectMessageFormat("Hello {name}")).toBe("icu");
     });
 
@@ -120,7 +124,7 @@ describe("ICU Formatter", () => {
       const result = formatICUMessage(
         "{count, plural, one {# item} other {# items}}",
         "en",
-        { count: 1 }
+        { count: 1 },
       );
       expect(result).toBe("1 item");
     });
@@ -129,7 +133,7 @@ describe("ICU Formatter", () => {
       const result = formatICUMessage(
         "{count, plural, one {# item} other {# items}}",
         "en",
-        { count: 5 }
+        { count: 5 },
       );
       expect(result).toBe("5 items");
     });
@@ -138,7 +142,7 @@ describe("ICU Formatter", () => {
       const result = formatICUMessage(
         "{count, plural, =0 {no items} one {# item} other {# items}}",
         "en",
-        { count: 0 }
+        { count: 0 },
       );
       expect(result).toBe("no items");
     });
@@ -149,24 +153,27 @@ describe("ICU Formatter", () => {
       expect(formatICUMessage(message, "en", { gender: "male" })).toBe("He");
       expect(formatICUMessage(message, "en", { gender: "female" })).toBe("She");
       expect(formatICUMessage(message, "en", { gender: "other" })).toBe("They");
-      expect(formatICUMessage(message, "en", { gender: "unknown" })).toBe("They");
+      expect(formatICUMessage(message, "en", { gender: "unknown" })).toBe(
+        "They",
+      );
     });
 
     it("should handle nested ICU patterns", () => {
       const message =
         "{gender, select, male {{count, plural, one {He has # apple} other {He has # apples}}} female {{count, plural, one {She has # apple} other {She has # apples}}} other {{count, plural, one {They have # apple} other {They have # apples}}}}";
 
-      expect(formatICUMessage(message, "en", { gender: "male", count: 1 })).toBe(
-        "He has 1 apple"
-      );
-      expect(formatICUMessage(message, "en", { gender: "female", count: 3 })).toBe(
-        "She has 3 apples"
-      );
+      expect(
+        formatICUMessage(message, "en", { gender: "male", count: 1 }),
+      ).toBe("He has 1 apple");
+      expect(
+        formatICUMessage(message, "en", { gender: "female", count: 3 }),
+      ).toBe("She has 3 apples");
     });
 
     it("should use locale-specific plural rules", () => {
       // Russian has more complex plural rules
-      const message = "{count, plural, one {# яблоко} few {# яблока} many {# яблок} other {# яблок}}";
+      const message =
+        "{count, plural, one {# яблоко} few {# яблока} many {# яблок} other {# яблок}}";
 
       expect(formatICUMessage(message, "ru", { count: 1 })).toBe("1 яблоко");
       expect(formatICUMessage(message, "ru", { count: 2 })).toBe("2 яблока");
@@ -207,7 +214,9 @@ describe("ICU Formatter", () => {
     });
 
     it("should cache different messages separately", () => {
-      formatICUMessage("{count, plural, one {#} other {#}}", "en", { count: 1 });
+      formatICUMessage("{count, plural, one {#} other {#}}", "en", {
+        count: 1,
+      });
       formatICUMessage("Hello {name}!", "en", { name: "World" });
 
       const stats = getICUCacheStats();
@@ -225,7 +234,9 @@ describe("ICU Formatter", () => {
     });
 
     it("should clear cache", () => {
-      formatICUMessage("{count, plural, one {#} other {#}}", "en", { count: 1 });
+      formatICUMessage("{count, plural, one {#} other {#}}", "en", {
+        count: 1,
+      });
 
       expect(getICUCacheStats().size).toBe(1);
 
@@ -263,5 +274,22 @@ describe("ICU Formatter", () => {
       expect(isICUFormat("Hello {{name}}")).toBe(false);
       expect(isLegacyFormat("Hello {{name}}")).toBe(true);
     });
+  });
+});
+
+describe("warnMissingICULibrary", () => {
+  it("warns once, and only for plural/select messages", async () => {
+    const { warnMissingICULibrary } = await import("./icu-formatter");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    warnMissingICULibrary("Hello {name}!");
+    expect(warn).not.toHaveBeenCalled();
+
+    warnMissingICULibrary("{count, plural, one {# item} other {# items}}");
+    warnMissingICULibrary("{gender, select, male {He} other {They}}");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("npm install intl-messageformat");
+
+    warn.mockRestore();
   });
 });

@@ -124,6 +124,53 @@ describe("I18n", () => {
       expect(i18n.t("items", { count: 2 })).toBe("items");
     });
 
+    it("should resolve i18next-style plural suffix keys", () => {
+      const i18n = createI18n({
+        locales: ["en", "ru"],
+        defaultLocale: "en",
+        namespaces: ["common"],
+      });
+      i18n.addTranslations("en", "common", {
+        items_zero: "No items",
+        items_one: "{{count}} item",
+        items_other: "{{count}} items",
+        cart: {
+          total_one: "{{count}} product",
+          total_other: "{{count}} products",
+        },
+      });
+      i18n.addTranslations("ru", "common", {
+        files_one: "{{count}} файл",
+        files_few: "{{count}} файла",
+        files_many: "{{count}} файлов",
+        files_other: "{{count}} файла",
+      });
+
+      expect(i18n.t("items", { count: 0 })).toBe("No items");
+      expect(i18n.t("items", { count: 1 })).toBe("1 item");
+      expect(i18n.t("items", { count: 5 })).toBe("5 items");
+      expect(i18n.t("cart.total", { count: 2 })).toBe("2 products");
+      // count passed as an interpolation value (Next.js hook)
+      expect(i18n.t("items", { interpolation: { count: 1 } })).toBe("1 item");
+
+      i18n.setLocale("ru");
+      expect([1, 3, 5, 21].map((count) => i18n.t("files", { count }))).toEqual([
+        "1 файл",
+        "3 файла",
+        "5 файлов",
+        "21 файл",
+      ]);
+    });
+
+    it("should prefer an exact key over plural suffixes", () => {
+      const i18n = createI18n(config);
+      i18n.addTranslations("en", "common", {
+        items: "{{count|item|items}}",
+        items_other: "suffix",
+      });
+      expect(i18n.t("items", { count: 2 })).toBe("items");
+    });
+
     it("should pluralize with a count passed as an interpolation value", () => {
       // The Next.js hook passes t(key, { count }) as interpolation values
       const i18n = createI18n(config);
