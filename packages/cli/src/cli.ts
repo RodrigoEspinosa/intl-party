@@ -66,7 +66,10 @@ program
 program
   .command("sync")
   .description("synchronize translations across locales")
-  .option("-b, --base <locale>", "base locale to sync from", "en")
+  .option(
+    "-b, --base <locale>",
+    "base locale to sync from (default: config defaultLocale)",
+  )
   .option("-t, --target <locales...>", "target locales to sync to")
   .option("--missing-only", "only add missing keys, don't remove extras")
   .option("--interactive", "interactive mode for conflict resolution")
