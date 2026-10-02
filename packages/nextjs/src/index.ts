@@ -8,11 +8,12 @@
 
 // One-call setup driven by intl-party.config.ts (see README)
 export { createSetup, type SetupConfig, type SetupResult } from "./setup";
+export { localizePath, type RoutingConfig } from "./routing";
 
 // Translation hook for client components. Re-exported through the package's
 // own "./client" entry (kept external by the build) so the "use client"
 // boundary is preserved.
-export { useTranslations } from "@intl-party/nextjs/client";
+export { useTranslations, useLocale } from "@intl-party/nextjs/client";
 
 // Zero-config setup: auto-detects locales and namespaces from ./messages
 export { createZeroConfigSetup, type ZeroConfigResult } from "./config";

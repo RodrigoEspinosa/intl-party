@@ -6,12 +6,17 @@
 # renders in the locale chosen by cookie / Accept-Language.
 #
 # Usage: scripts/e2e-nextjs.sh <next-version> <react-version>
+# Set LOCALE_PREFIX=as-needed|always to test locale-prefixed routing instead
+# of the default clean URLs, and E2E_BROWSER=1 to also click the locale
+# switcher in a real browser (installs Playwright; CHROMIUM_PATH skips the
+# browser download).
 # Requires: `pnpm build` to have run first.
 set -euo pipefail
 
 NEXT_VERSION=${1:?next version required}
 REACT_VERSION=${2:?react version required}
 PORT=${PORT:-3999}
+LOCALE_PREFIX=${LOCALE_PREFIX:-never}
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 WORK=$(mktemp -d)
 # Set KEEP=1 to keep the scaffolded app for debugging.
@@ -51,9 +56,11 @@ cat > package.json <<JSON
 JSON
 npm install --no-audit --no-fund --loglevel=error
 
-node "$REPO/packages/cli/dist/cli.js" nextjs --init
-mv app/layout.intl-party.tsx app/layout.tsx
-mv app/page.intl-party.tsx app/page.tsx
+node "$REPO/packages/cli/dist/cli.js" nextjs --init --locale-prefix "$LOCALE_PREFIX"
+PAGES_DIR=app
+[[ $LOCALE_PREFIX != never ]] && PAGES_DIR="app/[locale]"
+mv "$PAGES_DIR/layout.intl-party.tsx" "$PAGES_DIR/layout.tsx"
+mv "$PAGES_DIR/page.intl-party.tsx" "$PAGES_DIR/page.tsx"
 
 echo "▶ Checking translations with the CLI"
 CLI="node $REPO/packages/cli/dist/cli.js"
@@ -113,11 +120,12 @@ for _ in $(seq 1 60); do
 done
 
 FAILED=0
+# expect_locale <name> <lang> <heading> [path] [curl args...]
 expect_locale() {
-  local name=$1 lang=$2 heading=$3
-  shift 3
+  local name=$1 lang=$2 heading=$3 path=${4:-/}
+  shift 4 2>/dev/null || shift 3
   local html
-  html=$(curl -sf "$@" "http://localhost:$PORT/")
+  html=$(curl -sf "$@" "http://localhost:$PORT$path")
   if [[ $html == *"<html lang=\"$lang\""* && $html == *"<h1>$heading</h1>"* ]]; then
     echo "  ✓ $name"
   else
@@ -126,17 +134,57 @@ expect_locale() {
   fi
 }
 
-expect_locale "default locale" en "Welcome to IntlParty!"
-expect_locale "Accept-Language" es "¡Bienvenido a IntlParty!" -H "Accept-Language: es-ES,es;q=0.9"
-expect_locale "cookie beats header" fr "Bienvenue chez IntlParty !" -H "Cookie: INTL_LOCALE=fr" -H "Accept-Language: es"
-expect_locale "unsupported falls back" en "Welcome to IntlParty!" -H "Accept-Language: de"
-expect_locale "?locale= applies to the same request" fr "Bienvenue chez IntlParty !" -H "Accept-Language: es" --url-query "locale=fr"
+# expect_redirect <name> <path> <location> [curl args...]
+expect_redirect() {
+  local name=$1 path=$2 location=$3
+  shift 3
+  local got
+  got=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$@" "http://localhost:$PORT$path")
+  if [[ $got == 30[78]" http://localhost:$PORT$location" ]]; then
+    echo "  ✓ $name"
+  else
+    echo "  ✗ $name: expected redirect to $location, got '$got'"
+    FAILED=1
+  fi
+}
+
+case $LOCALE_PREFIX in
+never)
+expect_locale "default locale" en "Welcome to IntlParty!" /
+expect_locale "Accept-Language" es "¡Bienvenido a IntlParty!" / -H "Accept-Language: es-ES,es;q=0.9"
+expect_locale "cookie beats header" fr "Bienvenue chez IntlParty !" / -H "Cookie: INTL_LOCALE=fr" -H "Accept-Language: es"
+expect_locale "unsupported falls back" en "Welcome to IntlParty!" / -H "Accept-Language: de"
+expect_locale "?locale= applies to the same request" fr "Bienvenue chez IntlParty !" / -H "Accept-Language: es" --url-query "locale=fr"
 
 if curl -s -D - -o /dev/null -H "Accept-Language: es" "http://localhost:$PORT/" | grep -qi '^set-cookie: INTL_LOCALE=es'; then
   echo "  ✓ middleware sets locale cookie"
 else
   echo "  ✗ middleware did not set the locale cookie"
   FAILED=1
+fi
+
+  ;;
+as-needed)
+  expect_locale "default locale has no prefix" en "Welcome to IntlParty!" /
+  expect_locale "prefixed locale" es "¡Bienvenido a IntlParty!" /es
+  expect_locale "path beats Accept-Language" fr "Bienvenue chez IntlParty !" /fr -H "Accept-Language: es"
+  expect_redirect "Accept-Language redirects to the prefix" / /es -H "Accept-Language: es"
+  expect_redirect "default-locale prefix is removed" /en /
+  ;;
+always)
+  expect_redirect "unprefixed URL gets a prefix" / /en
+  expect_locale "default locale is prefixed" en "Welcome to IntlParty!" /en
+  expect_locale "prefixed locale" es "¡Bienvenido a IntlParty!" /es
+  ;;
+esac
+
+if [[ -n "${E2E_BROWSER:-}" ]]; then
+  echo "▶ Switching locale in a browser"
+  npm install --no-save --no-audit --no-fund --loglevel=error playwright
+  [[ -z "${CHROMIUM_PATH:-}" ]] && npx playwright install --with-deps chromium >/dev/null
+  # Copied next to the app so `import "playwright"` resolves there
+  cp "$REPO/scripts/e2e-switch-locale.mjs" .
+  node e2e-switch-locale.mjs "http://localhost:$PORT" "$LOCALE_PREFIX" || FAILED=1
 fi
 
 if [[ $FAILED -ne 0 ]]; then

@@ -31,6 +31,8 @@ export default {
 
 Scaffolds a Next.js App Router project: `intl-party.config.ts`, `middleware.ts` (`proxy.ts` on Next.js 16+), sample `messages/`, `intl-party.d.ts`, and an example layout and page (`app/layout.intl-party.tsx`, `app/page.intl-party.tsx`) to merge into yours. Use `--force` to overwrite existing files.
 
+`--locale-prefix as-needed` (or `always`) sets up `/es/about`-style URLs: it adds `localePrefix` to the config and puts the example layout and page under `app/[locale]/`.
+
 ### `check`
 
 Fails (exit 1) when translations have problems, so you can run it in CI.

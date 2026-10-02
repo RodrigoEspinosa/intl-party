@@ -125,11 +125,11 @@ On Next.js 16+, name the file `proxy.ts` and export the function as `proxy`: `ex
 ### Layout with SSR
 
 ```tsx
-// app/layout.tsx
+// app/layout.tsx (app/[locale]/layout.tsx with a localePrefix)
 import { createSetup } from "@intl-party/nextjs";
 import config from "../intl-party.config";
 
-const { getLocale, getMessages, Provider } = createSetup(config);
+const { getLocale, getMessages, Provider, routing } = createSetup(config);
 
 export default async function RootLayout({ children }) {
   const locale = await getLocale();
@@ -138,7 +138,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={locale}>
       <body>
-        <Provider locale={locale} initialMessages={messages}>
+        <Provider locale={locale} initialMessages={messages} routing={routing}>
           {children}
         </Provider>
       </body>
@@ -177,31 +177,13 @@ Translation files are simple JSON:
 
 ## 🎨 Advanced Features
 
-### Clean URLs (Default)
+### Clean URLs or locale-prefixed URLs
 
-By default, uses cookie-based locale detection:
+By default URLs stay clean (`/about` in every language), and the locale comes from a `?locale=` parameter, the `INTL_LOCALE` cookie, or `Accept-Language`. For `/es/about`-style URLs, set `localePrefix: "as-needed"` (no prefix for the default locale) or `"always"`, and put your pages under `app/[locale]/`. `npx intl-party nextjs --init --locale-prefix as-needed` scaffolds this.
 
-```
-✅ Clean URLs:
-  /about          # Shows in user's preferred language
-  /contact        # Shows in user's preferred language
+### Switching locale
 
-❌ Traditional URLs:
-  /en/about        # English version
-  /es/about        # Spanish version
-  /fr/about        # French version
-```
-
-### URL Prefixes (Optional)
-
-```typescript
-// intl-party.config.ts
-export default {
-  locales: ["en", "es", "fr"],
-  defaultLocale: "en",
-  localePrefix: "always", // or "as-needed"
-};
-```
+`const [locale, setLocale] = useLocale()` from `@intl-party/nextjs/client`. `setLocale` saves the choice in the cookie and loads the new locale's messages from the server: it re-renders in place with clean URLs, and navigates to the new locale's URL with a `localePrefix`. Pass `routing` from `createSetup` to `<Provider>`.
 
 ### Type-Checked Translation Keys
 

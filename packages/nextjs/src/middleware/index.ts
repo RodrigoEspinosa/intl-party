@@ -401,6 +401,17 @@ function handleAsNeededPrefix(
         targetLocale,
       );
     }
+  } else if (targetLocale === defaultLocale && !pathLocale) {
+    // Unprefixed URL in the default locale: serve it from the [locale] route
+    // (/about → /en/about) while the browser keeps the clean URL.
+    const url = new URL(request.url);
+    const pathWithoutBase = stripBasePath(url.pathname, basePath);
+    url.pathname = `${basePath}/${defaultLocale}${pathWithoutBase === "/" ? "" : pathWithoutBase}`;
+    return persistLocale(
+      NextResponse.rewrite(url, forward),
+      cookieName,
+      targetLocale,
+    );
   } else if (targetLocale !== defaultLocale && !pathLocale) {
     // Add non-default locale prefix (strip basePath before prepending)
     const url = new URL(request.url);

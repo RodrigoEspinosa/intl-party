@@ -51,7 +51,7 @@ jobs:
         run: pnpm build
 
   e2e-nextjs:
-    name: E2E (Next.js ${{ matrix.next }})
+    name: E2E (Next.js ${{ matrix.next }}, ${{ matrix.prefix }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -59,10 +59,22 @@ jobs:
         include:
           - next: "14"
             react: "18"
+            prefix: never
           - next: "15"
             react: "19"
+            prefix: never
           - next: "16"
             react: "19"
+            prefix: never
+          - next: "14"
+            react: "18"
+            prefix: as-needed
+          - next: "16"
+            react: "19"
+            prefix: as-needed
+          - next: "16"
+            react: "19"
+            prefix: always
 
     steps:
       - name: Checkout
@@ -85,3 +97,6 @@ jobs:
 
       - name: Scaffold, build, and serve a CLI-generated app
         run: scripts/e2e-nextjs.sh ${{ matrix.next }} ${{ matrix.react }}
+        env:
+          LOCALE_PREFIX: ${{ matrix.prefix }}
+          E2E_BROWSER: "1"

@@ -13,7 +13,7 @@ IntlParty reads messages from `<messages>/<locale>/<namespace>.json`. Each file 
 
 ## From next-intl
 
-**Before you start:** IntlParty supports clean URLs (`/about` in every language), with the locale taken from a cookie or `Accept-Language`. Locale-prefixed routes (`/es/about`) aren't supported yet ([#46](https://github.com/RodrigoEspinosa/intl-party/issues/46)). Translation hooks run in Client Components only.
+**Before you start:** translation hooks run in Client Components only. Locale-prefixed routes work like next-intl's: use `localePrefix: "as-needed"` (or `"always"`) and keep your pages under `app/[locale]/`. Clean URLs (`localePrefix: "never"`, the default) are also available.
 
 ### 1. Split your message files
 
@@ -48,10 +48,10 @@ The messages themselves are ICU, so they work unchanged once `intl-messageformat
 ```bash
 npm uninstall next-intl
 npm install @intl-party/nextjs intl-messageformat
-npx intl-party nextjs --init
+npx intl-party nextjs --init --locale-prefix as-needed
 ```
 
-`--init` writes `intl-party.config.ts`, `middleware.ts` (`proxy.ts` on Next.js 16+), `intl-party.d.ts`, and an example root layout (`app/layout.intl-party.tsx`). Merge that layout into yours, then delete next-intl's `i18n/request.ts`, `routing.ts`, and its plugin in `next.config`. `--init` also adds sample `common.json` files, which you can delete. Run `npx intl-party generate --types` afterwards so `intl-party.d.ts` registers your namespaces.
+`--init` writes `intl-party.config.ts`, `middleware.ts` (`proxy.ts` on Next.js 16+), `intl-party.d.ts`, and an example root layout (`app/[locale]/layout.intl-party.tsx`). Merge that layout into your `app/[locale]/layout.tsx`, then delete next-intl's `i18n/request.ts`, `routing.ts`, and its plugin in `next.config`. `--init` also adds sample `common.json` files, which you can delete. Run `npx intl-party generate --types` afterwards so `intl-party.d.ts` registers your namespaces.
 
 ### 3. Update components
 
