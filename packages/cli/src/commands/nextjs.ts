@@ -6,9 +6,12 @@ import { join } from "node:path";
 import chalk from "chalk";
 import { generateRegisterFile, REGISTER_FILE_HEADER } from "./generate";
 
+export type LocalePrefix = "never" | "as-needed" | "always";
+
 export interface NextjsCommandOptions {
   init?: boolean;
   force?: boolean;
+  localePrefix?: LocalePrefix;
 }
 
 /** Major version of the project's installed (or declared) Next.js, if known. */
@@ -33,7 +36,18 @@ function getNextMajorVersion(): number | null {
   return null;
 }
 
-export async function initializeNextjsProject(force = false) {
+export async function initializeNextjsProject(
+  force = false,
+  localePrefix: LocalePrefix = "never",
+) {
+  if (!["never", "as-needed", "always"].includes(localePrefix)) {
+    console.error(
+      chalk.red(
+        `Invalid --locale-prefix "${localePrefix}". Use never, as-needed, or always.`,
+      ),
+    );
+    return false;
+  }
   console.log(chalk.cyan("🚀 Initializing IntlParty for Next.js..."));
 
   // Check if it's already initialized
@@ -57,13 +71,19 @@ export async function initializeNextjsProject(force = false) {
 
   // Create config file
   const configContent = `// IntlParty configuration for Next.js
+import type { SetupConfig } from "@intl-party/nextjs";
+
 export default {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
   messages: "./messages",
-  // localePrefix defaults to "never" for clean URLs
+${
+  localePrefix === "never"
+    ? `  // localePrefix defaults to "never" for clean URLs`
+    : `  localePrefix: "${localePrefix}", // pages live under app/[locale]/`
+}
   // cookieName defaults to "INTL_LOCALE"
-};`;
+} satisfies SetupConfig;`;
 
   writeFileSync("intl-party.config.ts", configContent);
   console.log(chalk.green("✅ Created intl-party.config.ts"));
@@ -154,15 +174,20 @@ export const config = {
   writeFileSync(middlewarePath, middlewareContent);
   console.log(chalk.green(`✅ Created ${middlewarePath}`));
 
-  // Create layout and page examples in the correct app directory
-  if (!existsSync(appDir)) {
-    mkdirSync(appDir, { recursive: true });
+  // Create layout and page examples in the correct app directory. With
+  // locale-prefixed URLs they live under app/[locale]/.
+  const pagesDir = localePrefix === "never" ? appDir : join(appDir, "[locale]");
+  if (!existsSync(pagesDir)) {
+    mkdirSync(pagesDir, { recursive: true });
   }
+  const configImport =
+    "../".repeat((hasSrcDir ? 2 : 1) + (localePrefix === "never" ? 0 : 1)) +
+    "intl-party.config";
 
   const layoutContent = `import { createSetup } from "@intl-party/nextjs";
-import config from "${hasSrcDir ? "../../" : "../"}intl-party.config";
+import config from "${configImport}";
 
-const { getLocale, getMessages, Provider } = createSetup(config);
+const { getLocale, getMessages, Provider, routing } = createSetup(config);
 
 export default async function RootLayout({
   children,
@@ -175,7 +200,7 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body>
-        <Provider locale={locale} initialMessages={messages}>
+        <Provider locale={locale} initialMessages={messages} routing={routing}>
           {children}
         </Provider>
       </body>
@@ -183,14 +208,15 @@ export default async function RootLayout({
   );
 }`;
 
-  writeFileSync(join(appDir, "layout.intl-party.tsx"), layoutContent);
+  writeFileSync(join(pagesDir, "layout.intl-party.tsx"), layoutContent);
 
   const pageContent = `"use client";
 
-import { useTranslations } from "@intl-party/nextjs";
+import { useTranslations, useLocale } from "@intl-party/nextjs";
 
 export default function HomePage() {
   const t = useTranslations("common");
+  const [locale, setLocale] = useLocale();
 
   return (
     <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif" }}>
@@ -202,12 +228,20 @@ export default function HomePage() {
         <a href="/about">{t("navigation.about")}</a>
         <a href="/contact">{t("navigation.contact")}</a>
       </nav>
+
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+        {["en", "es", "fr"].map((code) => (
+          <button key={code} onClick={() => setLocale(code)} disabled={code === locale}>
+            {code.toUpperCase()}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }`;
 
-  writeFileSync(join(appDir, "page.intl-party.tsx"), pageContent);
-  console.log(chalk.green(`✅ Created example files in ${appDir}`));
+  writeFileSync(join(pagesDir, "page.intl-party.tsx"), pageContent);
+  console.log(chalk.green(`✅ Created example files in ${pagesDir}`));
 
   // Suggest updating .gitignore
   if (existsSync(".gitignore")) {
@@ -225,7 +259,7 @@ export default function HomePage() {
   console.log("\n📝 Next steps:");
   console.log("1. Review the generated configuration files");
   console.log(
-    `2. Move/merge ${appDir}/layout.intl-party.tsx into your RootLayout`,
+    `2. Move/merge ${pagesDir}/layout.intl-party.tsx into your RootLayout`,
   );
   console.log("3. Add translations to your message files in ./messages");
   console.log("4. Run your development server");
@@ -241,9 +275,14 @@ export const nextjsCommand = new Command("nextjs")
   .description("Next.js specific commands for IntlParty")
   .option("--init", "Initialize IntlParty in a Next.js project")
   .option("--force", "Force overwrite existing files")
+  .option(
+    "--locale-prefix <mode>",
+    "locale in URLs: never (clean URLs), as-needed, or always",
+    "never",
+  )
   .action(async (options: NextjsCommandOptions) => {
     if (options.init) {
-      await initializeNextjsProject(options.force);
+      await initializeNextjsProject(options.force, options.localePrefix);
     } else {
       console.log("Please specify an action. Use --init to initialize.");
     }

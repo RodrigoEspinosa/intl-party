@@ -26,3 +26,6 @@ export {
   createClientProviderData,
   createClientI18nSetup,
 } from "./client-utils";
+
+// URL helpers for locale-prefixed routing
+export { localizePath, type RoutingConfig } from "./routing";

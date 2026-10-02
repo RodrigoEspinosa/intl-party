@@ -13,6 +13,8 @@ import React, {
 } from "react";
 import { I18nProvider, useUntypedTranslations } from "@intl-party/react";
 import { createI18n } from "@intl-party/core";
+import { useRouter } from "next/navigation";
+import { localizePath, type RoutingConfig } from "./routing";
 import type {
   Locale,
   RegisteredNamespace,
@@ -27,9 +29,28 @@ const LocaleContext = createContext<{
 
 interface ProviderProps {
   children: React.ReactNode;
+  /**
+   * The locale resolved on the server (e.g. `await getLocale()`). When set,
+   * the server is the source of truth: switching locale reloads the page's
+   * server data so the new locale's messages arrive.
+   */
   locale?: string;
   defaultLocale?: string;
   initialMessages?: Record<string, Record<string, any>>;
+  /** URL settings from `createSetup()`; needed for locale-prefixed URLs. */
+  routing?: RoutingConfig;
+}
+
+/**
+ * Next's App Router instance, or null outside it (tests, the Pages Router).
+ * useRouter() throws when no App Router is mounted.
+ */
+function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -40,10 +61,17 @@ export function Provider({
   locale: propLocale,
   defaultLocale = "en",
   initialMessages = {},
+  routing,
 }: ProviderProps) {
   const [locale, setLocale] = useState<Locale>(
     (propLocale as Locale) || defaultLocale,
   );
+  const router = useOptionalRouter();
+
+  // Follow the server when it renders a new locale (after a switch below)
+  useEffect(() => {
+    if (propLocale) setLocale(propLocale as Locale);
+  }, [propLocale]);
   const [messages, setMessages] = useState(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,12 +110,33 @@ export function Provider({
   // setLocale on the current instance here — doing so would throw when the
   // target locale's messages haven't been loaded into it yet.
   const handleLocaleChange = (newLocale: Locale) => {
-    setLocale(newLocale);
-
     // Update cookie
     if (typeof document !== "undefined") {
       document.cookie = `INTL_LOCALE=${newLocale}; path=/; max-age=31536000`; // 1 year
     }
+
+    // Server-driven: only the current locale's messages are loaded, so ask
+    // the server for the new ones instead of rendering missing keys. With
+    // locale-prefixed URLs, navigate to the new locale's URL; otherwise
+    // re-render in place (the middleware reads the new cookie).
+    if (propLocale && router) {
+      if (routing && routing.localePrefix !== "never") {
+        const { pathname, search, hash } = window.location;
+        const basePath = routing.basePath ?? "";
+        const path =
+          basePath && pathname.startsWith(basePath)
+            ? pathname.slice(basePath.length) || "/"
+            : pathname;
+        router.push(
+          `${localizePath(path, newLocale, routing)}${search}${hash}`,
+        );
+      } else {
+        router.refresh();
+      }
+      return;
+    }
+
+    setLocale(newLocale);
   };
 
   // Create i18n instance

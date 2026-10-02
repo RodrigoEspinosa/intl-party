@@ -84,3 +84,41 @@ describe("middleware basePath handling", () => {
     expect((res as any).url.pathname).toBe("/base/about");
   });
 });
+
+describe("as-needed prefix routing", () => {
+  const middleware = createI18nMiddleware({
+    locales: ["en", "es"],
+    defaultLocale: "en",
+    localePrefix: "as-needed",
+    detectFromCookie: false,
+    detectFromHeader: false,
+    detectFromQuery: false,
+  });
+
+  it("serves an unprefixed default-locale URL from the [locale] route", () => {
+    const res = middleware(makeRequest("https://x.com/about", "/about")) as any;
+    expect(res.type).toBe("rewrite");
+    expect(res.url.pathname).toBe("/en/about");
+  });
+
+  it("rewrites the root to the default locale", () => {
+    const res = middleware(makeRequest("https://x.com/", "/")) as any;
+    expect(res.type).toBe("rewrite");
+    expect(res.url.pathname).toBe("/en");
+  });
+
+  it("passes prefixed non-default URLs through", () => {
+    const res = middleware(
+      makeRequest("https://x.com/es/about", "/es/about"),
+    ) as any;
+    expect(res.type).toBe("next");
+  });
+
+  it("redirects a prefixed default-locale URL to the clean one", () => {
+    const res = middleware(
+      makeRequest("https://x.com/en/about", "/en/about"),
+    ) as any;
+    expect(res.type).toBe("redirect");
+    expect(res.url.pathname).toBe("/about");
+  });
+});

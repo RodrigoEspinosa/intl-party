@@ -12,6 +12,7 @@ import { createI18nMiddleware, createLocaleMatcher } from "./middleware/index";
 import { loadMessagesForLocale } from "./messages";
 import { detectLocaleFromHeaders, type HeadersLike } from "./shared/detect";
 import { detectAvailableNamespaces } from "./server/utils";
+import type { RoutingConfig } from "./routing";
 // Imported through the package's own "./client" export (kept external by the
 // build) so the "use client" boundary survives bundling: server components
 // that render `Provider` get a client reference, not an inlined copy.
@@ -46,6 +47,11 @@ export interface SetupResult {
   ) => Promise<Record<Locale, Record<Namespace, unknown>>>;
   /** Client provider; render it in your root layout. */
   Provider: typeof Provider;
+  /**
+   * URL settings for the Provider, so switching locale goes to the right
+   * URL: `<Provider routing={routing} …>`.
+   */
+  routing: RoutingConfig;
 }
 
 const DEFAULT_COOKIE_NAME = "INTL_LOCALE";
@@ -96,6 +102,7 @@ export function createSetup(config: SetupConfig): SetupResult {
 
   return {
     middleware,
+    routing: { locales, defaultLocale, localePrefix },
     middlewareConfig: { matcher: createLocaleMatcher() },
     getLocale,
     getMessages,

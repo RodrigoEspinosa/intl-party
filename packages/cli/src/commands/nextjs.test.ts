@@ -154,6 +154,36 @@ describe("nextjsCommand", () => {
       expect(String(call?.[1])).toContain('"./messages/en/common.json"');
     });
 
+    it("puts pages under app/[locale] for locale-prefixed URLs", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      vi.mocked(fs.readFileSync).mockReturnValue("");
+
+      await initializeNextjsProject(false, "as-needed");
+
+      const written = (file: string) =>
+        String(
+          vi.mocked(fs.writeFileSync).mock.calls.find(([f]) => f === file)?.[1],
+        );
+      expect(written("intl-party.config.ts")).toContain(
+        'localePrefix: "as-needed"',
+      );
+      const layout = written("./app/[locale]/layout.intl-party.tsx");
+      expect(layout).toContain('import config from "../../intl-party.config"');
+      expect(layout).toContain("routing={routing}");
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
+        "./app/[locale]/page.intl-party.tsx",
+        expect.any(String),
+      );
+    });
+
+    it("rejects an unknown --locale-prefix", async () => {
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+      await expect(
+        initializeNextjsProject(false, "sometimes" as never),
+      ).resolves.toBe(false);
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
     it("marks the example page as a client component", async () => {
       vi.mocked(fs.existsSync).mockReturnValue(false);
       vi.mocked(fs.readFileSync).mockReturnValue("");
