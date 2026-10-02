@@ -100,6 +100,16 @@ export function splitEscapedDots(path: string): string[] {
   return segments;
 }
 
+/**
+ * The plural count for a lookup: the `count` option, or a numeric `count`
+ * interpolation value (the Next.js hook passes t(key, { count }) that way).
+ */
+function getCount(options?: TranslationOptions): number | undefined {
+  if (options?.count !== undefined) return options.count;
+  const interpolated = options?.interpolation?.count;
+  return typeof interpolated === "number" ? interpolated : undefined;
+}
+
 export interface TranslationStoreOptions {
   fallbackChain?: Record<Locale, Locale>;
   maxCacheSize?: number;
@@ -196,12 +206,16 @@ export class TranslationStore {
     options?: TranslationOptions,
   ): string {
     const locales = this.getLocaleChain(locale);
+    const count = getCount(options);
 
     for (const currentLocale of locales) {
-      const translation = this.getNestedValue(
-        this.translations[currentLocale]?.[namespace],
-        key,
-      );
+      const messages = this.translations[currentLocale]?.[namespace];
+      const translation =
+        this.getNestedValue(messages, key) ??
+        // i18next-style plural keys: items_zero / items_one / items_other
+        (count !== undefined
+          ? this.getPluralSuffixValue(messages, key, count, currentLocale)
+          : undefined);
 
       if (translation !== undefined) {
         return this.formatTranslation(translation, currentLocale, options);
@@ -259,6 +273,33 @@ export class TranslationStore {
     return current as TranslationValue;
   }
 
+  /**
+   * Looks up `${key}_${category}` using the locale's plural rules, so message
+   * files written for i18next (`items_one`, `items_other`, `items_zero`)
+   * work unchanged. `_zero` is tried first for a count of 0.
+   */
+  private getPluralSuffixValue(
+    messages: Translations | undefined,
+    key: TranslationKey,
+    count: number,
+    locale: Locale,
+  ): TranslationValue | undefined {
+    const candidates: string[] = [];
+    if (count === 0) candidates.push("zero");
+    try {
+      candidates.push(new Intl.PluralRules(locale).select(count));
+    } catch {
+      // Unknown locale tag: fall through to "other"
+    }
+    candidates.push("other");
+
+    for (const category of candidates) {
+      const value = this.getNestedValue(messages, `${key}_${category}`);
+      if (value !== undefined) return value;
+    }
+    return undefined;
+  }
+
   private formatTranslation(
     value: TranslationValue,
     locale: Locale,
@@ -285,12 +326,7 @@ export class TranslationStore {
         result = this.interpolate(result, options.interpolation);
       }
 
-      // `count` may also arrive as an interpolation value, e.g. from the
-      // Next.js hook's t(key, { count }) — honor it for plural forms too.
-      const interpolatedCount = options?.interpolation?.count;
-      const count =
-        options?.count ??
-        (typeof interpolatedCount === "number" ? interpolatedCount : undefined);
+      const count = getCount(options);
       if (count !== undefined) {
         result = this.handlePluralization(result, count);
       }

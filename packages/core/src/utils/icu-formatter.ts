@@ -111,7 +111,9 @@ interface ICUModuleShape {
  * `module.createRequire`, obtained via `process.getBuiltinModule` rather than
  * a static `node:module` import that browser bundlers would try to resolve.
  */
-function loadOptionalICUModule(): (ICUModuleShape & IntlMessageFormatConstructor) | null {
+function loadOptionalICUModule():
+  | (ICUModuleShape & IntlMessageFormatConstructor)
+  | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require("intl-messageformat");
@@ -122,7 +124,10 @@ function loadOptionalICUModule(): (ICUModuleShape & IntlMessageFormatConstructor
   try {
     const getBuiltin = (
       globalThis as {
-        process?: { getBuiltinModule?: (id: string) => unknown; cwd?: () => string };
+        process?: {
+          getBuiltinModule?: (id: string) => unknown;
+          cwd?: () => string;
+        };
       }
     ).process?.getBuiltinModule;
     if (typeof getBuiltin !== "function") {
@@ -139,7 +144,8 @@ function loadOptionalICUModule(): (ICUModuleShape & IntlMessageFormatConstructor
     // which is the only build that reaches this fallback.
     const metaUrl =
       typeof import.meta !== "undefined" ? import.meta.url : undefined;
-    const cwd = (globalThis as { process?: { cwd?: () => string } }).process?.cwd;
+    const cwd = (globalThis as { process?: { cwd?: () => string } }).process
+      ?.cwd;
     const base = metaUrl ?? (cwd ? `${cwd()}/__resolve__.js` : undefined);
     if (!base) {
       return null;
@@ -176,10 +182,12 @@ export function isICULibraryAvailable(): boolean {
 // ICU pattern: {var, type, ...} or just {var}
 // Must contain comma for plural/select, or be a simple {var} placeholder
 // Excludes double-brace legacy patterns
-const ICU_PLURAL_SELECT_PATTERN = /\{[^{}]+,\s*(plural|select|selectordinal)\s*,/;
+const ICU_PLURAL_SELECT_PATTERN =
+  /\{[^{}]+,\s*(plural|select|selectordinal)\s*,/;
 const ICU_SIMPLE_ARG_PATTERN = /\{[a-zA-Z_][a-zA-Z0-9_]*\}/;
 // Match typed arguments like {amount, number}, {date, date}, {date, date, long}
-const ICU_TYPED_ARG_PATTERN = /\{[a-zA-Z_][a-zA-Z0-9_]*\s*,\s*(number|date|time|spellout|ordinal|duration)(\s*,\s*[^{}]+)?\}/;
+const ICU_TYPED_ARG_PATTERN =
+  /\{[a-zA-Z_][a-zA-Z0-9_]*\s*,\s*(number|date|time|spellout|ordinal|duration)(\s*,\s*[^{}]+)?\}/;
 
 // Legacy pattern: {{var}} or {{count|singular|plural}}
 const LEGACY_INTERPOLATION_PATTERN = /\{\{[^}]+\}\}/;
@@ -297,6 +305,29 @@ export function detectMessageFormat(text: string): "icu" | "legacy" | "plain" {
   return "plain";
 }
 
+let warnedMissingICULibrary = false;
+
+/**
+ * Plural/select/selectordinal messages can't be formatted without
+ * intl-messageformat; the fallback would render their raw ICU text. Warn
+ * once in development so the cause is obvious.
+ */
+/** @internal Exported for tests. */
+export function warnMissingICULibrary(message: string): void {
+  if (
+    warnedMissingICULibrary ||
+    process.env.NODE_ENV === "production" ||
+    !ICU_PLURAL_SELECT_PATTERN.test(message)
+  ) {
+    return;
+  }
+  warnedMissingICULibrary = true;
+  console.warn(
+    `[intl-party] "${message}" uses ICU plural/select syntax, which needs the ` +
+      "optional intl-messageformat package. Install it: npm install intl-messageformat",
+  );
+}
+
 /**
  * Formats a message using ICU MessageFormat.
  *
@@ -330,10 +361,11 @@ export function detectMessageFormat(text: string): "icu" | "legacy" | "plain" {
 export function formatICUMessage(
   message: string,
   locale: Locale,
-  values: Record<string, TranslationValue> = {}
+  values: Record<string, TranslationValue> = {},
 ): string {
   // Check if ICU library is available
   if (!loadICULibrary()) {
+    warnMissingICULibrary(message);
     // Fallback: return message with simple {var} replacement
     return message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) => {
       const value = values[key];
