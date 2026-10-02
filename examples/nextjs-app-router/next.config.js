@@ -18,10 +18,4 @@ const nextConfig = {
   },
 };
 
-// Zero-config: Only apply IntlParty hot reloading plugin in development
-if (process.env.NODE_ENV === "development") {
-  const { withIntlPartyHotReload } = require("@intl-party/nextjs/webpack-plugin");
-  module.exports = withIntlPartyHotReload(nextConfig);
-} else {
-  module.exports = nextConfig;
-}
+module.exports = nextConfig;
