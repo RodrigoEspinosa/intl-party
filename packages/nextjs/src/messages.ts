@@ -34,7 +34,9 @@ export async function loadMessages({
           result[locale][namespace] = JSON.parse(fileContent);
         } else {
           // Client-side: dynamic import (though this won't work reliably)
-          const messages = await import(/* @vite-ignore */ messagePath);
+          const messages = await import(
+            /* webpackIgnore: true */ /* turbopackIgnore: true */ /* @vite-ignore */ messagePath
+          );
           result[locale][namespace] = messages.default;
         }
       } catch (error) {
