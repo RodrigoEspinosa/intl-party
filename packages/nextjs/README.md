@@ -295,7 +295,6 @@ const t = useTranslations("common");
 | `@intl-party/nextjs`                | middleware, layouts, client code | `createSetup`, `useTranslations`, `createI18nMiddleware`, `createLocaleMatcher`, `createZeroConfigSetup`, `loadMessages`, `loadMessagesForLocale`, `loadAllMessages`, `detectConfig` |
 | `@intl-party/nextjs/client`         | client components                | `Provider`, `useTranslations`, `useLocale`, `AppI18nProvider`, `NextIntlClientProvider`                                                                                              |
 | `@intl-party/nextjs/server`         | server components                | `getLocale`, `getServerTranslations`, `createServerTranslations`, `getLocaleFromParams`, `loadMessagesForLocale`                                                                     |
-| `@intl-party/nextjs/webpack-plugin` | `next.config.js`                 | `withIntlPartyHotReload` (webpack builds only)                                                                                                                                       |
 
 ## 🤝 Contributing
 

@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 import { watch } from "chokidar";
+import { warnWebpackIntegrationDeprecated } from "./deprecation";
 
 // Re-export Next.js integration utilities
 export {
@@ -46,12 +47,19 @@ export interface IntlPartyHotReloadOptions {
  * Webpack plugin that automatically regenerates IntlParty translations
  * when message files change during development.
  */
+/**
+ * @deprecated Regenerates types and messages on change, which is no longer
+ * needed (messages are read per request; intl-party.d.ts imports the JSON),
+ * and webpack plugins break Next.js 16 (Turbopack) builds. Will be removed in
+ * the next major version.
+ */
 export class IntlPartyHotReloadPlugin {
   private options: Required<IntlPartyHotReloadOptions>;
   private isRegenerating = false;
   private watcher: any = null;
 
   constructor(options: IntlPartyHotReloadOptions = {}) {
+    warnWebpackIntegrationDeprecated("IntlPartyHotReloadPlugin");
     this.options = {
       messagesPath: options.messagesPath || "./messages",
       outputPath: options.outputPath || "./src/lib/generated",
@@ -311,12 +319,15 @@ export class IntlPartyHotReloadPlugin {
 
 /**
  * Creates a Next.js webpack configuration that includes IntlParty hot reloading.
- * This is a convenience function that can be used in next.config.js.
+ *
+ * @deprecated See {@link IntlPartyHotReloadPlugin}. Remove it from
+ * next.config; will be removed in the next major version.
  */
 export function withIntlPartyHotReload(
   nextConfig: any = {},
   pluginOptions: IntlPartyHotReloadOptions = {}
 ) {
+  warnWebpackIntegrationDeprecated("withIntlPartyHotReload");
   return {
     ...nextConfig,
     webpack: (config: any, context: any) => {
