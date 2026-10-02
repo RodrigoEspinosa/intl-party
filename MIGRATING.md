@@ -1,485 +1,191 @@
 # Migrating to IntlParty
 
-This guide helps you migrate from other internationalization (i18n) libraries to IntlParty.
-
-## Table of Contents
-
 - [From next-intl](#from-next-intl)
 - [From react-i18next](#from-react-i18next)
 - [From FormatJS (react-intl)](#from-formatjs-react-intl)
-- [From lingui](#from-lingui)
-- [General Migration Tips](#general-migration-tips)
+- [From Lingui](#from-lingui)
+- [After migrating](#after-migrating)
+
+IntlParty reads messages from `<messages>/<locale>/<namespace>.json`. Each file is one namespace. Both message formats work, and you can mix them:
+
+- **ICU MessageFormat** (`{name}`, `{count, plural, …}`), used by next-intl, FormatJS, and Lingui. Plural and select messages need the optional `intl-messageformat` package: `npm install intl-messageformat`.
+- **Double-brace** (`{{name}}`), used by i18next. Plurals can use i18next's `key_one` / `key_other` / `key_zero` suffixes.
 
 ## From next-intl
 
-[next-intl](https://next-intl-docs.vercel.app/) is a popular i18n library for Next.js. Here's how to migrate:
+**Before you start:** IntlParty supports clean URLs (`/about` in every language), with the locale taken from a cookie or `Accept-Language`. Locale-prefixed routes (`/es/about`) aren't supported yet ([#46](https://github.com/RodrigoEspinosa/intl-party/issues/46)). Translation hooks run in Client Components only.
 
-### Configuration
+### 1. Split your message files
 
-#### next-intl:
+next-intl keeps one file per locale with top-level namespaces. IntlParty wants one file per namespace:
 
-```typescript
-// i18n.ts
-import { getRequestConfig } from "next-intl/server";
-
-export default getRequestConfig(async ({ locale }) => ({
-  messages: (await import(`./messages/${locale}.json`)).default,
-}));
-
-// middleware.ts
-import createMiddleware from "next-intl/middleware";
-
-export default createMiddleware({
-  locales: ["en", "fr", "es"],
-  defaultLocale: "en",
-});
-
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};
+```text
+messages/en.json                    →  messages/en/LocaleSwitcher.json
+{ "LocaleSwitcher": { … },               messages/en/HomePage.json
+  "HomePage": { … } }
 ```
 
-#### IntlParty:
+This splits every locale in place:
 
-```typescript
-// intl-party.config.ts
-export default {
-  locales: ["en", "fr", "es"],
-  defaultLocale: "en",
-  messages: "./messages",
-  localePrefix: "as-needed", // matches next-intl default
-};
-
-// middleware.ts
-import { createSetup } from "@intl-party/nextjs";
-import intlConfig from "./intl-party.config";
-
-const { middleware } = createSetup(intlConfig);
-
-export { middleware };
-
-// Next.js reads this at build time, so it must be a static literal.
-export const config = {
-  matcher: ["/((?!api|_next|_vercel|favicon\\.ico).*)", "/"],
-};
+```bash
+node -e '
+const fs = require("fs");
+for (const file of fs.readdirSync("messages").filter((f) => f.endsWith(".json"))) {
+  const locale = file.replace(/\.json$/, "");
+  const messages = JSON.parse(fs.readFileSync(`messages/${file}`, "utf8"));
+  fs.mkdirSync(`messages/${locale}`, { recursive: true });
+  for (const [namespace, value] of Object.entries(messages)) {
+    fs.writeFileSync(`messages/${locale}/${namespace}.json`, JSON.stringify(value, null, 2));
+  }
+  fs.rmSync(`messages/${file}`);
+}'
 ```
 
-### Usage in Components
+The messages themselves are ICU, so they work unchanged once `intl-messageformat` is installed.
 
-#### next-intl:
+### 2. Replace the setup
+
+```bash
+npm uninstall next-intl
+npm install @intl-party/nextjs intl-messageformat
+npx intl-party nextjs --init
+```
+
+`--init` writes `intl-party.config.ts`, `middleware.ts` (`proxy.ts` on Next.js 16+), `intl-party.d.ts`, and an example root layout (`app/layout.intl-party.tsx`). Merge that layout into yours, then delete next-intl's `i18n/request.ts`, `routing.ts`, and its plugin in `next.config`. `--init` also adds sample `common.json` files, which you can delete. Run `npx intl-party generate --types` afterwards so `intl-party.d.ts` registers your namespaces.
+
+### 3. Update components
+
+The hook name and call signature are the same:
 
 ```tsx
-"use client";
-
+// next-intl
 import { useTranslations } from "next-intl";
 
-export default function LocaleSwitcher() {
-  const t = useTranslations("LocaleSwitcher");
-
-  return (
-    <div>
-      <p>{t("switchLocale")}</p>
-      <p>{t("welcomeMessage", { username: "John" })}</p>
-    </div>
-  );
-}
-```
-
-#### IntlParty:
-
-```tsx
-"use client";
-
+// IntlParty
+("use client");
 import { useTranslations } from "@intl-party/nextjs";
 
 export default function LocaleSwitcher() {
   const t = useTranslations("LocaleSwitcher");
-
-  return (
-    <div>
-      <p>{t("switchLocale")}</p>
-      <p>{t("welcomeMessage", { interpolation: { username: "John" } })}</p>
-    </div>
-  );
+  return <p>{t("welcomeMessage", { username: "John" })}</p>;
 }
 ```
 
-### Key Differences
-
-1. **Type Safety**: IntlParty provides better TypeScript integration without explicit type assertions
-2. **Interpolation**: Use `interpolation` object instead of direct parameter passing
-3. **Setup**: Simple configuration with `createSetup` and a single config file
-4. **Clean URLs**: Default is clean URLs (no locale prefix)
+| next-intl                                           | IntlParty                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `useTranslations("ns")` in any component            | Same, in Client Components (`"use client"`)                                                 |
+| `t("key", { value })`                               | Same                                                                                        |
+| `t.rich("key", { b: (chunks) => <b>{chunks}</b> })` | `<Trans namespace="ns" i18nKey="key" components={{ b: <b /> }} />` from `@intl-party/react` |
+| `useLocale()`                                       | `const [locale, setLocale] = useLocale()` from `@intl-party/nextjs/client`                  |
+| `AppConfig` type augmentation                       | `intl-party.d.ts`, generated by the CLI                                                     |
+| `getTranslations()` in Server Components            | Not available; move the text into a Client Component                                        |
 
 ## From react-i18next
 
-[react-i18next](https://react.i18next.com/) is a React integration for i18next. Here's how to migrate:
+### 1. Point IntlParty at your files
 
-### Configuration
+i18next's default layout (`public/locales/<locale>/<namespace>.json`) already matches. `{{name}}` interpolation and `_one` / `_other` / `_zero` plural keys work unchanged. Nesting (`$t(…)`) and context suffixes (`_male`) aren't supported.
 
-#### react-i18next:
+### 2. Replace the provider
 
-```typescript
-// i18n.js
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import Backend from "i18next-http-backend";
-import LanguageDetector from "i18next-browser-languagedetector";
-
-i18n
-  .use(Backend)
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    fallbackLng: "en",
-    debug: true,
-    interpolation: {
-      escapeValue: false,
-    },
-  });
-
-export default i18n;
-```
-
-#### IntlParty:
-
-```typescript
-// i18n.ts
+```tsx
+// before: i18next.use(initReactI18next).init({ resources, lng: "en", … })
 import { createI18n } from "@intl-party/core";
-import enTranslations from "./locales/en.json";
-import frTranslations from "./locales/fr.json";
-
-const i18n = createI18n({
-  locales: ["en", "fr"],
-  defaultLocale: "en",
-  namespaces: ["translation", "common"],
-});
-
-i18n.addTranslations("en", "translation", enTranslations);
-i18n.addTranslations("fr", "translation", frTranslations);
-
-export default i18n;
-```
-
-### Usage in Components
-
-#### react-i18next:
-
-```tsx
-import React from "react";
-import { useTranslation } from "react-i18next";
-
-function MyComponent() {
-  const { t } = useTranslation();
-
-  return (
-    <div>
-      <h1>{t("welcome")}</h1>
-      <p>{t("greeting", { name: "John" })}</p>
-      <p>{t("items", { count: 5 })}</p>
-      <p>{t("nested.key")}</p>
-    </div>
-  );
-}
-```
-
-#### IntlParty:
-
-```tsx
-import React from "react";
-import { useTranslations } from "@intl-party/react";
-
-function MyComponent() {
-  const t = useTranslations("translation");
-
-  return (
-    <div>
-      <h1>{t("welcome")}</h1>
-      <p>{t("greeting", { interpolation: { name: "John" } })}</p>
-      <p>{t("items", { count: 5 })}</p>
-      <p>{t("nested.key")}</p>
-    </div>
-  );
-}
-```
-
-### Key Differences
-
-1. **Cleaner API**: No need for destructuring, just use the returned function
-2. **Interpolation**: Use `interpolation` object for variable replacement
-3. **Namespaces**: Explicitly specify the namespace during hook initialization
-4. **Type Safety**: Better TypeScript integration without manual type assertions
-5. **Loading**: Replace `Suspense` with IntlParty's built-in loading handling
-
-### Trans Component Migration
-
-#### react-i18next:
-
-```tsx
-import { Trans } from "react-i18next";
-
-function RichText() {
-  return (
-    <Trans i18nKey="richText" t={t}>
-      Welcome to <strong>{{ name }}</strong>.
-    </Trans>
-  );
-}
-```
-
-#### IntlParty:
-
-```tsx
-import { Trans } from "@intl-party/react";
-
-function RichText() {
-  return (
-    <Trans
-      i18nKey="richText"
-      components={{
-        strong: <strong />,
-      }}
-      interpolation={{ name: "World" }}
-    />
-  );
-}
-```
-
-## From FormatJS (react-intl)
-
-[react-intl](https://formatjs.io/docs/react-intl/) is part of the FormatJS suite. Here's how to migrate:
-
-### Configuration
-
-#### react-intl:
-
-```tsx
-import React from "react";
-import { IntlProvider } from "react-intl";
-import English from "./locales/en.json";
-import French from "./locales/fr.json";
-
-const messages = {
-  en: English,
-  fr: French,
-};
-
-function App({ locale }) {
-  return (
-    <IntlProvider locale={locale} messages={messages[locale]}>
-      <MyComponent />
-    </IntlProvider>
-  );
-}
-```
-
-#### IntlParty:
-
-```tsx
-import React from "react";
 import { I18nProvider } from "@intl-party/react";
-import { createI18n } from "@intl-party/core";
-import English from "./locales/en.json";
-import French from "./locales/fr.json";
+import en from "./public/locales/en/translation.json";
+import fr from "./public/locales/fr/translation.json";
 
 const i18n = createI18n({
   locales: ["en", "fr"],
   defaultLocale: "en",
-  namespaces: ["messages"],
+  namespaces: ["translation"],
 });
+i18n.addTranslations("en", "translation", en);
+i18n.addTranslations("fr", "translation", fr);
 
-// Add translations
-i18n.addTranslations("en", "messages", English);
-i18n.addTranslations("fr", "messages", French);
-
-function App({ locale }) {
+export function App() {
   return (
-    <I18nProvider i18n={i18n} initialLocale={locale}>
+    <I18nProvider i18n={i18n}>
       <MyComponent />
     </I18nProvider>
   );
 }
 ```
 
-### Usage in Components
+For a Next.js App Router project, use `@intl-party/nextjs` and `npx intl-party nextjs --init` instead, and set `messages: "./public/locales"` in `intl-party.config.ts`.
 
-#### react-intl:
-
-```tsx
-import { useIntl, FormattedMessage } from "react-intl";
-
-function MyComponent() {
-  const intl = useIntl();
-
-  return (
-    <div>
-      <h1>
-        <FormattedMessage id="welcome" defaultMessage="Welcome" />
-      </h1>
-      <p>{intl.formatMessage({ id: "greeting" }, { name: "John" })}</p>
-    </div>
-  );
-}
-```
-
-#### IntlParty:
+### 3. Update components
 
 ```tsx
-import { useTranslations } from "@intl-party/react";
+// react-i18next
+const { t } = useTranslation();
+t("greeting", { name: "John" });
+t("items", { count: 5 });
 
-function MyComponent() {
-  const t = useTranslations("messages");
-
-  return (
-    <div>
-      <h1>{t("welcome")}</h1>
-      <p>{t("greeting", { interpolation: { name: "John" } })}</p>
-    </div>
-  );
-}
+// IntlParty (@intl-party/react)
+const t = useTranslations("translation");
+t("greeting", { interpolation: { name: "John" } });
+t("items", { count: 5 }); // resolves items_one / items_other
 ```
 
-### Key Differences
+With `@intl-party/nextjs`, values are passed directly, as in i18next: `t("greeting", { name: "John" })`.
 
-1. **Simpler Component API**: No need for `FormattedMessage` components
-2. **Streamlined Hook**: More intuitive hook usage with direct function return
-3. **Interpolation**: Use `interpolation` object for variables
-4. **Type Safety**: Better TypeScript integration throughout
-5. **Message Definition**: No need for separate `defaultMessage` in components
+`<Trans>` takes named tags in the message, not numbered ones:
 
-## From lingui
-
-[lingui](https://lingui.js.org/) is another popular React i18n library. Here's how to migrate:
-
-### Configuration
-
-#### lingui:
-
-```typescript
-// lingui.config.js
-/** @type {import('@lingui/conf').LinguiConfig} */
-module.exports = {
-  locales: ["en", "fr", "es"],
-  sourceLocale: "en",
-  catalogs: [
-    {
-      path: "<rootDir>/src/locales/{locale}/messages",
-      include: ["src"],
-    },
-  ],
-  format: "po",
-};
+```tsx
+// message: "Welcome to <strong>{{name}}</strong>."
+<Trans
+  i18nKey="richText"
+  namespace="translation"
+  values={{ name: "World" }}
+  components={{ strong: <strong /> }}
+/>
 ```
 
-#### IntlParty:
+## From FormatJS (react-intl)
 
-```typescript
-// intl-party.config.ts
-export default {
-  locales: ["en", "fr", "es"],
+FormatJS messages are ICU, so they work unchanged with `intl-messageformat` installed. Put each flat message file in a namespace, e.g. `messages/en/messages.json`.
+
+```tsx
+// react-intl
+<IntlProvider locale={locale} messages={messages}>
+  …
+</IntlProvider>;
+const intl = useIntl();
+intl.formatMessage({ id: "greeting" }, { name: "John" });
+
+// IntlParty
+import { createI18n } from "@intl-party/core";
+import { I18nProvider, useTranslations } from "@intl-party/react";
+
+const i18n = createI18n({
+  locales: ["en", "fr"],
   defaultLocale: "en",
-  messages: "./src/locales",
-};
+  namespaces: ["messages"],
+});
+i18n.addTranslations("en", "messages", en);
+i18n.addTranslations("fr", "messages", fr);
+i18n.setLocale(locale); // or call setLocale from useLocale() later
+
+<I18nProvider i18n={i18n}>…</I18nProvider>;
+
+const t = useTranslations("messages");
+t("greeting", { interpolation: { name: "John" } });
 ```
 
-### Usage in Components
+`<FormattedMessage id="greeting" values={{ name }} />` becomes `t("greeting", { interpolation: { name } })`, or `<Trans>` for messages with tags. For dates and numbers, use `i18n.formatDate`, `formatNumber`, `formatCurrency`, and `formatRelativeTime`.
 
-#### lingui:
+## From Lingui
 
-```tsx
-import { Trans, Plural } from "@lingui/macro";
+Lingui messages are ICU. Export your catalogs as JSON, e.g. with Lingui's JSON catalog format, and put each locale's catalog in a namespace file (`messages/<locale>/messages.json`). Then follow the FormatJS steps above. Replace `` t`Hello ${name}` `` macros and `<Trans>` macros with explicit keys: `t("greeting", { interpolation: { name } })`.
 
-function MyComponent() {
-  const count = 3;
-
-  return (
-    <div>
-      <h1>
-        <Trans>Welcome</Trans>
-      </h1>
-      <p>
-        <Trans>Hello, {name}!</Trans>
-      </p>
-      <p>
-        <Plural value={count} one="# item" other="# items" />
-      </p>
-    </div>
-  );
-}
-```
-
-#### IntlParty:
-
-```tsx
-import { useTranslations } from "@intl-party/react";
-
-function MyComponent() {
-  const count = 3;
-  const t = useTranslations("messages");
-
-  return (
-    <div>
-      <h1>{t("welcome")}</h1>
-      <p>{t("greeting", { interpolation: { name } })}</p>
-      <p>{t("items", { count })}</p>
-    </div>
-  );
-}
-```
-
-### Key Differences
-
-1. **No Macros Required**: IntlParty doesn't use macros for extraction
-2. **Pluralization**: Simpler pluralization with `count` parameter
-3. **Message Format**: JSON-based instead of PO files
-4. **Type Safety**: Better TypeScript support with auto-completion
-
-## General Migration Tips
-
-1. **Incremental Migration**: Migrate one component or feature at a time
-2. **Translation Files**: Convert your existing translation files to JSON format
-3. **Key Structure**: Maintain your existing key structure when possible
-4. **Namespace Organization**: Group related translations into logical namespaces
-5. **Test Thoroughly**: Verify all translations work correctly after migration
-
-### Translation Format
-
-IntlParty uses a simple JSON format for translations:
-
-```json
-{
-  "common": {
-    "welcome": "Welcome to IntlParty",
-    "greeting": "Hello {{name}}!",
-    "items_zero": "No items",
-    "items_one": "{{count}} item",
-    "items_other": "{{count}} items",
-    "nested": {
-      "key": "This is a nested key"
-    }
-  }
-}
-```
-
-### Migration Tools
-
-To help with migration, you can use the CLI to extract and validate your translations:
+## After migrating
 
 ```bash
-# Initialize IntlParty in your project
-npx intl-party init
-
-# Extract existing keys from your codebase
-npx intl-party extract
-
-# Validate your translations
-npx intl-party check
+npx intl-party check --missing   # every locale has every key (exits 1 if not)
+npx intl-party extract --dry-run # keys used in code but missing from messages
 ```
 
-## Need More Help?
+In TypeScript projects, `intl-party.d.ts` makes misspelled keys compile errors. See the [README](./README.md#-type-checked-translation-keys).
 
-If you encounter specific migration challenges:
-
-1. Check our [troubleshooting guide](./README.md#troubleshooting-guide)
-2. Open an issue on GitHub with details about your migration scenario
-3. Join our community discussion for more personalized help
+Stuck? See [Troubleshooting](./docs/TROUBLESHOOTING.md), or open an [issue](https://github.com/RodrigoEspinosa/intl-party/issues) or a [discussion](https://github.com/RodrigoEspinosa/intl-party/discussions).
