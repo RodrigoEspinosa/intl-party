@@ -100,3 +100,23 @@ jobs:
         env:
           LOCALE_PREFIX: ${{ matrix.prefix }}
           E2E_BROWSER: "1"
+
+  starter:
+    name: Starter (published packages)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Installs @intl-party/* from npm, as StackBlitz and real apps do
+      - name: Install and build examples/nextjs-starter
+        working-directory: examples/nextjs-starter
+        run: |
+          npm install --no-audit --no-fund
+          npx intl-party check
+          npx next build

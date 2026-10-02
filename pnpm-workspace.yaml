@@ -1,4 +1,6 @@
 packages:
   - 'packages/*'
   - 'examples/*'
+  # Installs published packages from npm, like a real app (and StackBlitz)
+  - '!examples/nextjs-starter'
   - 'apps/*'
