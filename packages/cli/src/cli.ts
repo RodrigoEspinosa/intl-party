@@ -48,17 +48,17 @@ program
 program
   .command("extract")
   .description("extract translation keys from source code")
-  .option("-s, --source <patterns...>", "source file patterns", [
-    "src/**/*.{ts,tsx,js,jsx}",
-  ])
+  // No default here: it would override the config's sourcePatterns
+  .option(
+    "-s, --source <patterns...>",
+    "source file patterns (default: config sourcePatterns)",
+  )
   .option(
     "-o, --output <dir>",
     "output directory for extracted keys",
     "./messages",
   )
   .option("--dry-run", "show what would be extracted without writing files")
-  .option("--update", "update existing translation files with new keys")
-  .option("--remove-unused", "remove unused translation keys")
   .option("--format <format>", "output format (text|json|junit)", "text")
   .action(withGlobals(extractCommand));
 
@@ -66,7 +66,10 @@ program
 program
   .command("sync")
   .description("synchronize translations across locales")
-  .option("-b, --base <locale>", "base locale to sync from", "en")
+  .option(
+    "-b, --base <locale>",
+    "base locale to sync from (default: config defaultLocale)",
+  )
   .option("-t, --target <locales...>", "target locales to sync to")
   .option("--missing-only", "only add missing keys, don't remove extras")
   .option("--interactive", "interactive mode for conflict resolution")

@@ -1,7 +1,10 @@
 import chalk from "chalk";
 import ora from "ora";
 import { loadConfig } from "../utils/config";
-import { loadTranslations } from "../utils/translations";
+import {
+  assertTranslationFilesExist,
+  loadTranslations,
+} from "../utils/translations";
 import { validateTranslations } from "@intl-party/core";
 
 export interface CheckOptions {
@@ -21,6 +24,11 @@ export async function checkCommand(options: CheckOptions) {
 
     // Load translations
     spinner.start("Loading translations...");
+    await assertTranslationFilesExist(
+      config.translationPaths,
+      config.locales,
+      config.namespaces,
+    );
     const translations = await loadTranslations(
       config.translationPaths,
       config.locales,

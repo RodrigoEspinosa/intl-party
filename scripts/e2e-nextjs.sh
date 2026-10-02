@@ -55,6 +55,30 @@ node "$REPO/packages/cli/dist/cli.js" nextjs --init
 mv app/layout.intl-party.tsx app/layout.tsx
 mv app/page.intl-party.tsx app/page.tsx
 
+echo "▶ Checking translations with the CLI"
+CLI="node $REPO/packages/cli/dist/cli.js"
+$CLI check --missing > check.log 2>&1 || { echo "  ✗ check --missing failed on a fresh project"; cat check.log; exit 1; }
+echo "  ✓ check --missing passes on a fresh project"
+node -e '
+  const f = "messages/es/common.json";
+  const m = JSON.parse(require("fs").readFileSync(f, "utf8"));
+  delete m.description;
+  require("fs").writeFileSync(f, JSON.stringify(m, null, 2));
+'
+if $CLI check --missing > check.log 2>&1; then
+  echo "  ✗ check --missing passed with a missing translation"; cat check.log; exit 1
+elif grep -q 'description' check.log; then
+  echo "  ✓ check --missing reports a missing translation"
+else
+  echo "  ✗ check --missing failed without naming the key"; cat check.log; exit 1
+fi
+node -e '
+  const f = "messages/es/common.json";
+  const m = JSON.parse(require("fs").readFileSync(f, "utf8"));
+  m.description = "Una solución i18n moderna para Next.js";
+  require("fs").writeFileSync(f, JSON.stringify(m, null, 2));
+'
+
 echo "▶ Building"
 npx next build
 

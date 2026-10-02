@@ -3,7 +3,10 @@ import ora from "ora";
 import fs from "fs-extra";
 import { validateTranslations } from "@intl-party/core";
 import { loadConfig } from "../utils/config";
-import { loadTranslations } from "../utils/translations";
+import {
+  assertTranslationFilesExist,
+  loadTranslations,
+} from "../utils/translations";
 
 export interface ValidateOptions {
   locales?: string[];
@@ -30,6 +33,11 @@ export async function validateCommand(options: ValidateOptions) {
     spinner.start("Loading translations...");
 
     // Load all translations
+    await assertTranslationFilesExist(
+      config.translationPaths,
+      targetLocales,
+      targetNamespaces,
+    );
     const translations = await loadTranslations(
       config.translationPaths,
       targetLocales,

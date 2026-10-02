@@ -24,6 +24,7 @@ vi.mock("../utils/config", () => ({
 
 vi.mock("../utils/translations", () => ({
   loadTranslations: vi.fn(),
+  assertTranslationFilesExist: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("@intl-party/core", () => ({
