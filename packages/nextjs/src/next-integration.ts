@@ -4,6 +4,7 @@
  */
 
 import type { NextConfig } from "next";
+import { warnWebpackIntegrationDeprecated } from "./deprecation";
 
 /**
  * Returns the installed Next.js major version, or null if it can't be read.
@@ -34,11 +35,16 @@ export interface NextIntegrationOptions {
 
 /**
  * Enhances Next.js config with i18n integration
+ *
+ * @deprecated Adds a webpack hook that breaks Next.js 16 (Turbopack) builds,
+ * and isn't needed: remove it from next.config. Will be removed in the next
+ * major version. See https://github.com/RodrigoEspinosa/intl-party/issues/41
  */
 export function withIntlParty(
   nextConfig: NextConfig = {},
   options: NextIntegrationOptions
 ): NextConfig {
+  warnWebpackIntegrationDeprecated("withIntlParty");
   const { i18nConfig, autoGenerate = true, watchMode = true } = options;
 
   return {
@@ -114,6 +120,9 @@ function externalPackagesConfig(nextConfig: NextConfig): Partial<NextConfig> {
 
 /**
  * Creates a Next.js config with i18n integration
+ *
+ * @deprecated See {@link withIntlParty}. Will be removed in the next major
+ * version.
  */
 export function createNextConfigWithIntl(
   options: NextIntegrationOptions,
