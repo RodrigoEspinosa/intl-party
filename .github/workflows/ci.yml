@@ -120,3 +120,5 @@ jobs:
           npm install --no-audit --no-fund
           npx intl-party check
           npx next build
+          # StackBlitz has no Turbopack support, so it runs webpack (.stackblitzrc)
+          npx next build --webpack
