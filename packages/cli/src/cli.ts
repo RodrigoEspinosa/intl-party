@@ -48,9 +48,11 @@ program
 program
   .command("extract")
   .description("extract translation keys from source code")
-  .option("-s, --source <patterns...>", "source file patterns", [
-    "src/**/*.{ts,tsx,js,jsx}",
-  ])
+  // No default here: it would override the config's sourcePatterns
+  .option(
+    "-s, --source <patterns...>",
+    "source file patterns (default: config sourcePatterns)",
+  )
   .option(
     "-o, --output <dir>",
     "output directory for extracted keys",

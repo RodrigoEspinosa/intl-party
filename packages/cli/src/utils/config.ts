@@ -36,7 +36,8 @@ const DEFAULT_CONFIG: CLIConfig = {
   defaultLocale: "en",
   namespaces: ["common"],
   translationPaths: {},
-  sourcePatterns: ["src/**/*.{ts,tsx,js,jsx}"],
+  // Next.js projects often keep app/, pages/, and components/ at the root
+  sourcePatterns: ["{src,app,pages,components,lib}/**/*.{ts,tsx,js,jsx}"],
   outputDir: "./translations",
   validation: {
     strict: false,
@@ -121,10 +122,13 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
     if (configFile && (await fs.pathExists(configFile))) {
       try {
         const config = await loadConfigFile(configFile);
-        return mergeConfig(DEFAULT_CONFIG, config);
+        return await resolveMessagesDirectory(
+          mergeConfig(DEFAULT_CONFIG, config),
+          config,
+        );
       } catch (error) {
         throw new Error(
-          `Failed to load config from ${configFile}: ${error instanceof Error ? error.message : error}`
+          `Failed to load config from ${configFile}: ${error instanceof Error ? error.message : error}`,
         );
       }
     }
@@ -168,7 +172,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
       try {
         const entries = await fs.readdir(basePath);
         const locales = entries.filter((entry) =>
-          fs.statSync(path.join(basePath, entry)).isDirectory()
+          fs.statSync(path.join(basePath, entry)).isDirectory(),
         );
 
         if (locales.length > 0) {
@@ -192,7 +196,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
                 config.translationPaths![locale][namespace] = path.join(
                   basePath,
                   locale,
-                  `${namespace}.json`
+                  `${namespace}.json`,
                 );
               }
             }
@@ -207,6 +211,70 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
   }
 
   return config;
+}
+
+/**
+ * Fills in locales, namespaces, and translationPaths from a `messages`
+ * directory laid out as `<messages>/<locale>/<namespace>.json` — the config
+ * format `intl-party nextjs --init` writes. Without this, commands saw the
+ * default `namespaces: ["common"]` and no translation paths, loaded nothing,
+ * and reported "no issues".
+ */
+async function resolveMessagesDirectory(
+  merged: CLIConfig,
+  userConfig: any,
+): Promise<CLIConfig> {
+  const messagesDir = userConfig?.messages;
+  if (
+    typeof messagesDir !== "string" ||
+    Object.keys(userConfig.translationPaths ?? {}).length > 0 ||
+    !(await fs.pathExists(messagesDir))
+  ) {
+    return merged;
+  }
+
+  const entries = await fs.readdir(messagesDir);
+  const detectedLocales: string[] = [];
+  const detectedNamespaces = new Set<string>();
+  for (const entry of entries) {
+    const localeDir = path.join(messagesDir, entry);
+    if (!(await fs.stat(localeDir)).isDirectory()) continue;
+    detectedLocales.push(entry);
+    for (const file of await fs.readdir(localeDir)) {
+      if (file.endsWith(".json")) {
+        detectedNamespaces.add(path.basename(file, ".json"));
+      }
+    }
+  }
+
+  const locales: string[] = userConfig.locales?.length
+    ? userConfig.locales
+    : detectedLocales;
+  const namespaces: string[] = userConfig.namespaces?.length
+    ? userConfig.namespaces
+    : [...detectedNamespaces].sort();
+
+  const translationPaths: CLIConfig["translationPaths"] = {};
+  for (const locale of locales) {
+    translationPaths[locale] = {};
+    for (const namespace of namespaces) {
+      translationPaths[locale][namespace] = path.join(
+        messagesDir,
+        locale,
+        `${namespace}.json`,
+      );
+    }
+  }
+
+  return {
+    ...merged,
+    locales,
+    defaultLocale: locales.includes(merged.defaultLocale)
+      ? merged.defaultLocale
+      : locales[0],
+    namespaces,
+    translationPaths,
+  };
 }
 
 function mergeConfig(defaultConfig: CLIConfig, userConfig: any): CLIConfig {
@@ -247,7 +315,7 @@ function mergeConfig(defaultConfig: CLIConfig, userConfig: any): CLIConfig {
 
 export async function saveConfig(
   config: CLIConfig,
-  configPath: string = "intl-party.config.json"
+  configPath: string = "intl-party.config.json",
 ): Promise<void> {
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }

@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { extractCommand, extractKeysFromContent } from "./extract";
+import {
+  extractCommand,
+  extractKeysFromContent,
+  extractKeyReferences,
+  resolveKeyReference,
+} from "./extract";
 import fs from "fs-extra";
 import path from "node:path";
 import { glob } from "glob";
@@ -65,6 +70,78 @@ const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 const processExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit with code ${code}`);
+});
+
+describe("extractKeyReferences", () => {
+  it("scopes keys to the translator's namespace", () => {
+    const content = `
+      const t = useTranslations("common");
+      const tAuth = useTranslations('auth');
+      t("navigation.home");
+      tAuth("title");
+    `;
+    expect(extractKeyReferences(content)).toEqual(
+      expect.arrayContaining([
+        { namespace: "common", key: "navigation.home" },
+        { namespace: "auth", key: "title" },
+      ]),
+    );
+  });
+
+  it("matches calls with params", () => {
+    const content = `const t = useTranslations("common"); t("greeting", { name });`;
+    expect(extractKeyReferences(content)).toContainEqual({
+      namespace: "common",
+      key: "greeting",
+    });
+  });
+
+  it("leaves unbound t() and i18nKey unscoped", () => {
+    const content = `t('welcome'); <Trans i18nKey="page.title" />`;
+    expect(extractKeyReferences(content)).toEqual(
+      expect.arrayContaining([
+        { namespace: null, key: "welcome" },
+        { namespace: null, key: "page.title" },
+      ]),
+    );
+  });
+
+  it("handles inline useTranslations('ns')('key')", () => {
+    expect(
+      extractKeyReferences(`useTranslations('common')('button.submit')`),
+    ).toContainEqual({ namespace: "common", key: "button.submit" });
+  });
+});
+
+describe("resolveKeyReference", () => {
+  const namespaces = ["common", "auth"];
+
+  it("keeps a known namespace", () => {
+    expect(
+      resolveKeyReference(
+        { namespace: "auth", key: "a.b" },
+        namespaces,
+        "common",
+      ),
+    ).toEqual({ namespace: "auth", key: "a.b" });
+  });
+
+  it("uses a leading segment only when it names a namespace", () => {
+    expect(
+      resolveKeyReference(
+        { namespace: null, key: "auth.title" },
+        namespaces,
+        "common",
+      ),
+    ).toEqual({ namespace: "auth", key: "title" });
+    expect(
+      resolveKeyReference(
+        { namespace: null, key: "navigation.home" },
+        namespaces,
+        "common",
+      ),
+    ).toEqual({ namespace: "common", key: "navigation.home" });
+  });
 });
 
 describe("extractKeysFromContent", () => {
@@ -317,6 +394,15 @@ describe("extractCommand", () => {
     vi.mocked(fs.readJson).mockImplementation(() =>
       Promise.resolve(existingTranslations),
     );
+    // "app" is a real namespace, so t('app.title') is "title" in app.json
+    vi.mocked(loadConfig).mockResolvedValueOnce({
+      locales: ["en", "fr"],
+      defaultLocale: "en",
+      namespaces: ["common", "app"],
+      sourcePatterns: ["src/**/*.{ts,tsx}"],
+      outputDir: "./messages",
+      translationPaths: {},
+    } as unknown as CLIConfig);
 
     await extractCommand({});
 
@@ -395,7 +481,8 @@ describe("extractCommand", () => {
     expect(parsed).toHaveProperty("missingKeysByLocale");
     expect(parsed).toHaveProperty("totalFiles");
     expect(parsed).toHaveProperty("totalKeys");
-    expect(parsed.extractedKeys).toContain("hello");
+    // Keys are reported as namespace:key
+    expect(parsed.extractedKeys).toContain("common:hello");
   });
 
   it("should output JUnit XML format when --format junit is specified", async () => {
