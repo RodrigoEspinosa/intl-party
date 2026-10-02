@@ -59,8 +59,6 @@ program
     "./messages",
   )
   .option("--dry-run", "show what would be extracted without writing files")
-  .option("--update", "update existing translation files with new keys")
-  .option("--remove-unused", "remove unused translation keys")
   .option("--format <format>", "output format (text|json|junit)", "text")
   .action(withGlobals(extractCommand));
 

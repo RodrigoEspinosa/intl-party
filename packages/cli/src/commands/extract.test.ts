@@ -329,7 +329,7 @@ describe("extractCommand", () => {
     );
   });
 
-  it("should update existing translation files when update option is true", async () => {
+  it("should merge new keys into existing translation files", async () => {
     const mockSourceFiles = ["src/App.tsx"];
 
     const mockSourceContent = `
@@ -354,7 +354,7 @@ describe("extractCommand", () => {
       Promise.resolve(existingTranslations),
     );
 
-    await extractCommand({ update: true });
+    await extractCommand({});
 
     expect(fs.pathExists).toHaveBeenCalled();
     expect(fs.readJson).toHaveBeenCalled();
@@ -371,7 +371,7 @@ describe("extractCommand", () => {
     );
   });
 
-  it("should preserve existing default-locale values without the update option", async () => {
+  it("should preserve existing default-locale values", async () => {
     const mockSourceFiles = ["src/App.tsx"];
 
     const mockSourceContent = `

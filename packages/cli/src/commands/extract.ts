@@ -9,8 +9,6 @@ export interface ExtractOptions {
   source?: string[];
   output?: string;
   dryRun?: boolean;
-  update?: boolean;
-  removeUnused?: boolean;
   format?: "text" | "json" | "junit";
   config?: string;
   verbose?: boolean;
