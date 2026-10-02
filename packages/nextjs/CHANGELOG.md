@@ -1,5 +1,11 @@
 # @intl-party/nextjs
 
+## 1.9.1
+
+### Patch Changes
+
+- d31d129: Remove the "Critical dependency: the request of a dependency is an expression" warning that webpack builds printed for `@intl-party/nextjs`.
+
 ## 1.9.0
 
 ### Minor Changes
