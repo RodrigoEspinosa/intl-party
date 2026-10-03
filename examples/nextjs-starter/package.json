@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@intl-party/nextjs": "^1.8.0",
-    "intl-messageformat": "^10.7.0",
+    "intl-messageformat": "^12.1.2",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -19,6 +19,6 @@
     "@intl-party/cli": "^1.8.0",
     "@types/node": "^22",
     "@types/react": "^19",
-    "typescript": "^5"
+    "typescript": "^6"
   }
 }

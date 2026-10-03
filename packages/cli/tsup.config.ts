@@ -5,8 +5,7 @@ export default defineConfig({
   format: ["cjs"],
   dts: true,
   clean: true,
-  // chalk@5, ora@7, and inquirer@9 are ESM-only; leaving them external in a
-  // CJS bundle produces require() calls that throw ERR_REQUIRE_ESM at
-  // runtime. Bundle them instead.
-  noExternal: ["chalk", "ora", "inquirer"],
+  // These deps are ESM-only. Bundle them instead of emitting require() calls,
+  // which would depend on Node's require(esm) support.
+  noExternal: ["chalk", "ora", "inquirer", "commander", "glob", "chokidar"],
 });
