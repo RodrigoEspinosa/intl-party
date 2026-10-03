@@ -65,11 +65,12 @@
     }
   },
   "devDependencies": {
-    "@types/react": "^18.2.45",
-    "react": "^18.2.0",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "react-native": "^0.87.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.3.0",
-    "vitest": "^3.2.4"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
   },
   "repository": {
     "type": "git",
@@ -80,6 +81,6 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.12.0"
   }
 }

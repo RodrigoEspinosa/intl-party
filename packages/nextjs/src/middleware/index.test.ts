@@ -37,12 +37,14 @@ vi.mock("next/server", () => {
   };
 
   return {
-    NextRequest: vi.fn().mockImplementation((url) => ({
-      url,
-      cookies: mockCookies,
-      headers: mockHeaders,
-      nextUrl: { ...mockNextUrl },
-    })),
+    NextRequest: vi.fn().mockImplementation(function (url) {
+      return {
+        url,
+        cookies: mockCookies,
+        headers: mockHeaders,
+        nextUrl: { ...mockNextUrl },
+      };
+    }),
     NextResponse: {
       next: vi.fn().mockImplementation(() => ({ ...mockNextResponse })),
       redirect: vi.fn().mockImplementation(() => ({
@@ -101,8 +103,7 @@ describe("Next.js Middleware", () => {
     await middleware(mockRequest);
 
     const init = vi.mocked(NextResponse.next).mock.calls.at(-1)?.[0] as
-      | { request: { headers: Headers } }
-      | undefined;
+      { request: { headers: Headers } } | undefined;
     expect(init?.request.headers.get("x-locale")).toBe("fr");
   });
 

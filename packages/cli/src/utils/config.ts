@@ -129,6 +129,7 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
       } catch (error) {
         throw new Error(
           `Failed to load config from ${configFile}: ${error instanceof Error ? error.message : error}`,
+          { cause: error },
         );
       }
     }
