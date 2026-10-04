@@ -113,12 +113,12 @@ jobs:
         with:
           node-version: 22
 
-      # Installs @intl-party/* from npm, as StackBlitz and real apps do
+      # Installs @intl-party/* from npm, as real apps do
       - name: Install and build examples/nextjs-starter
         working-directory: examples/nextjs-starter
         run: |
           npm install --no-audit --no-fund
           npx intl-party check
           npx next build
-          # StackBlitz has no Turbopack support, so it runs webpack (.stackblitzrc)
+          # Apps that opt out of Turbopack build with webpack
           npx next build --webpack

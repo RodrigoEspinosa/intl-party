@@ -1,7 +1,5 @@
 # IntlParty Next.js starter
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/RodrigoEspinosa/intl-party/tree/master/examples/nextjs-starter)
-
 A Next.js App Router app set up with `npx intl-party nextjs --init`, using the published packages. It shows:
 
 - English, Spanish, and French with clean URLs (`/` in every language)
@@ -12,6 +10,8 @@ A Next.js App Router app set up with `npx intl-party nextjs --init`, using the p
 ## Run it
 
 ```bash
+npx degit RodrigoEspinosa/intl-party/examples/nextjs-starter my-app
+cd my-app
 npm install
 npm run dev
 ```
