@@ -9,7 +9,7 @@
 
 Type-safe internationalization for the Next.js App Router, React, and React Native. Translation keys are checked at compile time, URLs stay clean (`/about`, not `/en/about`), and one command sets up a working project.
 
-**Try it in your browser:** [open the Next.js starter in StackBlitz](https://stackblitz.com/github/RodrigoEspinosa/intl-party/tree/master/examples/nextjs-starter).
+**Try it:** `npx degit RodrigoEspinosa/intl-party/examples/nextjs-starter my-app`, then `npm install` and start the dev server. That copies a [ready-made Next.js starter](./examples/nextjs-starter).
 
 ## ✨ Why IntlParty?
 
