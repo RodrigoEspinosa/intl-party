@@ -1,5 +1,21 @@
 # @intl-party/nextjs
 
+## 1.10.0
+
+### Minor Changes
+
+- d07b947: Require Node.js 22.12 or later. Node 20 reached end of life in April 2026.
+
+  - `@intl-party/cli`: update commander, chalk, chokidar, glob, ora and inquirer to their latest majors (bundled into the CLI, so nothing changes for users).
+  - `@intl-party/core`, `@intl-party/nextjs`: update `@formatjs/intl-localematcher` to 0.9.
+  - `@intl-party/nextjs`: update chokidar to 5. The client entry now uses the automatic JSX runtime (`react/jsx-runtime`), the same as `@intl-party/react`.
+
+### Patch Changes
+
+- Updated dependencies [d07b947]
+  - @intl-party/core@1.10.0
+  - @intl-party/react@1.10.0
+
 ## 1.9.1
 
 ### Patch Changes
