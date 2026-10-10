@@ -38,3 +38,15 @@ export function localizePath(
   }
   return `/${locale}${rest}`;
 }
+
+/**
+ * Full-page navigation. A separate object so tests can stub it (jsdom can't
+ * navigate). Used when the locale can't be stored in a cookie: changing only
+ * the query string re-renders the page but not the root layout, which is
+ * where the locale and messages are loaded.
+ */
+export const hardNavigation = {
+  assign(url: string): void {
+    window.location.assign(url);
+  },
+};

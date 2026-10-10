@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { Provider, useLocale, useTranslations } from "./client-exports";
+import { hardNavigation } from "./routing";
 
 function Switcher() {
   const t = useTranslations("common");
@@ -64,6 +65,40 @@ describe("Provider locale switching", () => {
 
     expect(push).toHaveBeenCalledWith("/es/about?x=1");
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("carries the locale in the URL when the cookie is refused", () => {
+    // Browsers drop SameSite=Lax cookies set in a cross-site iframe (e.g. an
+    // online sandbox's preview), so the switch must not depend on the cookie
+    const descriptor = Object.getOwnPropertyDescriptor(
+      Document.prototype,
+      "cookie",
+    )!;
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      get: () => "",
+      set: () => {},
+    });
+    try {
+      render(
+        <Provider locale="en" initialMessages={en}>
+          <Switcher />
+        </Provider>,
+      );
+      const assign = vi
+        .spyOn(hardNavigation, "assign")
+        .mockImplementation(() => {});
+      act(() => screen.getByText("es").click());
+
+      // A full load, so the root layout re-renders with the new locale
+      expect(assign).toHaveBeenCalledWith("/about?x=1&locale=es");
+      expect(push).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+      assign.mockRestore();
+    } finally {
+      Object.defineProperty(document, "cookie", descriptor);
+      delete (document as unknown as { cookie?: string }).cookie;
+    }
   });
 
   it("renders the new locale once the server sends it", () => {
