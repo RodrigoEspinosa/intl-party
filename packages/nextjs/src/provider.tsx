@@ -14,7 +14,7 @@ import React, {
 import { I18nProvider, useUntypedTranslations } from "@intl-party/react";
 import { createI18n } from "@intl-party/core";
 import { useRouter } from "next/navigation";
-import { localizePath, type RoutingConfig } from "./routing";
+import { hardNavigation, localizePath, type RoutingConfig } from "./routing";
 import type {
   Locale,
   RegisteredNamespace,
@@ -39,6 +39,33 @@ interface ProviderProps {
   initialMessages?: Record<string, Record<string, any>>;
   /** URL settings from `createSetup()`; needed for locale-prefixed URLs. */
   routing?: RoutingConfig;
+}
+
+const LOCALE_COOKIE = "INTL_LOCALE";
+const LOCALE_QUERY_PARAM = "locale";
+
+/**
+ * Saves the locale cookie and reports whether the browser kept it. Inside a
+ * cross-site iframe a SameSite=Lax cookie is rejected, so use SameSite=None
+ * there (which requires HTTPS); the caller falls back to the URL if the
+ * cookie still isn't stored.
+ */
+function writeLocaleCookie(locale: Locale): boolean {
+  const framed = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true; // cross-origin parent
+    }
+  })();
+  const sameSite =
+    framed && window.location.protocol === "https:"
+      ? "SameSite=None; Secure"
+      : "SameSite=Lax";
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; ${sameSite}`; // 1 year
+  return document.cookie
+    .split("; ")
+    .some((entry) => entry === `${LOCALE_COOKIE}=${locale}`);
 }
 
 /**
@@ -110,26 +137,32 @@ export function Provider({
   // setLocale on the current instance here — doing so would throw when the
   // target locale's messages haven't been loaded into it yet.
   const handleLocaleChange = (newLocale: Locale) => {
-    // Update cookie
-    if (typeof document !== "undefined") {
-      document.cookie = `INTL_LOCALE=${newLocale}; path=/; max-age=31536000`; // 1 year
-    }
+    const cookieSaved =
+      typeof document !== "undefined" && writeLocaleCookie(newLocale);
 
     // Server-driven: only the current locale's messages are loaded, so ask
     // the server for the new ones instead of rendering missing keys. With
     // locale-prefixed URLs, navigate to the new locale's URL; otherwise
     // re-render in place (the middleware reads the new cookie).
     if (propLocale && router) {
-      if (routing && routing.localePrefix !== "never") {
-        const { pathname, search, hash } = window.location;
-        const basePath = routing.basePath ?? "";
-        const path =
-          basePath && pathname.startsWith(basePath)
-            ? pathname.slice(basePath.length) || "/"
-            : pathname;
-        router.push(
-          `${localizePath(path, newLocale, routing)}${search}${hash}`,
-        );
+      const { pathname, search, hash } = window.location;
+      const basePath = routing?.basePath ?? "";
+      const path =
+        basePath && pathname.startsWith(basePath)
+          ? pathname.slice(basePath.length) || "/"
+          : pathname;
+      const prefixed = routing && routing.localePrefix !== "never";
+      const target = prefixed ? localizePath(path, newLocale, routing) : path;
+
+      if (!cookieSaved) {
+        // The browser refused the cookie (blocked cookies, or a cross-site
+        // iframe such as an online sandbox's preview). Carry the choice in
+        // the URL instead; the middleware gives ?locale= priority.
+        const params = new URLSearchParams(search);
+        params.set(LOCALE_QUERY_PARAM, newLocale);
+        hardNavigation.assign(`${basePath}${target}?${params}${hash}`);
+      } else if (prefixed) {
+        router.push(`${target}${search}${hash}`);
       } else {
         router.refresh();
       }
