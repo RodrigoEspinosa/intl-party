@@ -50,6 +50,28 @@ module.exports = {
 };
 ```
 
+### Oxlint
+
+The plugin also runs in [Oxlint](https://oxc.rs) through its [JS plugin support](https://oxc.rs/docs/guide/usage/linter/js-plugins). All three rules give the same results as in ESLint, including rule options and loading translation files. This was tested with Oxlint 1.88.0. Oxlint's JS plugin API is still alpha, so recheck after upgrading Oxlint.
+
+```json
+// .oxlintrc.json
+{
+  "jsPlugins": ["@intl-party/eslint-plugin"],
+  "rules": {
+    "@intl-party/no-hardcoded-strings": "warn",
+    "@intl-party/no-missing-keys": "error",
+    "@intl-party/prefer-translation-hooks": "warn"
+  }
+}
+```
+
+Differences from ESLint:
+
+- The presets (`recommended`, `strict`) can't be used, so list the rules yourself as above. Options go in the usual place, e.g. `["warn", { "minLength": 2 }]`.
+- `oxlint --fix` leaves these rules' reports alone, like `eslint --fix`. But `oxlint --fix-suggestions` applies the suggestions, rewriting text to `t('key')` calls for keys that don't exist yet. Don't run it with these rules enabled.
+- Both `// oxlint-disable` and `// eslint-disable` comments work.
+
 ## Presets
 
 | Rule                                   | `recommended` | `strict`                                     |
