@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": {
+      // The Oxlint parity test loads the built plugin from dist/.
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    }
+  }
+}
