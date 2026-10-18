@@ -289,6 +289,7 @@ Run `npx intl-party --help` for all commands, including `extract` and `sync`.
 | [`@intl-party/react-native`](./packages/react-native)   | React Native and Expo                              |
 | [`@intl-party/cli`](./packages/cli)                     | Scaffolding, type registration, translation checks |
 | [`@intl-party/eslint-plugin`](./packages/eslint-plugin) | Catching hardcoded strings                         |
+| [`@intl-party/biome-plugin`](./packages/biome-plugin)   | Catching hardcoded strings with Biome              |
 | [`@intl-party/core`](./packages/core)                   | Framework-agnostic engine the others build on      |
 
 ## 🆚 How It Compares

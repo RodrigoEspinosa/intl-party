@@ -1,0 +1,14 @@
+// IntlParty: report direct i18n.t() usage, which should go through the
+// useTranslations() hook in React components. Mirrors the i18n.t check of
+// @intl-party/eslint-plugin's prefer-translation-hooks. Scope it to your
+// component files with `includes` in biome.json, since non-React code may
+// legitimately call i18n.t().
+language js(typescript,jsx)
+
+or { `i18n.t`, `i18n?.t` } as $member where {
+  register_diagnostic(
+    span=$member,
+    message="Prefer the useTranslations() hook over direct i18n.t() usage (intl-party/prefer-translation-hooks)",
+    severity="warn"
+  )
+}

@@ -1,0 +1,43 @@
+// IntlParty: report JSX text and user-facing attribute strings that should
+// come from a translation. Mirrors @intl-party/eslint-plugin's
+// no-hardcoded-strings with its default options; GritQL plugins can't take
+// options, so copy this file to customize it.
+language js(typescript,jsx)
+
+// Text worth translating: at least 3 characters once trimmed, and not a URL
+// or path, kebab-case class name, CONSTANT_CASE value, CSS unit, or tag-like
+// word. Grit regexes must match the whole string.
+pattern intl_party_translatable_text() {
+  and {
+    r"(?s)\s*\S.+\S.*",
+    not r"(?s)\s*(?:https?://|/|\./|\.\./).*",
+    not r"\s*[a-z]+(?:-[a-z]+)+\s*",
+    not r"\s*[A-Z_][A-Z0-9_]*\s*",
+    not r"\s*\d+(?:\.\d+)?(?:px|em|rem|%|vh|vw)\s*",
+    not r"(?i)\s*(?:div|span|button|input|form|header|footer|nav|main|section|article)\s*"
+  }
+}
+
+or {
+  JsxText() as $text where {
+    $text <: intl_party_translatable_text(),
+    register_diagnostic(
+      span=$text,
+      message="Hardcoded JSX text should be translated with t() (intl-party/no-hardcoded-strings)",
+      severity="warn"
+    )
+  },
+  JsxAttribute(
+    name=$name,
+    initializer=JsxAttributeInitializerClause(value=JsxString() as $string)
+  ) where {
+    $name <: or { `placeholder`, `title`, `aria-label`, `aria-description`, `alt` },
+    $string <: r"(?s)[\"'](.*)[\"']"($value),
+    $value <: intl_party_translatable_text(),
+    register_diagnostic(
+      span=$string,
+      message="Hardcoded attribute string should be translated with t() (intl-party/no-hardcoded-strings)",
+      severity="warn"
+    )
+  }
+}
