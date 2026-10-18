@@ -77,7 +77,7 @@ i18n.t("items", { count: 1 }); // "1 item"
 i18n.t("items", { count: 5 }); // "5 items"
 ```
 
-**ICU MessageFormat**, for locale-aware plurals and selects. Install the optional `intl-messageformat` dependency to use it:
+**ICU MessageFormat**, for locale-aware plurals and selects:
 
 ```typescript
 i18n.addTranslations("ru", "common", {

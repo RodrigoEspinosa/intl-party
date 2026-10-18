@@ -1,3 +1,4 @@
+import { IntlMessageFormat } from "intl-messageformat";
 import type { Locale, TranslationValue, MessageFormatConfig } from "../types";
 
 /**
@@ -55,115 +56,9 @@ class LRUCache<K, V> {
   }
 }
 
-/** Minimal interface for a compiled ICU message (from intl-messageformat). */
-interface CompiledICUMessage {
-  format(values?: Record<string, unknown>): string | Array<string | object>;
-}
-
-/** Constructor interface for the IntlMessageFormat class. */
-interface IntlMessageFormatConstructor {
-  new (message: string, locale: string): CompiledICUMessage;
-}
-
 // Global cache for compiled ICU messages
 // Key format: `${locale}:${message}`
-const icuMessageCache = new LRUCache<string, CompiledICUMessage>(500);
-
-// Cached reference to IntlMessageFormat constructor
-let IntlMessageFormat: IntlMessageFormatConstructor | null = null;
-let icuLoadAttempted = false;
-
-/**
- * Attempts to load the intl-messageformat library.
- * Returns true if available, false otherwise.
- */
-export function loadICULibrary(): boolean {
-  if (IntlMessageFormat !== null) {
-    return true;
-  }
-
-  if (icuLoadAttempted) {
-    return false;
-  }
-
-  icuLoadAttempted = true;
-
-  const lib = loadOptionalICUModule();
-  if (lib) {
-    IntlMessageFormat = lib.IntlMessageFormat || lib.default || lib;
-    return true;
-  }
-
-  // intl-messageformat not installed - this is expected for users
-  // who don't need ICU support
-  return false;
-}
-
-interface ICUModuleShape {
-  IntlMessageFormat?: IntlMessageFormatConstructor;
-  default?: IntlMessageFormatConstructor;
-}
-
-/**
- * Loads the optional intl-messageformat dependency in a way that works in
- * both build formats. In the CJS build the ambient `require` is real; in the
- * ESM build esbuild replaces it with a throwing shim, so fall back to
- * `module.createRequire`, obtained via `process.getBuiltinModule` rather than
- * a static `node:module` import that browser bundlers would try to resolve.
- */
-function loadOptionalICUModule():
-  | (ICUModuleShape & IntlMessageFormatConstructor)
-  | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("intl-messageformat");
-  } catch {
-    // Fall through to the Node ESM strategy below.
-  }
-
-  try {
-    const getBuiltin = (
-      globalThis as {
-        process?: {
-          getBuiltinModule?: (id: string) => unknown;
-          cwd?: () => string;
-        };
-      }
-    ).process?.getBuiltinModule;
-    if (typeof getBuiltin !== "function") {
-      return null;
-    }
-    const moduleBuiltin = getBuiltin("module") as
-      | { createRequire?: (filename: string) => (id: string) => unknown }
-      | undefined;
-    if (!moduleBuiltin?.createRequire) {
-      return null;
-    }
-    // Resolve relative to this module so node_modules lookup walks the
-    // consumer's tree; import.meta.url is only populated in the ESM build,
-    // which is the only build that reaches this fallback.
-    const metaUrl =
-      typeof import.meta !== "undefined" ? import.meta.url : undefined;
-    const cwd = (globalThis as { process?: { cwd?: () => string } }).process
-      ?.cwd;
-    const base = metaUrl ?? (cwd ? `${cwd()}/__resolve__.js` : undefined);
-    if (!base) {
-      return null;
-    }
-    const requireFromHere = moduleBuiltin.createRequire(base);
-    return requireFromHere("intl-messageformat") as ICUModuleShape &
-      IntlMessageFormatConstructor;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Checks if the intl-messageformat library is available.
- */
-export function isICULibraryAvailable(): boolean {
-  return loadICULibrary();
-}
+const icuMessageCache = new LRUCache<string, IntlMessageFormat>(500);
 
 /**
  * Regex patterns for detecting message format types.
@@ -305,36 +200,12 @@ export function detectMessageFormat(text: string): "icu" | "legacy" | "plain" {
   return "plain";
 }
 
-let warnedMissingICULibrary = false;
-
-/**
- * Plural/select/selectordinal messages can't be formatted without
- * intl-messageformat; the fallback would render their raw ICU text. Warn
- * once in development so the cause is obvious.
- */
-/** @internal Exported for tests. */
-export function warnMissingICULibrary(message: string): void {
-  if (
-    warnedMissingICULibrary ||
-    process.env.NODE_ENV === "production" ||
-    !ICU_PLURAL_SELECT_PATTERN.test(message)
-  ) {
-    return;
-  }
-  warnedMissingICULibrary = true;
-  console.warn(
-    `[intl-party] "${message}" uses ICU plural/select syntax, which needs the ` +
-      "optional intl-messageformat package. Install it: npm install intl-messageformat",
-  );
-}
-
 /**
  * Formats a message using ICU MessageFormat.
  *
  * This function:
- * 1. Checks if intl-messageformat is available
- * 2. Uses an LRU cache to avoid re-compiling messages
- * 3. Compiles and formats the message with the provided values
+ * 1. Uses an LRU cache to avoid re-compiling messages
+ * 2. Compiles and formats the message with the provided values
  *
  * @param message - The ICU MessageFormat message string
  * @param locale - The locale to use for formatting
@@ -363,16 +234,6 @@ export function formatICUMessage(
   locale: Locale,
   values: Record<string, TranslationValue> = {},
 ): string {
-  // Check if ICU library is available
-  if (!loadICULibrary()) {
-    warnMissingICULibrary(message);
-    // Fallback: return message with simple {var} replacement
-    return message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) => {
-      const value = values[key];
-      return value !== undefined ? String(value) : match;
-    });
-  }
-
   // Create cache key
   const cacheKey = `${locale}:${message}`;
 
@@ -382,7 +243,7 @@ export function formatICUMessage(
   if (!compiledMessage) {
     try {
       // Compile the message
-      compiledMessage = new IntlMessageFormat!(message, locale);
+      compiledMessage = new IntlMessageFormat(message, locale);
       icuMessageCache.set(cacheKey, compiledMessage);
     } catch (error) {
       // If compilation fails, return original message

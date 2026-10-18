@@ -78,14 +78,6 @@
     "typescript": "^6.0.3",
     "vitest": "^5.0.3"
   },
-  "peerDependencies": {
-    "intl-messageformat": ">=10.0.0"
-  },
-  "peerDependenciesMeta": {
-    "intl-messageformat": {
-      "optional": true
-    }
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/RodrigoEspinosa/intl-party.git",
