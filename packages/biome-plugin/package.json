@@ -1,0 +1,49 @@
+{
+  "name": "@intl-party/biome-plugin",
+  "version": "1.10.0",
+  "description": "Biome GritQL plugins for IntlParty - detect hardcoded JSX strings and direct i18n.t() usage",
+  "files": [
+    "*.grit"
+  ],
+  "exports": {
+    "./no-hardcoded-strings.grit": "./no-hardcoded-strings.grit",
+    "./prefer-translation-hooks.grit": "./prefer-translation-hooks.grit",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "biome",
+    "biome-plugin",
+    "gritql",
+    "i18n",
+    "internationalization",
+    "hardcoded-strings",
+    "l10n",
+    "localization",
+    "react",
+    "jsx"
+  ],
+  "author": "RodrigoEspinosa",
+  "license": "MIT",
+  "homepage": "https://github.com/RodrigoEspinosa/intl-party#readme",
+  "bugs": {
+    "url": "https://github.com/RodrigoEspinosa/intl-party/issues"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^22.19.0",
+    "vitest": "^5.0.3"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": ">=2.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RodrigoEspinosa/intl-party.git",
+    "directory": "packages/biome-plugin"
+  }
+}

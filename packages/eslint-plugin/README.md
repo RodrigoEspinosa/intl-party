@@ -10,6 +10,8 @@ npm install --save-dev @intl-party/eslint-plugin
 
 Requires ESLint 8 or later. For `.tsx` files, use a parser that understands TypeScript and JSX, such as `@typescript-eslint/parser`.
 
+Using Biome instead of ESLint? [`@intl-party/biome-plugin`](../biome-plugin) ports `no-hardcoded-strings` and the `i18n.t` check of `prefer-translation-hooks`.
+
 ## Setup
 
 ### Flat config (ESLint 9)
