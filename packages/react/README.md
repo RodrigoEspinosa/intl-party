@@ -115,7 +115,7 @@ t("missing", { fallback: "Default text" });
 t("title", { namespace: "auth" }); // one-off lookup in another namespace
 ```
 
-ICU messages (`"{count, plural, one {# item} other {# items}}"`) take their values from `interpolation` and `count`. Install `intl-messageformat` to use them.
+ICU messages (`"{count, plural, one {# item} other {# items}}"`) take their values from `interpolation` and `count`.
 
 ## 🧩 Components
 

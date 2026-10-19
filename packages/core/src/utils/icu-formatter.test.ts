@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   isICUFormat,
   isLegacyFormat,
@@ -6,7 +6,6 @@ import {
   formatICUMessage,
   clearICUCache,
   getICUCacheStats,
-  isICULibraryAvailable,
 } from "./icu-formatter";
 
 describe("ICU Formatter", () => {
@@ -246,13 +245,6 @@ describe("ICU Formatter", () => {
     });
   });
 
-  describe("isICULibraryAvailable", () => {
-    it("should return boolean indicating library availability", () => {
-      const available = isICULibraryAvailable();
-      expect(typeof available).toBe("boolean");
-    });
-  });
-
   describe("Mixed format coexistence", () => {
     it("should correctly identify ICU vs legacy in same project", () => {
       const icuMessage = "{count, plural, one {# item} other {# items}}";
@@ -274,22 +266,5 @@ describe("ICU Formatter", () => {
       expect(isICUFormat("Hello {{name}}")).toBe(false);
       expect(isLegacyFormat("Hello {{name}}")).toBe(true);
     });
-  });
-});
-
-describe("warnMissingICULibrary", () => {
-  it("warns once, and only for plural/select messages", async () => {
-    const { warnMissingICULibrary } = await import("./icu-formatter");
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    warnMissingICULibrary("Hello {name}!");
-    expect(warn).not.toHaveBeenCalled();
-
-    warnMissingICULibrary("{count, plural, one {# item} other {# items}}");
-    warnMissingICULibrary("{gender, select, male {He} other {They}}");
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toContain("npm install intl-messageformat");
-
-    warn.mockRestore();
   });
 });

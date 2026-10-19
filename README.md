@@ -250,12 +250,6 @@ For complex pluralization, gender selection, and locale-specific formatting, use
 }
 ```
 
-To use ICU MessageFormat, install the optional dependency:
-
-```bash
-npm install intl-messageformat
-```
-
 **Auto-detection**: IntlParty automatically detects which format each message uses. You can mix both formats in the same project - legacy `{{variable}}` and ICU `{variable, type}` patterns coexist seamlessly.
 
 ```json

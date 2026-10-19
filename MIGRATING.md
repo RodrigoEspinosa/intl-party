@@ -8,7 +8,7 @@
 
 IntlParty reads messages from `<messages>/<locale>/<namespace>.json`. Each file is one namespace. Both message formats work, and you can mix them:
 
-- **ICU MessageFormat** (`{name}`, `{count, plural, …}`), used by next-intl, FormatJS, and Lingui. Plural and select messages need the optional `intl-messageformat` package: `npm install intl-messageformat`.
+- **ICU MessageFormat** (`{name}`, `{count, plural, …}`), used by next-intl, FormatJS, and Lingui.
 - **Double-brace** (`{{name}}`), used by i18next. Plurals can use i18next's `key_one` / `key_other` / `key_zero` suffixes.
 
 ## From next-intl
@@ -41,13 +41,13 @@ for (const file of fs.readdirSync("messages").filter((f) => f.endsWith(".json"))
 }'
 ```
 
-The messages themselves are ICU, so they work unchanged once `intl-messageformat` is installed.
+The messages themselves are ICU, so they work unchanged.
 
 ### 2. Replace the setup
 
 ```bash
 npm uninstall next-intl
-npm install @intl-party/nextjs intl-messageformat
+npm install @intl-party/nextjs
 npx intl-party nextjs --init --locale-prefix as-needed
 ```
 
@@ -144,7 +144,7 @@ With `@intl-party/nextjs`, values are passed directly, as in i18next: `t("greeti
 
 ## From FormatJS (react-intl)
 
-FormatJS messages are ICU, so they work unchanged with `intl-messageformat` installed. Put each flat message file in a namespace, e.g. `messages/en/messages.json`.
+FormatJS messages are ICU, so they work unchanged. Put each flat message file in a namespace, e.g. `messages/en/messages.json`.
 
 ```tsx
 // react-intl
