@@ -14,6 +14,7 @@
     "Other"
   ],
   "activationEvents": [
+    "workspaceContains:**/messages/**/*.json",
     "workspaceContains:**/locales/**/*.json",
     "workspaceContains:**/intl-party.config.*"
   ],
@@ -24,7 +25,7 @@
       "properties": {
         "intl-party.translationFiles": {
           "type": "string",
-          "default": "**/locales/**/*.json",
+          "default": "**/{messages,locales}/**/*.json",
           "description": "Glob pattern for translation JSON files"
         },
         "intl-party.defaultLocale": {
@@ -44,16 +45,20 @@
   "scripts": {
     "build": "tsup src/extension.ts --format cjs --external vscode --minify",
     "dev": "tsup src/extension.ts --format cjs --external vscode --watch",
+    "test": "vitest --run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "package": "vsce package"
   },
   "devDependencies": {
+    "@types/picomatch": "^4.0.0",
     "@types/vscode": "^1.85.0",
     "eslint": "^10.12.0",
+    "picomatch": "^4.0.7",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
   },
   "repository": {
     "type": "git",

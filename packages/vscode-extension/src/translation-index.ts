@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { DEFAULT_TRANSLATION_FILES } from "./defaults";
 
 export interface TranslationEntry {
   key: string;
@@ -81,7 +82,7 @@ export class TranslationIndex {
 
   private getGlobPattern(): string {
     const config = vscode.workspace.getConfiguration("intl-party");
-    return config.get<string>("translationFiles", "**/locales/**/*.json");
+    return config.get<string>("translationFiles", DEFAULT_TRANSLATION_FILES);
   }
 
   private async buildIndex(): Promise<void> {
@@ -128,6 +129,7 @@ export class TranslationIndex {
 
   /**
    * Infer locale from the file path. Supports patterns like:
+   *   messages/en/common.json -> "en"
    *   locales/en/common.json  -> "en"
    *   locales/en.json         -> "en"
    *   i18n/fr-FR/messages.json -> "fr-FR"
