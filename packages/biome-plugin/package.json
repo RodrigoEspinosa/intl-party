@@ -1,6 +1,6 @@
 {
   "name": "@intl-party/biome-plugin",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Biome GritQL plugins for IntlParty - detect hardcoded JSX strings and direct i18n.t() usage",
   "files": [
     "*.grit"

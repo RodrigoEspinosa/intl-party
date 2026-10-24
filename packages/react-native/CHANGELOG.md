@@ -1,5 +1,13 @@
 # @intl-party/react-native
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [cc04bd8]
+  - @intl-party/core@1.11.0
+  - @intl-party/react@1.11.0
+
 ## 0.2.0
 
 ### Minor Changes
