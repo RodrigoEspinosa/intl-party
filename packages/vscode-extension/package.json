@@ -52,13 +52,13 @@
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/picomatch": "^4.0.0",
+    "@types/picomatch": "^4.0.3",
     "@types/vscode": "^1.85.0",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "picomatch": "^4.0.7",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "repository": {
     "type": "git",

@@ -47,19 +47,19 @@
     "commander": "^15.0.0",
     "fs-extra": "^11.4.1",
     "glob": "^13.0.6",
-    "inquirer": "^14.2.2",
+    "inquirer": "^14.2.4",
     "jiti": "^2.7.0",
     "ora": "^9.4.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^9.0.10",
-    "@types/node": "^22.19.0",
-    "eslint": "^10.12.0",
-    "jsdom": "^30.1.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.13.0",
+    "jsdom": "^30.1.3",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "repository": {
     "type": "git",
