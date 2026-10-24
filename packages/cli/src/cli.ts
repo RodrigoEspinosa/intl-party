@@ -130,7 +130,7 @@ program
   .option("-s, --schemas", "generate JSON schemas")
   .option("-d, --docs", "generate documentation")
   // No -c shorthand: it would shadow the global -c, --config flag
-  .option("--client", "generate client package files")
+  .option("--client", "deprecated: generate @intl-party/client files")
   .option(
     "-o, --output <dir>",
     "output directory for generated files",
