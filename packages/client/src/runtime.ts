@@ -10,17 +10,23 @@ import {
   formatICUMessage,
   splitEscapedDots,
 } from "@intl-party/core";
+import { warnClientDeprecated } from "./deprecation";
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
 /**
  * Creates a type-safe translation function for a specific locale.
  * Supports both ICU MessageFormat and legacy {{variable}} format.
+ *
+ * @deprecated Use `createI18n` from `@intl-party/core`. This package will be
+ * removed in the next major version. See
+ * https://github.com/RodrigoEspinosa/intl-party/issues/80
  */
 export function createTranslationFunction(
   locale: Locale,
   messages: Translations = {}
 ) {
+  warnClientDeprecated();
   return function t(
     key: TranslationKey,
     options?: Record<string, TranslationValue>
@@ -67,6 +73,9 @@ export function createTranslationFunction(
 
 /**
  * Gets all messages for a specific locale
+ *
+ * @deprecated This package will be removed in the next major version. See
+ * https://github.com/RodrigoEspinosa/intl-party/issues/80
  */
 export function getLocaleMessages(
   locale: Locale,
@@ -80,6 +89,10 @@ export function getLocaleMessages(
  *
  * Returns a ready-to-use translation function plus the messages it resolves
  * against, instead of the unbound factory the previous implementation exposed.
+ *
+ * @deprecated Use `createI18n` from `@intl-party/core`. This package will be
+ * removed in the next major version. See
+ * https://github.com/RodrigoEspinosa/intl-party/issues/80
  */
 export function createClient(
   locale: Locale,
@@ -94,6 +107,8 @@ export function createClient(
 }
 
 /**
- * Type-safe client instance
+ * Client instance returned by `createClient`
+ *
+ * @deprecated This package will be removed in the next major version.
  */
 export type IntlPartyClient = ReturnType<typeof createClient>;

@@ -887,6 +887,13 @@ async function generateClientPackage(
   data: MessageData,
   options: GenerateOptions,
 ): Promise<void> {
+  console.warn(
+    chalk.yellow(
+      "⚠ --client is deprecated and will be removed in the next major " +
+        "version, along with @intl-party/client. Use --types instead. See " +
+        "https://github.com/RodrigoEspinosa/intl-party/issues/80",
+    ),
+  );
   console.log(chalk.blue("🔧 Generating client package files..."));
   if (options.verbose) {
     console.log(chalk.gray(`Data: ${JSON.stringify(data, null, 2)}`));

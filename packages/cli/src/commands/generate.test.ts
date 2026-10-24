@@ -77,6 +77,7 @@ vi.mock("chokidar", () => ({
 
 const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 const processExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit with code ${code}`);
 });
@@ -259,6 +260,9 @@ describe("generateCommand", () => {
 
     expect(consoleLog).toHaveBeenCalledWith(
       expect.stringContaining("Generating client package files"),
+    );
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("--client is deprecated"),
     );
   });
 });
