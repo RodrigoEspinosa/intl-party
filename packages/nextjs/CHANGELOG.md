@@ -1,5 +1,12 @@
 # @intl-party/nextjs
 
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [4909380]
+  - @intl-party/react@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes
