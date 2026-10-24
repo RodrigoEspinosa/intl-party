@@ -1,5 +1,12 @@
 # @intl-party/react-native
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [4909380]
+  - @intl-party/react@1.12.1
+
 ## 0.2.2
 
 ### Patch Changes
