@@ -96,6 +96,10 @@ export function I18nProvider({
     i18nInstance.getNamespace(),
   );
   const [isLoading, setIsLoading] = useState(false);
+  // The locale and namespace the provider last saw, so changes made before
+  // the listeners below subscribe aren't lost.
+  const seenLocaleRef = useRef(locale);
+  const seenNamespaceRef = useRef(namespace);
   const [error, setError] = useState<Error | null>(null);
 
   // Handle locale changes. State updates and the onLocaleChange callback
@@ -146,6 +150,7 @@ export function I18nProvider({
       locale: Locale;
     }) => {
       if (unmounted) return;
+      seenLocaleRef.current = newLocale;
       setLocaleState(newLocale);
       onLocaleChange?.(newLocale);
     };
@@ -156,6 +161,7 @@ export function I18nProvider({
       namespace: Namespace;
     }) => {
       if (unmounted) return;
+      seenNamespaceRef.current = newNamespace;
       setNamespaceState(newNamespace);
       onNamespaceChange?.(newNamespace);
     };
@@ -174,6 +180,16 @@ export function I18nProvider({
     i18nInstance.on("namespaceChange", handleNamespaceChangeEvent);
     i18nInstance.on("translationsPreloading", handleTranslationsPreloading);
     i18nInstance.on("translationsPreloaded", handleTranslationsPreloaded);
+
+    // Effects run after paint, so a setLocale() between the first render and
+    // this subscription (a tap on a just-shown switcher, or a child's layout
+    // effect) emitted no event we could hear. Treat it as one now.
+    if (i18nInstance.getLocale() !== seenLocaleRef.current) {
+      handleLocaleChangeEvent({ locale: i18nInstance.getLocale() });
+    }
+    if (i18nInstance.getNamespace() !== seenNamespaceRef.current) {
+      handleNamespaceChangeEvent({ namespace: i18nInstance.getNamespace() });
+    }
 
     return () => {
       unmounted = true;

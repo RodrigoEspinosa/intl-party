@@ -401,4 +401,42 @@ describe("I18nProvider", () => {
     // Changing locale after unmount should not throw (listeners cleaned up)
     expect(() => i18n.setLocale("es")).not.toThrow();
   });
+
+  it("picks up a locale change made before it subscribes", () => {
+    // A child's layout effect runs before the provider's passive effect, the
+    // same window as a tap on a switcher shown right after mount.
+    function SwitchEarly() {
+      const { i18n } = useI18nContext();
+      React.useLayoutEffect(() => {
+        i18n.setLocale("es");
+      }, [i18n]);
+      return null;
+    }
+    const onLocaleChange = vi.fn();
+
+    render(
+      <I18nProvider i18n={i18n} onLocaleChange={onLocaleChange}>
+        <SwitchEarly />
+        <TestComponent />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByTestId("locale").textContent).toBe("es");
+    expect(onLocaleChange).toHaveBeenCalledTimes(1);
+    expect(onLocaleChange).toHaveBeenCalledWith("es");
+  });
+
+  it("doesn't report the initial locale as a change", () => {
+    i18n.setLocale("es");
+    const onLocaleChange = vi.fn();
+
+    render(
+      <I18nProvider i18n={i18n} onLocaleChange={onLocaleChange}>
+        <TestComponent />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByTestId("locale").textContent).toBe("es");
+    expect(onLocaleChange).not.toHaveBeenCalled();
+  });
 });
