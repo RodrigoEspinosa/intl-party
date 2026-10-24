@@ -66,11 +66,11 @@
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
-    "react": "^19.3.0",
+    "react": "^19.3.1",
     "react-native": "^0.87.1",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "repository": {
     "type": "git",
