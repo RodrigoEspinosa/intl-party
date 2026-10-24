@@ -1,5 +1,16 @@
 # @intl-party/client
 
+## 1.12.0
+
+### Minor Changes
+
+- 8d302b0: Deprecate `@intl-party/client` and `intl-party generate --client`. Both now warn once when used, and both will be removed in the next major version. The package never read the files `generate --client` writes, so its `TranslationKey` accepted any string. Its `t()` also skipped the default-locale fallback and plurals. Use `createI18n` from `@intl-party/core`, and `generate --types` for type-checked keys. See #80.
+
+### Patch Changes
+
+- Updated dependencies [d4b22ef]
+  - @intl-party/core@1.12.0
+
 ## 1.11.0
 
 ### Patch Changes

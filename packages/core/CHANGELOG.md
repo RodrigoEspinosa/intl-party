@@ -1,5 +1,11 @@
 # @intl-party/core
 
+## 1.12.0
+
+### Patch Changes
+
+- d4b22ef: Update `intl-messageformat` to 12.1.4 (core) and `inquirer` to 14.2.4 (cli).
+
 ## 1.11.0
 
 ### Patch Changes
