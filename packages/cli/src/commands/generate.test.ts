@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { generateCommand } from "./generate";
 import fs from "fs-extra";
-import path from "node:path";
 import { loadConfig } from "../utils/config";
 import type { CLIConfig } from "../utils/config";
 import { loadTranslations } from "../utils/translations";

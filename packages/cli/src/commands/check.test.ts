@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { checkCommand } from "./check";
 import type { CLIConfig } from "../utils/config";
-import type {
-  AllTranslations,
-  ValidationError,
-  ValidationResult,
-} from "@intl-party/core";
+import type { AllTranslations, ValidationResult } from "@intl-party/core";
 
 // Mock dependencies
 vi.mock("ora", () => {
@@ -44,7 +40,7 @@ import { validateTranslations } from "@intl-party/core";
 // Mock console methods
 const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
 const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
 const processExit = vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit with code ${code}`);
 });

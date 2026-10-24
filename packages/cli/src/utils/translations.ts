@@ -19,7 +19,7 @@ export async function loadTranslations(
         try {
           const content = await fs.readJson(translationPath);
           translations[locale][namespace] = content;
-        } catch (error) {
+        } catch {
           console.warn(
             `Failed to load ${locale}/${namespace} from ${translationPath}`,
           );

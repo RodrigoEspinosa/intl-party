@@ -327,7 +327,8 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 
 function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split(".");
-  const lastKey = keys.pop()!;
+  const lastKey = keys.pop();
+  if (lastKey === undefined) return;
   const target = keys.reduce((current: Record<string, unknown>, key: string) => {
     if (!current[key]) current[key] = {};
     return current[key] as Record<string, unknown>;
@@ -337,7 +338,8 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
 
 function removeNestedValue(obj: Record<string, unknown>, path: string): void {
   const keys = path.split(".");
-  const lastKey = keys.pop()!;
+  const lastKey = keys.pop();
+  if (lastKey === undefined) return;
   const target = keys.reduce((current: unknown, key: string) => {
     if (current && typeof current === "object") {
       return (current as Record<string, unknown>)[key];

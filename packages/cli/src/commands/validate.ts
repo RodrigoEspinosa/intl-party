@@ -2,6 +2,7 @@ import chalk from "chalk";
 import ora from "ora";
 import fs from "fs-extra";
 import { validateTranslations } from "@intl-party/core";
+import type { ValidationResult } from "@intl-party/core";
 import { loadConfig } from "../utils/config";
 import {
   assertTranslationFilesExist,
@@ -81,7 +82,10 @@ export async function validateCommand(options: ValidateOptions) {
   }
 }
 
-async function outputResults(result: any, options: ValidateOptions) {
+async function outputResults(
+  result: ValidationResult,
+  options: ValidateOptions,
+) {
   if (options.format === "json") {
     const output = JSON.stringify(result, null, 2);
 
@@ -116,7 +120,7 @@ async function outputResults(result: any, options: ValidateOptions) {
     if (result.warnings.length > 0) {
       console.log(chalk.yellow(`\n⚠ ${result.warnings.length} warning(s):`));
 
-      result.warnings.forEach((warning: any, index: number) => {
+      result.warnings.forEach((warning, index) => {
         console.log(
           `  ${index + 1}. ${chalk.yellow(warning.type)}: ${warning.message}`,
         );
@@ -132,7 +136,7 @@ async function outputResults(result: any, options: ValidateOptions) {
       chalk.red(`✗ Validation failed with ${result.errors.length} error(s):`),
     );
 
-    result.errors.forEach((error: any, index: number) => {
+    result.errors.forEach((error, index) => {
       console.log(`  ${index + 1}. ${chalk.red(error.type)}: ${error.message}`);
       if (options.verbose) {
         console.log(
@@ -144,7 +148,7 @@ async function outputResults(result: any, options: ValidateOptions) {
     if (result.warnings.length > 0) {
       console.log(chalk.yellow(`\n⚠ ${result.warnings.length} warning(s):`));
 
-      result.warnings.forEach((warning: any, index: number) => {
+      result.warnings.forEach((warning, index) => {
         console.log(
           `  ${index + 1}. ${chalk.yellow(warning.type)}: ${warning.message}`,
         );
@@ -166,7 +170,7 @@ async function outputResults(result: any, options: ValidateOptions) {
   }
 }
 
-function generateJUnitXML(result: any): string {
+function generateJUnitXML(result: ValidationResult): string {
   const totalTests = 1;
   const failures = result.valid ? 0 : 1;
   const errors = result.errors.length;
@@ -182,7 +186,7 @@ function generateJUnitXML(result: any): string {
     xml += `      <failure message="Translation validation failed">\n`;
     xml += `        <![CDATA[\n`;
 
-    result.errors.forEach((error: any) => {
+    result.errors.forEach((error) => {
       xml += `${error.type}: ${error.message}\n`;
       xml += `  Locale: ${error.locale}, Namespace: ${error.namespace}, Key: ${error.key}\n\n`;
     });

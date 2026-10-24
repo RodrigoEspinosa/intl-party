@@ -24,9 +24,9 @@ vi.mock("node:path", () => ({
 }));
 
 const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
-const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
-const processExit = vi.spyOn(process, "exit").mockImplementation((code) => {
+vi.spyOn(console, "error").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(process, "exit").mockImplementation((code) => {
   throw new Error(`Process exit with code ${code}`);
 });
 

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { syncCommand, analyzeTranslations } from "./sync";
-import type { SyncOptions } from "./sync";
 import type { CLIConfig } from "../utils/config";
 import type { AllTranslations } from "@intl-party/core";
 

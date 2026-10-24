@@ -6,6 +6,8 @@ import ora from "ora";
 import { watch } from "chokidar";
 import { loadConfig, findConfigFile } from "../utils/config";
 import { loadTranslations } from "../utils/translations";
+import type { CLIConfig } from "../utils/config";
+import type { AllTranslations } from "@intl-party/core";
 
 export interface GenerateOptions {
   types?: boolean;
@@ -24,9 +26,24 @@ interface MessageData {
   namespaces: string[];
   /** locale -> namespace -> JSON file path */
   translationPaths: Record<string, Record<string, string>>;
-  messages: Record<string, Record<string, any>>;
+  messages: AllTranslations;
   translationKeys: string[];
   namespaceKeys: string[];
+}
+
+/** Config fields older setups use alongside CLIConfig. */
+interface LegacyConfigFields {
+  shared?: { messagesPath?: string; locales?: string[]; namespaces?: string[] };
+  messagesPath?: string;
+  /** Messages directory, as written by `intl-party nextjs --init` */
+  messages?: unknown;
+}
+
+/** A parsed messages JSON object. */
+type MessageTree = Record<string, unknown>;
+
+function isMessageTree(value: unknown): value is MessageTree {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function getMessageData(
@@ -34,7 +51,7 @@ async function getMessageData(
   options?: GenerateOptions,
 ): Promise<MessageData> {
   // Try to load config if provided, otherwise auto-detect
-  let config;
+  let config: (CLIConfig & LegacyConfigFields) | undefined;
   let locales: string[];
   let namespaces: string[];
   let translationPaths: Record<string, Record<string, string>>;
@@ -64,28 +81,26 @@ async function getMessageData(
   // Handle config-based setup if config was loaded
   if (config) {
     // Prioritize Next.js-style config format
-    const nextjsConfig = (config as any).shared;
-    if (
-      nextjsConfig &&
-      nextjsConfig.messagesPath &&
-      nextjsConfig.locales &&
-      nextjsConfig.namespaces
-    ) {
+    const nextjsConfig = config.shared;
+    const nextjsMessagesPath = nextjsConfig?.messagesPath;
+    const nextjsLocales = nextjsConfig?.locales;
+    const nextjsNamespaces = nextjsConfig?.namespaces;
+    if (nextjsMessagesPath && nextjsLocales && nextjsNamespaces) {
       // Convert Next.js config to CLI format
       translationPaths = {};
-      for (const locale of nextjsConfig.locales) {
+      for (const locale of nextjsLocales) {
         translationPaths[locale] = {};
-        for (const namespace of nextjsConfig.namespaces) {
+        for (const namespace of nextjsNamespaces) {
           translationPaths[locale][namespace] = path.join(
             process.cwd(),
-            nextjsConfig.messagesPath,
+            nextjsMessagesPath,
             locale,
             `${namespace}.json`,
           );
         }
       }
-      locales = nextjsConfig.locales;
-      namespaces = nextjsConfig.namespaces;
+      locales = nextjsLocales;
+      namespaces = nextjsNamespaces;
 
       if (options?.verbose) {
         console.log(
@@ -93,22 +108,19 @@ async function getMessageData(
             `Using Next.js config: ${locales.length} locales, ${namespaces.length} namespaces`,
           ),
         );
-        console.log(chalk.gray(`Messages path: ${nextjsConfig.messagesPath}`));
+        console.log(chalk.gray(`Messages path: ${nextjsMessagesPath}`));
       }
-    } else if (
-      (config as any).messagesPath &&
-      (config as any).locales &&
-      (config as any).namespaces
-    ) {
+    } else if (config.messagesPath && config.locales && config.namespaces) {
       // Handle standard config format
-      const standardConfig = config as any;
+      const standardConfig = config;
+      const messagesPath = config.messagesPath;
       translationPaths = {};
       for (const locale of standardConfig.locales) {
         translationPaths[locale] = {};
         for (const namespace of standardConfig.namespaces) {
           translationPaths[locale][namespace] = path.join(
             process.cwd(),
-            standardConfig.messagesPath,
+            messagesPath,
             locale,
             `${namespace}.json`,
           );
@@ -123,16 +135,14 @@ async function getMessageData(
             `Using standard config: ${locales.length} locales, ${namespaces.length} namespaces`,
           ),
         );
-        console.log(
-          chalk.gray(`Messages path: ${standardConfig.messagesPath}`),
-        );
+        console.log(chalk.gray(`Messages path: ${messagesPath}`));
       }
     }
   }
 
   // Config written by `intl-party nextjs --init`: { locales, defaultLocale,
   // messages: "./messages" } with namespaces discovered from the files.
-  const messagesDirOption = (config as any)?.messages;
+  const messagesDirOption = config?.messages;
   if (
     config &&
     typeof messagesDirOption === "string" &&
@@ -162,19 +172,14 @@ async function getMessageData(
 
   for (const locale of locales) {
     for (const namespace of namespaces) {
-      const extractKeys = (obj: any, prefix = ""): void => {
+      const extractKeys = (obj: MessageTree, prefix = ""): void => {
         for (const [key, value] of Object.entries(obj)) {
           const fullKey = prefix ? `${prefix}.${key}` : key;
-          const namespaceKey = prefix ? key : fullKey;
 
           // Add namespaced key (for global translation function)
           translationKeys.add(fullKey);
 
-          if (
-            typeof value === "object" &&
-            value !== null &&
-            !Array.isArray(value)
-          ) {
+          if (isMessageTree(value)) {
             // Recursively extract nested keys
             extractKeys(value, fullKey);
           } else {
@@ -222,18 +227,17 @@ function generateTypescriptTypes(data: MessageData): string {
       if (!messageStructure) return `  "${ns}": {};`;
 
       // Generate nested interface from the actual structure
-      const generateNestedInterface = (obj: any, indent = 2): string => {
+      const generateNestedInterface = (
+        obj: MessageTree,
+        indent = 2,
+      ): string => {
         const spaces = "  ".repeat(indent);
         const entries = Object.entries(obj);
 
         if (entries.length === 0) return "{}";
 
         const interfaceLines = entries.map(([key, value]) => {
-          if (
-            typeof value === "object" &&
-            value !== null &&
-            !Array.isArray(value)
-          ) {
+          if (isMessageTree(value)) {
             return `${spaces}"${key}": ${generateNestedInterface(value, indent + 1)};`;
           } else {
             return `${spaces}"${key}": string;`;
@@ -348,7 +352,7 @@ export * from './messages.generated';
 }
 
 function generateJsonSchemas(data: MessageData): string {
-  const schemas: Record<string, any> = {};
+  const schemas: Record<string, unknown> = {};
 
   // Generate schema for each locale and namespace combination
   for (const locale of data.locales) {
@@ -371,19 +375,28 @@ function generateJsonSchemas(data: MessageData): string {
   }
 
   // Generate a combined schema for all translations
-  const combinedSchema: any = {
+  const localeSchemas: Record<
+    string,
+    {
+      type: "object";
+      description: string;
+      properties: Record<string, { $ref: string }>;
+    }
+  > = {};
+  const definitions: Record<string, unknown> = {};
+  const combinedSchema = {
     $schema: "http://json-schema.org/draft-07/schema#",
     $id: "#/schemas/translations",
     title: "IntlParty Translation Schema",
     description: "JSON schema for all IntlParty translations",
     type: "object",
-    properties: {},
-    definitions: {},
+    properties: localeSchemas,
+    definitions,
   };
 
   // Add locale definitions
   for (const locale of data.locales) {
-    combinedSchema.properties[locale] = {
+    localeSchemas[locale] = {
       type: "object",
       description: `Translations for ${locale} locale`,
       properties: {},
@@ -391,11 +404,11 @@ function generateJsonSchemas(data: MessageData): string {
 
     for (const namespace of data.namespaces) {
       const schemaName = `${locale}_${namespace}`;
-      combinedSchema.properties[locale].properties[namespace] = {
+      localeSchemas[locale].properties[namespace] = {
         $ref: `#/definitions/${schemaName}`,
       };
 
-      combinedSchema.definitions[schemaName] = schemas[schemaName];
+      definitions[schemaName] = schemas[schemaName];
     }
   }
 
@@ -416,16 +429,16 @@ function generateJsonSchemas(data: MessageData): string {
 }
 
 function createJsonSchema(
-  obj: any,
+  obj: MessageTree,
   prefix: string = "",
-): { properties: any; required: string[] } {
-  const properties: any = {};
+): { properties: Record<string, object>; required: string[] } {
+  const properties: Record<string, object> = {};
   const required: string[] = [];
 
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
 
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    if (isMessageTree(value)) {
       // Recursively create schema for nested objects
       const nestedSchema = createJsonSchema(value, fullKey);
       properties[key] = {
@@ -519,14 +532,14 @@ function generateDocumentation(data: MessageData): string {
 }
 
 function generateNamespaceDocumentation(
-  obj: any,
+  obj: MessageTree,
   lines: string[],
   prefix: string,
 ): void {
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
 
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    if (isMessageTree(value)) {
       // Nested object
       lines.push(`#### ${fullKey}`);
       lines.push("");
@@ -566,11 +579,11 @@ function generateNamespaceDocumentation(
   }
 }
 
-function countKeys(obj: any): number {
+function countKeys(obj: MessageTree): number {
   let count = 0;
 
   for (const value of Object.values(obj)) {
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    if (isMessageTree(value)) {
       count += countKeys(value);
     } else {
       count += 1;
@@ -621,7 +634,7 @@ async function autoDetectMessages(
   const localeDirs = await fs.readdir(messagesDir);
   const validLocales = [];
   for (const dir of localeDirs) {
-    const localePath = path.join(messagesDir!, dir);
+    const localePath = path.join(messagesDir, dir);
     const stat = await fs.stat(localePath);
     if (stat.isDirectory()) {
       validLocales.push(dir);
