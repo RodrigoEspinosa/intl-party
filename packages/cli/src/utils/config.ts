@@ -31,6 +31,16 @@ export interface CLIConfig {
   };
 }
 
+/**
+ * A config file's contents: any CLIConfig fields, plus the aliases
+ * `messages` (the messages directory `intl-party nextjs --init` writes) and
+ * `sourceDir`.
+ */
+type UserConfig = Partial<CLIConfig> & {
+  messages?: string;
+  sourceDir?: string;
+};
+
 const DEFAULT_CONFIG: CLIConfig = {
   locales: ["en", "es", "fr"],
   defaultLocale: "en",
@@ -63,7 +73,7 @@ const DEFAULT_CONFIG: CLIConfig = {
  * jiti so a scaffolded `intl-party.config.ts` actually works instead of
  * throwing "Unknown file extension .ts" at runtime.
  */
-async function loadConfigFile(configFile: string): Promise<any> {
+async function loadConfigFile(configFile: string): Promise<UserConfig> {
   if (configFile.endsWith(".json")) {
     const content = await fs.readFile(configFile, "utf-8");
     return JSON.parse(content);
@@ -178,7 +188,8 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
 
         if (locales.length > 0) {
           config.locales = locales;
-          config.translationPaths = {};
+          const translationPaths: CLIConfig["translationPaths"] = {};
+          config.translationPaths = translationPaths;
 
           // Try to detect namespaces
           const firstLocaleDir = path.join(basePath, locales[0]);
@@ -192,9 +203,9 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
 
             // Build translation paths
             for (const locale of locales) {
-              config.translationPaths![locale] = {};
+              translationPaths[locale] = {};
               for (const namespace of namespaces) {
-                config.translationPaths![locale][namespace] = path.join(
+                translationPaths[locale][namespace] = path.join(
                   basePath,
                   locale,
                   `${namespace}.json`,
@@ -223,7 +234,7 @@ async function autoDetectConfig(): Promise<Partial<CLIConfig>> {
  */
 async function resolveMessagesDirectory(
   merged: CLIConfig,
-  userConfig: any,
+  userConfig: UserConfig,
 ): Promise<CLIConfig> {
   const messagesDir = userConfig?.messages;
   if (
@@ -278,7 +289,10 @@ async function resolveMessagesDirectory(
   };
 }
 
-function mergeConfig(defaultConfig: CLIConfig, userConfig: any): CLIConfig {
+function mergeConfig(
+  defaultConfig: CLIConfig,
+  userConfig: UserConfig,
+): CLIConfig {
   const merged = {
     ...defaultConfig,
     ...userConfig,

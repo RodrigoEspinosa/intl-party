@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { Command } from "commander";
 import { existsSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

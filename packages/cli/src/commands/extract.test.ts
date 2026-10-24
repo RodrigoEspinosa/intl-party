@@ -6,7 +6,6 @@ import {
   resolveKeyReference,
 } from "./extract";
 import fs from "fs-extra";
-import path from "node:path";
 import { glob } from "glob";
 import { loadConfig } from "../utils/config";
 import type { CLIConfig } from "../utils/config";

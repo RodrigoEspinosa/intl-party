@@ -16,7 +16,7 @@
     "dev": "tsup --watch",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

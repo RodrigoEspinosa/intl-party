@@ -78,6 +78,8 @@ module.exports = [
       "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      // Silencing spies: vi.spyOn(console, "log").mockImplementation(() => {})
+      "@typescript-eslint/no-empty-function": "off",
     },
   },
 ];

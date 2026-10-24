@@ -6,6 +6,8 @@ import inquirer from "inquirer";
 import { saveConfig } from "../utils/config";
 import type { CLIConfig } from "../utils/config";
 
+type TemplateConfig = Pick<CLIConfig, "locales" | "defaultLocale" | "namespaces">;
+
 export interface InitOptions {
   force?: boolean;
   template?: string;
@@ -136,7 +138,7 @@ export async function initCommand(options: InitOptions) {
 
     // Create example template files based on template option
     if (options.template) {
-      await createTemplateFiles(options.template, answers, options.force);
+      await createTemplateFiles(options.template, config, options.force);
     }
 
     spinner.succeed("IntlParty configuration initialized successfully!");
@@ -175,7 +177,7 @@ export async function initCommand(options: InitOptions) {
 
 async function createTemplateFiles(
   template: string,
-  config: any,
+  config: TemplateConfig,
   force = false
 ) {
   switch (template) {
@@ -212,7 +214,7 @@ async function writeTemplateFile(
   await fs.writeFile(filePath, content);
 }
 
-async function createNextJSTemplate(config: any, force = false) {
+async function createNextJSTemplate(config: TemplateConfig, force = false) {
   const middlewareContent = `import { createI18nMiddleware } from '@intl-party/nextjs/middleware';
 
 export default createI18nMiddleware({
@@ -257,7 +259,7 @@ export default function RootLayout({
   await writeTemplateFile("app/[locale]/layout.tsx", layoutContent, force);
 }
 
-async function createReactTemplate(config: any, force = false) {
+async function createReactTemplate(config: TemplateConfig, force = false) {
   const appContent = `import { I18nProvider } from '@intl-party/react';
 import { createI18n } from '@intl-party/core';
 
@@ -284,7 +286,7 @@ export default App;
   await writeTemplateFile("src/App.tsx", appContent, force);
 }
 
-async function createVanillaTemplate(config: any, force = false) {
+async function createVanillaTemplate(config: TemplateConfig, force = false) {
   const indexContent = `import { createI18n } from '@intl-party/core';
 
 const i18n = createI18n({

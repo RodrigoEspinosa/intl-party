@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { initCommand } from "./init";
 import fs from "fs-extra";
-import path from "node:path";
 import inquirer from "inquirer";
 import { saveConfig } from "../utils/config";
 

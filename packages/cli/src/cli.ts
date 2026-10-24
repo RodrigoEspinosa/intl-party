@@ -27,10 +27,9 @@ program
 
 // Commander only passes a subcommand's own options to its action handler,
 // so merge in the program-level --config/--verbose/--no-color flags.
-type ActionHandler = (options: any) => void | Promise<void>;
-function withGlobals(handler: ActionHandler) {
-  return (_options: unknown, command: { optsWithGlobals(): any }) =>
-    handler(command.optsWithGlobals());
+function withGlobals<O>(handler: (options: O) => void | Promise<void>) {
+  return (_options: unknown, command: { optsWithGlobals<T>(): T }) =>
+    handler(command.optsWithGlobals<O>());
 }
 
 // Validate command
