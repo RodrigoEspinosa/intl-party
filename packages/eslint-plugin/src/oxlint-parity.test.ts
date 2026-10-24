@@ -162,7 +162,9 @@ const messages = {
   "messages/en/auth.json": JSON.stringify({ login: "Log in" }),
 };
 
-describe("Oxlint parity", () => {
+// Each test spawns oxlint. The first run in a job loads the JS plugin cold,
+// which took over 5s on a GitHub runner.
+describe("Oxlint parity", { timeout: 30_000 }, () => {
   describe("no-hardcoded-strings", () => {
     const source = `export const App = () => (
   <div className="flex-row" title="Click to open">
